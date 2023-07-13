@@ -5,7 +5,9 @@ using PyCall
 using Random
 using SimIntensiveInference
 
-Random.seed!(16)
+include("priors.jl")
+
+Random.seed!(1)
 
 # TODO: extend things to production history
 # Make a finer grid for the truth
@@ -78,22 +80,23 @@ end
 # Prior setup
 # ----------------
 
-depth_s = -100.0
-depth_c = -250.0
 mass_rate_bnds = [1.0e-2, 1.5e-2]
-μ_s = -14.0
-μ_c = -16.0
-μ_d = -14.0
-k_s = ARDExpSquaredKernel(0.25, 1000, 150)
-k_c = ARDExpSquaredKernel(0.25, 1000, 150)
-k_d = ARDExpSquaredKernel(0.50, 1000, 150)
+depth_shal = -100.0
+μ_depth_clay = -300.0
+μ_perm_shal = -14.0
+μ_perm_clay = -16.0
+μ_perm_deep = -14.0
+k_perm_shal = ARDExpSquaredKernel(0.25, 1000, 250)
+k_perm_clay = ARDExpSquaredKernel(0.25, 1000, 250)
+k_perm_deep = ARDExpSquaredKernel(0.50, 1000, 250)
 level_width = 0.25
 
 p = GeothermalPrior(
-    depth_s, depth_c,
     mass_rate_bnds, 
-    μ_s, μ_c, μ_d, 
-    k_s, k_c, k_d, 
+    depth_shal,
+    μ_depth_clay, 
+    μ_perm_shal, μ_perm_clay, μ_perm_deep,
+    k_perm_shal, k_perm_clay, k_perm_deep, 
     level_width, 
     xs, -zs
 )
@@ -110,7 +113,7 @@ us_t = @time reshape(f(vec(θs_t)), nx, nz)
 
 # Define the observation locations
 x_locs = 300:300:1200
-z_locs = 100:200:1100
+z_locs = 300:200:1300
 n_obs = length(x_locs) * length(z_locs)
 
 # Define the distribution of the observation noise
