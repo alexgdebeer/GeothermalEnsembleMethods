@@ -32,6 +32,7 @@ struct GeothermalPrior <: Prior
         mass_rate_bnds::AbstractVector,
         depth_shal::Real,
         μ_depth_clay::Real,
+        k_depth_clay::KernelFunction,
         μ_perm_shal::Real, 
         μ_perm_clay::Real,
         μ_perm_deep::Real,
@@ -69,7 +70,7 @@ struct GeothermalPrior <: Prior
             fill(μ_perm_deep, Nis_deep)
         )
 
-        Γ_depth_clay = 100^2*exp.(-(1/(2*500^2))*(xs' .- xs).^2)+1e-10I # TODO: fix this...
+        Γ_depth_clay = generate_cov(xs, xs, k_depth_clay)
         Γ_perm_shal = generate_cov(cxs[is_shal], cys[is_shal], k_perm_shal)
         Γ_perm_clay = generate_cov(cxs[is_deep], cys[is_deep], k_perm_clay)
         Γ_perm_deep = generate_cov(cxs[is_deep], cys[is_deep], k_perm_deep)
@@ -145,7 +146,7 @@ function get_mass_rate(d::GeothermalPrior, θs::AbstractVecOrMat)::Real
 
     return d.mass_rate_bnds[1] +
         (d.mass_rate_bnds[2] - d.mass_rate_bnds[1]) * 
-        cdf(d.mass_rate_dist, θs[end])
+        cdf(d.mass_rate_dist, θs[1])
 
 end
 

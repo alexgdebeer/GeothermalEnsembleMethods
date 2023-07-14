@@ -80,21 +80,25 @@ end
 # Prior setup
 # ----------------
 
-mass_rate_bnds = [1.0e-2, 1.5e-2]
+mass_rate_bnds = [0.5e-2, 2.0e-2]
 depth_shal = -100.0
+
 μ_depth_clay = -300.0
+k_depth_clay = ExpSquaredKernel(80, 500)
+
 μ_perm_shal = -14.0
 μ_perm_clay = -16.0
 μ_perm_deep = -14.0
 k_perm_shal = ARDExpSquaredKernel(0.25, 1000, 250)
 k_perm_clay = ARDExpSquaredKernel(0.25, 1000, 250)
 k_perm_deep = ARDExpSquaredKernel(0.50, 1000, 250)
+
 level_width = 0.25
 
 p = GeothermalPrior(
     mass_rate_bnds, 
     depth_shal,
-    μ_depth_clay, 
+    μ_depth_clay, k_depth_clay,
     μ_perm_shal, μ_perm_clay, μ_perm_deep,
     k_perm_shal, k_perm_clay, k_perm_deep, 
     level_width, 
