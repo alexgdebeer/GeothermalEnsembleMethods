@@ -1,0 +1,10 @@
+models/
+results/
+*.jld2
+
+.cid
+.idcheck
+
+.DS_Store
+
+Manifest.toml
