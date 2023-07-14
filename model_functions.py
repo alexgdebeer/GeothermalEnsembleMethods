@@ -144,7 +144,7 @@ def run_info(model_path):
     with open(f"{model_path}.yaml", "r") as f:
         log = yaml.safe_load(f)
 
-    for msg in log[:-20:-1]:
+    for msg in log[:-50:-1]:
 
         if msg[:3] == ["info", "timestep", "end_time_reached"]:
             return "success"
