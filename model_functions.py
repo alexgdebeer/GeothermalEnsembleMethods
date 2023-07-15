@@ -30,8 +30,8 @@ def build_base_model(xmax, ymax, zmax, nx, ny, nz,
     incon_name = f"{model_folder}/{model_name}_incon.h5"
 
     heat_cells = [
-        c.cell[-1].index for c in mesh.column if c.index not in mass_cols
-    ]
+        c.cell[-1].index for c in mesh.column 
+        if c.index not in mass_cols]
 
     model = {
         "eos": {"name" : "we"},
@@ -53,7 +53,7 @@ def build_base_model(xmax, ymax, zmax, nx, ny, nz,
     model["rock"] = {"types" : [
         {
             "name": f"{c.index}", 
-            "permeability": [permeability] * 3,
+            "permeability": permeability,
             "porosity": porosity, 
             "cells": [c.index],
             "wet_conductivity": 2.5,
