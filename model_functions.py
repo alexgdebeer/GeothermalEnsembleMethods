@@ -17,15 +17,16 @@ T_ATM = 20.0
 
 GRAVITY = 9.81
 
-POROSITY = 0.20
+POROSITY = 0.10
 CONDUCTIVITY = 2.5
 DENSITY = 2.5e+3
 SPECIFIC_HEAT = 1.0e+3
 
-MASS_ENTHALPY = 1.0e+7
+MASS_ENTHALPY = 1.5e+6
 HEAT_RATE = 1.0e+3
 
-MAX_TSTEPS = 500
+MAX_NS_TSTEPS = 500
+MAX_PR_TSTEPS = 1000
 NS_STEPSIZE = 1.0e+15
 
 
@@ -40,8 +41,7 @@ def save_json(model, fname):
         json.dump(model, f, indent=2, sort_keys=True)
 
 
-def build_base_model(xmax, ymax, zmax, nx, ny, nz, 
-                     model_path, mesh_path):
+def build_base_model(xmax, ymax, zmax, nx, ny, nz, model_path, mesh_path):
 
     dx = xmax / nx
     dy = ymax / ny
@@ -81,24 +81,9 @@ def build_base_model(xmax, ymax, zmax, nx, ny, nz,
         "region": 1,
         "faces": {
             "cells": [c.index for c in m.surface_cells],
-            "normal": [0, 1]
+            "normal": [0, 0, 1]
         }
     }]
-
-    model["time"] = {
-        "step": {
-            "size": 1.0e+6,
-            "adapt": {
-                "on": True,
-                "method": "iteration",
-                "minimum": 5, 
-                "maximum": 8
-            }, 
-            "maximum": {"number": MAX_TSTEPS},
-            "method": "beuler",
-            "stop": {"size": {"maximum": NS_STEPSIZE}}
-        }
-    }
 
     save_json(model, f"{model_path}_base.json")
 
@@ -137,8 +122,17 @@ def build_ns_model(model_path, mesh, perms, upflow_locs, upflow_rates):
     for rt in model["rock"]["types"]:
         rt["permeability"] = perms[rt["cells"][0]]
 
+    model["time"] = {
+        "step": {
+            "size": 1.0e+6,
+            "adapt": {"on": True}, 
+            "maximum": {"number": MAX_NS_TSTEPS},
+            "method": "beuler",
+            "stop": {"size": {"maximum": NS_STEPSIZE}}
+        }
+    }
+
     model["output"] = {
-        "filename": f"{model_path}_NS.h5",
         "frequency": 0, 
         "initial": False, 
         "final": True
@@ -147,7 +141,8 @@ def build_ns_model(model_path, mesh, perms, upflow_locs, upflow_rates):
     return model
 
 
-def build_pr_model(model, model_path, mesh, feedzone_locs, feedzone_rates):
+def build_pr_model(model, model_path, mesh, feedzone_locs, feedzone_rates, 
+                   tmax, dt):
 
     model["source"].extend([{
         "component": "water",
@@ -157,21 +152,21 @@ def build_pr_model(model, model_path, mesh, feedzone_locs, feedzone_rates):
 
     model["time"] = {
         "step": {
-            "size": 3600*24*7*10,
-            "adapt": {"on": True}, 
-            "maximum": {"number": 500},
-            "method": "beuler",
-            "stop": {"size": {"maximum": 1.0e+15}}
+            "adapt": {"on": True},
+            "size": dt,
+            "maximum": {"number": MAX_PR_TSTEPS},
         },
-        "stop": 3600*24*7*10
+        "stop": tmax
     }
 
     model["output"] = {
         "checkpoint": {
-            "time": [3600*24*7*10], 
+            "time": [dt], 
             "repeat": True
-        }, 
-        "filename": f"{model_path}_PR.h5"
+        },
+        "frequency": 0,
+        "intial": True,
+        "final": False
     }
 
     model["initial"] = {"filename": f"{model_path}_NS.h5"}
@@ -180,7 +175,7 @@ def build_pr_model(model, model_path, mesh, feedzone_locs, feedzone_rates):
 
 
 def build_models(model_path, mesh_path, perms, upflow_locs, upflow_rates, 
-                 feedzone_locs, feedzone_rates):
+                 feedzone_locs, feedzone_rates, tmax, dt):
 
     mesh = lm.mesh(f"{mesh_path}.h5")
 
@@ -190,7 +185,7 @@ def build_models(model_path, mesh_path, perms, upflow_locs, upflow_rates,
     
     pr_model = build_pr_model(
         copy.deepcopy(ns_model), model_path, mesh, 
-        feedzone_locs, feedzone_rates)
+        feedzone_locs, feedzone_rates, tmax, dt)
 
     save_json(ns_model, f"{model_path}_NS.json")
     save_json(pr_model, f"{model_path}_PR.json")
@@ -238,8 +233,19 @@ def slice_plot(model_folder, mesh_name, quantity, cmap="coolwarm",
     )
 
 
-def get_quantity(model_path, q="fluid_temperature"):
+def get_ns_temps(model_path):
 
-    results = h5py.File(f"{model_path}.h5", "r")
-    index = results["cell_index"][:, 0]
-    return results["cell_fields"][q][-1][index]
+    with h5py.File(f"{model_path}.h5", "r") as f:
+        inds = f["cell_index"][:, 0]
+        temps = f["cell_fields"]["fluid_temperature"][-1][inds]
+
+    return temps
+
+
+def get_pr_temps(model_path):
+
+    with h5py.File(f"{model_path}.h5", "r") as f:
+        inds = f["cell_index"][:, 0]
+        temps = f["cell_fields"]["fluid_vapour_saturation"][:, :]
+        
+    return [t[inds] for t in temps]

@@ -9,9 +9,8 @@ include("priors.jl")
 
 Random.seed!(1)
 
-# TODO: extend things to production history
+# TODO:
 # Make a finer grid for the truth
-# Initial condition stuff?
 
 # ----------------
 # Base model setup
@@ -19,12 +18,16 @@ Random.seed!(1)
 
 @pyinclude "model_functions.py"
 
+secs_per_week = 60.0 * 60.0 * 24.0 * 7.0
+
 xmax, nx = 1500.0, 25
 ymax, ny = 60.0, 1
 zmax, nz = 1500.0, 25
+tmax, nt = 104.0 * secs_per_week, 52
 
 dx = xmax / nx
 dz = zmax / nz
+dt = tmax / nt
 
 xs = collect(range(dx, xmax-dx, nx))
 zs = collect(range(dz, zmax-dz, nz))
@@ -49,19 +52,18 @@ function f(θs::AbstractVector)::Union{AbstractVector, Symbol}
     ps = 10 .^ get_perms(p, θs)
     
     py"build_models"(
-        model_path, mesh_path, ps, 
-        upflow_locs, [mass_rate], 
-        feedzone_locs, feedzone_rates)
+        model_path, mesh_path, ps, upflow_locs, [mass_rate], 
+        feedzone_locs, feedzone_rates, tmax, dt)
     
     py"run_model"("$(model_path)_NS")
-    py"run_model"("$(model_path)_PR")
 
     flag = py"run_info"("$(model_path)_NS")
     flag != "success" && @warn "Model failed. Flag: $(flag)."
     flag != "success" && return :failure 
 
-    temps = py"get_quantity"("$(model_path)_NS", "fluid_temperature")
-    return temps
+    py"run_model"("$(model_path)_PR")
+
+    return reduce(vcat, py"get_pr_temps"("$(model_path)_PR"))
 
 end
 
@@ -77,7 +79,7 @@ end
 # Prior setup
 # ----------------
 
-mass_rate_bnds = [0.5e-2, 1.5e-2]
+mass_rate_bnds = [1.0e-1, 2.0e-1]
 depth_shal = -100.0
 
 μ_depth_clay = -300.0
@@ -107,14 +109,17 @@ p = GeothermalPrior(
 # ----------------
 
 upflow_locs = [(xmax/2.0, ymax/2.0, -zmax+dz/2.0)]
-feedzone_locs = [(x, ymax/2.0, -zmax/2.0) for x in [250, 500, 750, 1000, 1250]]
-feedzone_rates = [0.1e-2 for _ in 1:5]
+feedzone_locs = [(x, ymax/2.0, -450.0) for x in [250, 750, 1250]]
+feedzone_rates = [-1.0 for _ in 1:5]
 
 # Generate the true set of parameters and outputs
 θs_t = rand(p)
 logps_t = get_perms(p, θs_t)
 ps_t = 10 .^ logps_t
-us_t = @time reshape(f(vec(θs_t)), nx, nz)
+us_t = @time f(vec(θs_t))
+us_t = reshape(us_t, nx, nz, nt+1)
+
+error("Stop.")
 
 # Define the observation locations
 x_locs = 300:300:1200
