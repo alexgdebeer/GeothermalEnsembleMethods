@@ -33,37 +33,34 @@ n_blocks = nx * nz
 
 model_folder = "models"
 mesh_name = "gSQ$n_blocks"
-model_name = "SQ$(n_blocks)"
-model_path = "$(model_folder)/$(model_name)"
+model_name = "SQ$n_blocks"
+mesh_path = "$model_folder/$mesh_name"
+model_path = "$model_folder/$model_name"
 
-mass_cols = [13]
-
-py"build_base_model"(
-    xmax, ymax, zmax, nx, ny, nz, 
-    mesh_name, model_name, model_folder, mass_cols
-)
-
-mass_cells = py"get_mass_cells"(mesh_name, model_folder, mass_cols)
+py"build_base_model"(xmax, ymax, zmax, nx, ny, nz, model_path, mesh_path)
 
 # ----------------
 # Model functions 
 # ----------------
-
-global model_num = 1
 
 function f(θs::AbstractVector)::Union{AbstractVector, Symbol}
 
     mass_rate = get_mass_rate(p, θs)
     ps = 10 .^ get_perms(p, θs)
     
-    py"build_model"(model_folder, model_name, mass_rate, mass_cells, ps)
-    py"run_model"(model_path)
+    py"build_models"(
+        model_path, mesh_path, ps, 
+        upflow_locs, [mass_rate], 
+        feedzone_locs, feedzone_rates)
+    
+    py"run_model"("$(model_path)_NS")
+    py"run_model"("$(model_path)_PR")
 
-    flag = py"run_info"(model_path)
+    flag = py"run_info"("$(model_path)_NS")
     flag != "success" && @warn "Model failed. Flag: $(flag)."
     flag != "success" && return :failure 
 
-    temps = py"get_quantity"(model_path, "fluid_temperature")
+    temps = py"get_quantity"("$(model_path)_NS", "fluid_temperature")
     return temps
 
 end
@@ -80,7 +77,7 @@ end
 # Prior setup
 # ----------------
 
-mass_rate_bnds = [0.5e-2, 2.0e-2]
+mass_rate_bnds = [0.5e-2, 1.5e-2]
 depth_shal = -100.0
 
 μ_depth_clay = -300.0
@@ -108,6 +105,10 @@ p = GeothermalPrior(
 # ----------------
 # Data generation 
 # ----------------
+
+upflow_locs = [(xmax/2.0, ymax/2.0, -zmax+dz/2.0)]
+feedzone_locs = [(x, ymax/2.0, -zmax/2.0) for x in [250, 500, 750, 1000, 1250]]
+feedzone_rates = [0.1e-2 for _ in 1:5]
 
 # Generate the true set of parameters and outputs
 θs_t = rand(p)

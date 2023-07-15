@@ -1,3 +1,4 @@
+import copy
 import h5py
 import json
 import layermesh.mesh as lm
@@ -9,11 +10,38 @@ import yaml
 plt.rc("text", usetex=True)
 plt.rc("font", family="serif")
 
+P0 = 1.0e+5
+T0 = 20.0
+P_ATM = 1.0e+5
+T_ATM = 20.0
+
+GRAVITY = 9.81
+
+POROSITY = 0.20
+CONDUCTIVITY = 2.5
+DENSITY = 2.5e+3
+SPECIFIC_HEAT = 1.0e+3
+
+MASS_ENTHALPY = 1.0e+7
+HEAT_RATE = 1.0e+3
+
+MAX_TSTEPS = 500
+NS_STEPSIZE = 1.0e+15
+
+
+def load_json(fname):
+    with open(fname, "r") as f:
+        model = json.load(f)
+    return model
+
+
+def save_json(model, fname):
+    with open(fname, "w") as f:
+        json.dump(model, f, indent=2, sort_keys=True)
+
 
 def build_base_model(xmax, ymax, zmax, nx, ny, nz, 
-                     mesh_name, model_name, model_folder, mass_cols, 
-                     P_atm=1.0e+5, T_atm=20.0, P0=1.0e+5, T0=20.0, 
-                     permeability=1.0e-14, porosity=0.25):
+                     model_path, mesh_path):
 
     dx = xmax / nx
     dy = ymax / ny
@@ -23,66 +51,36 @@ def build_base_model(xmax, ymax, zmax, nx, ny, nz,
     dys = [dy] * ny
     dzs = [dz] * nz
 
-    mesh = lm.mesh(rectangular=(dxs, dys, dzs))
-    mesh.write(f"{model_folder}/{mesh_name}.h5")
-    mesh.export(f"{model_folder}/{mesh_name}.msh", fmt="gmsh22")
-
-    incon_name = f"{model_folder}/{model_name}_incon.h5"
-
-    heat_cells = [
-        c.cell[-1].index for c in mesh.column 
-        if c.index not in mass_cols]
+    m = lm.mesh(rectangular=(dxs, dys, dzs))
+    m.write(f"{mesh_path}.h5")
+    m.export(f"{mesh_path}.msh", fmt="gmsh22")
 
     model = {
         "eos": {"name" : "we"},
-        "gravity": 9.81,
+        "gravity": GRAVITY,
         "logfile": {"echo" : False},
         "mesh": {
-            "filename": f"{model_folder}/{mesh_name}.msh", 
+            "filename": f"{mesh_path}.msh", 
             "thickness": dy
         },
-        "output" : {
-            "filename": f"{model_folder}/{model_name}.h5",
-            "frequency": 0, 
-            "initial": False, 
-            "final": True
-        },
-        "title": "Simple 2D model"
+        "title": "2D model"
     }
 
-    model["rock"] = {"types" : [
-        {
-            "name": f"{c.index}", 
-            "permeability": permeability,
-            "porosity": porosity, 
-            "cells": [c.index],
-            "wet_conductivity": 2.5,
-            "dry_conductivity": 2.5,
-            "density": 2.5e+3,
-            "specific_heat": 1.0e+3
-        }
-        for c in mesh.cell
-    ]}
-
-    model["source"] = [
-        {
-            "component": "energy",
-            "rate": 1.0e+3,
-            "cells": heat_cells
-        }
-    ]
-
-    if os.path.isfile(incon_name):
-        model["initial"] = {"filename": incon_name}
-    else:
-        print("Warning: initial condition file not found.")
-        model["initial"] = {"primary": [P0, T0], "region": 1}
+    model["rock"] = {"types" : [{
+        "name": f"{c.index}",
+        "porosity": POROSITY, 
+        "cells": [c.index],
+        "wet_conductivity": CONDUCTIVITY,
+        "dry_conductivity": CONDUCTIVITY,
+        "density": DENSITY,
+        "specific_heat": SPECIFIC_HEAT
+    } for c in m.cell]}
 
     model["boundaries"] = [{
-        "primary": [P_atm, T_atm], 
+        "primary": [P_ATM, T_ATM], 
         "region": 1,
         "faces": {
-            "cells": [c.index for c in mesh.surface_cells],
+            "cells": [c.index for c in m.surface_cells],
             "normal": [0, 1]
         }
     }]
@@ -96,45 +94,109 @@ def build_base_model(xmax, ymax, zmax, nx, ny, nz,
                 "minimum": 5, 
                 "maximum": 8
             }, 
-            "maximum": {"number": 500},
+            "maximum": {"number": MAX_TSTEPS},
             "method": "beuler",
-            "stop": {"size": {"maximum": 1.0e+15}}
+            "stop": {"size": {"maximum": NS_STEPSIZE}}
         }
     }
 
-    with open(f"{model_folder}/{model_name}_base.json", "w") as f:
-        json.dump(model, f, indent=2, sort_keys=True)
+    save_json(model, f"{model_path}_base.json")
 
 
-def build_model(model_folder, model_name, mass_rate, mass_cells, permeabilities):
+def build_ns_model(model_path, mesh, perms, upflow_locs, upflow_rates):
 
-    with open(f"{model_folder}/{model_name}_base.json", "r") as f:
-        model = json.load(f)
+    model = load_json(f"{model_path}_base.json")
 
-    model["source"].append({
+    if os.path.isfile(f"{model_path}_incon.h5"):
+        model["initial"] = {"filename": f"{model_path}_incon.h5"}
+    else:
+        print("Warning: initial condition file not found.")
+        model["initial"] = {"primary": [P0, T0], "region": 1}
+
+    upflow_cells = [
+        mesh.find(loc, indices=True) 
+        for loc in upflow_locs]
+
+    heat_cells = [
+        c.cell[-1].index for c in mesh.column 
+        if c.cell[-1].index not in upflow_cells]
+
+    model["source"] = [{
+        "component": "energy",
+        "rate": HEAT_RATE,
+        "cells": heat_cells
+    }]
+
+    model["source"].extend([{
         "component": "water",
-        "enthalpy": 1.0e+7, 
-        "rate": mass_rate / len(mass_cells),
-        "cells": list([int(c) for c in mass_cells])
-    })
+        "enthalpy": MASS_ENTHALPY, 
+        "rate": rate,
+        "cell": cell
+    } for cell, rate in zip(upflow_cells, upflow_rates)])
 
     for rt in model["rock"]["types"]:
-        rt["permeability"] = permeabilities[rt["cells"][0]]
+        rt["permeability"] = perms[rt["cells"][0]]
 
-    model["output"]["filename"] = f"{model_folder}/{model_name}.h5"
+    model["output"] = {
+        "filename": f"{model_path}_NS.h5",
+        "frequency": 0, 
+        "initial": False, 
+        "final": True
+    }
 
-    with open(f"{model_folder}/{model_name}.json", "w") as f:
-        json.dump(model, f, indent=2, sort_keys=True)
+    return model
 
 
-def get_mass_cells(mesh_name, model_folder, mass_cols):
+def build_pr_model(model, model_path, mesh, feedzone_locs, feedzone_rates):
+
+    model["source"].extend([{
+        "component": "water",
+        "rate": rate,
+        "cell": mesh.find(loc, indices=True)
+    } for loc, rate in zip(feedzone_locs, feedzone_rates)])
+
+    model["time"] = {
+        "step": {
+            "size": 3600*24*7*10,
+            "adapt": {"on": True}, 
+            "maximum": {"number": 500},
+            "method": "beuler",
+            "stop": {"size": {"maximum": 1.0e+15}}
+        },
+        "stop": 3600*24*7*10
+    }
+
+    model["output"] = {
+        "checkpoint": {
+            "time": [3600*24*7*10], 
+            "repeat": True
+        }, 
+        "filename": f"{model_path}_PR.h5"
+    }
+
+    model["initial"] = {"filename": f"{model_path}_NS.h5"}
+
+    return model
+
+
+def build_models(model_path, mesh_path, perms, upflow_locs, upflow_rates, 
+                 feedzone_locs, feedzone_rates):
+
+    mesh = lm.mesh(f"{mesh_path}.h5")
+
+    ns_model = build_ns_model(
+        model_path, mesh, perms, 
+        upflow_locs, upflow_rates)
     
-    m = lm.mesh(f"{model_folder}/{mesh_name}.h5")
-    return [c.cell[-1].index for c in m.column if c.index in mass_cols]
+    pr_model = build_pr_model(
+        copy.deepcopy(ns_model), model_path, mesh, 
+        feedzone_locs, feedzone_rates)
+
+    save_json(ns_model, f"{model_path}_NS.json")
+    save_json(pr_model, f"{model_path}_PR.json")
 
 
 def run_model(model_path):
-
     env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
     env.run_waiwera(f"{model_path}.json", noupdate=True)
 
