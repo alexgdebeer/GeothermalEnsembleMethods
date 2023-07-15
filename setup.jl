@@ -30,7 +30,7 @@ dz = zmax / nz
 dt = tmax / nt
 
 xs = collect(range(dx, xmax-dx, nx))
-zs = collect(range(dz, zmax-dz, nz))
+zs = collect(range(dz, zmax-dz, nz)) .- zmax
 
 n_blocks = nx * nz
 
@@ -41,6 +41,17 @@ mesh_path = "$model_folder/$mesh_name"
 model_path = "$model_folder/$model_name"
 
 py"build_base_model"(xmax, ymax, zmax, nx, ny, nz, model_path, mesh_path)
+
+upflow_locs = [(0.5xmax, 0.5ymax, -zmax+0.5dz)]
+feedzone_xs = [300, 600, 900, 1200]
+feedzone_ys = [-500, -500, -500, -500]
+feedzone_qs = [-1.0, -1.0, -1.0, -1.0]
+feedzone_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(feedzone_xs, feedzone_ys)]
+
+# Define the observation locations
+temp_obs_xs = [300, 600, 900, 1200]
+temp_obs_zs = [-300, -500, -700, -900, -1100, -1300]
+n_obs = length(temp_obs_xs) * length(temp_obs_zs)
 
 # ----------------
 # Model functions 
@@ -53,7 +64,7 @@ function f(θs::AbstractVector)::Union{AbstractVector, Symbol}
     
     py"build_models"(
         model_path, mesh_path, ps, upflow_locs, [mass_rate], 
-        feedzone_locs, feedzone_rates, tmax, dt)
+        feedzone_locs, feedzone_qs, tmax, dt)
     
     py"run_model"("$(model_path)_NS")
 
@@ -101,16 +112,12 @@ p = GeothermalPrior(
     μ_perm_shal, μ_perm_clay, μ_perm_deep,
     k_perm_shal, k_perm_clay, k_perm_deep, 
     level_width, 
-    xs, -zs
+    xs, reverse(zs)
 )
 
 # ----------------
 # Data generation 
 # ----------------
-
-upflow_locs = [(xmax/2.0, ymax/2.0, -zmax+dz/2.0)]
-feedzone_locs = [(x, ymax/2.0, -450.0) for x in [250, 750, 1250]]
-feedzone_rates = [-1.0 for _ in 1:5]
 
 # Generate the true set of parameters and outputs
 θs_t = rand(p)
@@ -120,11 +127,6 @@ us_t = @time f(vec(θs_t))
 us_t = reshape(us_t, nx, nz, nt+1)
 
 error("Stop.")
-
-# Define the observation locations
-x_locs = 300:300:1200
-z_locs = 300:200:1300
-n_obs = length(x_locs) * length(z_locs)
 
 # Define the distribution of the observation noise
 σ_ϵ_t = 2.0
@@ -145,4 +147,4 @@ us_o = [us_t(x, z) for (x, z) ∈ zip(xs_o, zs_o)] + rand(ϵ_dist)
 Γ_ϵ = σ_ϵ^2 * Matrix(1.0I, n_obs, n_obs)
 L = MvNormal(us_o, Γ_ϵ)
 
-# py"slice_plot"(model_folder, mesh_name, logps_t[1:n_blocks], cmap="turbo")
+# py"slice_plot"(model_folder, mesh_name, logps_t, cmap="turbo")

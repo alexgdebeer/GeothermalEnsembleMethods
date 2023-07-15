@@ -132,11 +132,7 @@ function get_perms(d::GeothermalPrior, θs::AbstractVecOrMat)
     perms_deep = θs[1+d.Nx+d.Nis_shal+d.Nis_deep+1 : end]
 
     perms_deep = get_perms_deep(d, clay_bounds, perms_clay, perms_deep)
-
-    perms = vcat(
-        perms_shal,
-        perms_deep
-    )
+    perms = vcat(perms_shal, perms_deep)
 
     return apply_level_sets(perms, d.level_width)
 
