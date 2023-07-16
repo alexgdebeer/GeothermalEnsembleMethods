@@ -11,6 +11,9 @@ import yaml
 plt.rc("text", usetex=True)
 plt.rc("font", family="serif")
 
+YELLOW = "\033[93m"
+END_COLOUR = "\033[0m"
+
 P0 = 1.0e+5
 T0 = 20.0
 P_ATM = 1.0e+5
@@ -29,6 +32,10 @@ HEAT_RATE = 1.0e+3
 MAX_NS_TSTEPS = 500
 MAX_PR_TSTEPS = 1000
 NS_STEPSIZE = 1.0e+16
+
+
+def warn(msg):
+    print(f"{YELLOW}Warning: {msg}{END_COLOUR}")
 
 
 def load_json(fname):
@@ -96,7 +103,7 @@ def build_ns_model(model_path, mesh, perms, upflow_locs, upflow_rates):
     if os.path.isfile(f"{model_path}_incon.h5"):
         model["initial"] = {"filename": f"{model_path}_incon.h5"}
     else:
-        print("Warning: initial condition file not found.")
+        warn("incon file not found.")
         model["initial"] = {"primary": [P0, T0], "region": 1}
 
     upflow_cells = [
@@ -197,7 +204,7 @@ def get_feedzone_cells(mesh_path, feedzone_locs):
     return [mesh.find(loc, indices=True) for loc in feedzone_locs]
 
 
-def run_model(model_path):
+def run_simulation(model_path):
     env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
     env.run_waiwera(f"{model_path}.json", noupdate=True)
 

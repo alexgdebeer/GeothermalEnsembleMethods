@@ -12,7 +12,8 @@ include("priors.jl")
 # TODO:
 # Make a finer grid for the truth
 
-Random.seed!(10)
+# Random.seed!(10) # 12, 17
+Random.seed!(0)
 
 secs_per_week = 60.0 * 60.0 * 24.0 * 7.0
 
@@ -106,14 +107,14 @@ function f(θs::AbstractVector)::Union{AbstractVector, Symbol}
         model_path, mesh_path, ks, upflow_locs, [upflow_q], 
         fz_locs, fz_qs, tmax, dt)
     
-    py"run_model"("$(model_path)_NS")
+    py"run_simulation"("$(model_path)_NS")
     flag = py"run_info"("$(model_path)_NS")
-    flag != "success" && @warn "NS model failed. Flag: $(flag)."
+    flag != "success" && @warn "NS simulation failed. Flag: $(flag)."
     flag != "success" && return :failure 
 
-    py"run_model"("$(model_path)_PR")
+    py"run_simulation"("$(model_path)_PR")
     flag = py"run_info"("$(model_path)_PR")
-    flag != "success" && @warn "PR model failed. Flag: $(flag)."
+    flag != "success" && @warn "PR simulation failed. Flag: $(flag)."
     flag != "success" && return :failure 
 
     us = py"get_pr_data"("$(model_path)_PR", nfz, fz_cells)
@@ -142,14 +143,14 @@ mass_rate_bnds = [1.0e-1, 2.0e-1]
 depth_shal = -100.0
 
 μ_depth_clay = -300.0
-k_depth_clay = ExpSquaredKernel(100, 250)
+k_depth_clay = ExpSquaredKernel(80, 500)
 
 μ_perm_shal = -14.0
 μ_perm_clay = -16.0
 μ_perm_deep = -14.0
-k_perm_shal = ARDExpSquaredKernel(0.25, 1000, 250)
-k_perm_clay = ARDExpSquaredKernel(0.25, 1000, 250)
-k_perm_deep = ARDExpSquaredKernel(0.50, 1000, 250)
+k_perm_shal = ARDExpSquaredKernel(0.25, 1500, 200)
+k_perm_clay = ARDExpSquaredKernel(0.25, 1500, 200)
+k_perm_deep = ARDExpSquaredKernel(0.50, 1500, 200)
 
 level_width = 0.25
 
@@ -165,8 +166,9 @@ p = GeothermalPrior(
 
 # Generate the true set of parameters and outputs
 θs_t = rand(p)
-logps_t = get_perms(p, θs_t)
-ks_t = 10 .^ logps_t
+q_t = get_mass_rate(p, θs_t)
+logks_t = get_perms(p, θs_t)
+ks_t = 10 .^ logks_t
 
 us_t = @time f(vec(θs_t))
 us_o = g(us_t) + rand(ϵ_dist)
