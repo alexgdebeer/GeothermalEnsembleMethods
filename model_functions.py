@@ -3,6 +3,7 @@ import h5py
 import json
 import layermesh.mesh as lm
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import pywaiwera
 import yaml
@@ -191,6 +192,11 @@ def build_models(model_path, mesh_path, perms, upflow_locs, upflow_rates,
     save_json(pr_model, f"{model_path}_PR.json")
 
 
+def get_feedzone_cells(mesh_path, feedzone_locs):
+    mesh = lm.mesh(f"{mesh_path}.h5")
+    return [mesh.find(loc, indices=True) for loc in feedzone_locs]
+
+
 def run_model(model_path):
     env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
     env.run_waiwera(f"{model_path}.json", noupdate=True)
@@ -242,10 +248,17 @@ def get_ns_temps(model_path):
     return temps
 
 
-def get_pr_temps(model_path):
+def get_pr_data(model_path, nfz, fz_inds):
 
     with h5py.File(f"{model_path}.h5", "r") as f:
-        inds = f["cell_index"][:, 0]
-        temps = f["cell_fields"]["fluid_vapour_saturation"][:, :]
+       
+        cell_inds = f["cell_index"][:, 0]
+        src_inds = f["source_index"][:, 0]
         
-    return [t[inds] for t in temps]
+        ts = f["cell_fields"]["fluid_temperature"][0][cell_inds]
+        ps = [p[cell_inds][fz_inds] for p in f["cell_fields"]["fluid_pressure"]]   
+        es = [e[src_inds][-nfz:] for e in f["source_fields"]["source_enthalpy"]]
+
+    ps = np.concatenate(ps)
+    es = np.concatenate(es)
+    return np.concatenate((ts, ps, es))
