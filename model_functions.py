@@ -28,7 +28,7 @@ HEAT_RATE = 1.0e+3
 
 MAX_NS_TSTEPS = 500
 MAX_PR_TSTEPS = 1000
-NS_STEPSIZE = 1.0e+15
+NS_STEPSIZE = 1.0e+16
 
 
 def load_json(fname):
@@ -237,15 +237,6 @@ def slice_plot(model_folder, mesh_name, quantity, cmap="coolwarm",
         xlabel="$x$ (m)",
         ylabel="$z$ (m)"
     )
-
-
-def get_ns_temps(model_path):
-
-    with h5py.File(f"{model_path}.h5", "r") as f:
-        inds = f["cell_index"][:, 0]
-        temps = f["cell_fields"]["fluid_temperature"][-1][inds]
-
-    return temps
 
 
 def get_pr_data(model_path, nfz, fz_inds):

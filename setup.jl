@@ -12,7 +12,7 @@ include("priors.jl")
 # TODO:
 # Make a finer grid for the truth
 
-Random.seed!(1)
+Random.seed!(10)
 
 secs_per_week = 60.0 * 60.0 * 24.0 * 7.0
 
@@ -27,6 +27,7 @@ dt = tmax / nt
 
 xs = collect(range(dx, xmax-dx, nx))
 zs = collect(range(dz, zmax-dz, nz)) .- zmax
+ts = collect(range(0, tmax, nt+1))
 
 n_blocks = nx * nz
 
@@ -39,16 +40,16 @@ model_path = "$model_folder/$model_name"
 py"build_base_model"(xmax, ymax, zmax, nx, ny, nz, model_path, mesh_path)
 
 upflow_xs = [0.5xmax]
-upflow_zs = [-zmax+0.5dz] # TODO: maybe just name upflow_loc?
+upflow_zs = [-zmax+0.5dz]
 upflow_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(upflow_xs, upflow_zs)]
 
-fz_xs = [300, 600, 900, 1200]
-fz_zs = [-500, -500, -500, -500]
-fz_qs = [-2.0, -2.0, -2.0, -2.0]
+fz_xs = [200, 475, 750, 1025, 1300]
+fz_zs = [-500, -500, -500, -500, -500]
+fz_qs = [-2.0, -2.0, -2.0, -2.0, -2.0]
 fz_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(fz_xs, fz_zs)]
 fz_cells = py"get_feedzone_cells"(mesh_path, fz_locs)
 
-ts_obs_xlocs = [300, 600, 900, 1200]
+ts_obs_xlocs = [200, 475, 750, 1025, 1300]
 ts_obs_zlocs = [-300, -500, -700, -900, -1100, -1300]
 ts_obs_xs = [x for x ∈ ts_obs_xlocs for _ ∈ ts_obs_zlocs]
 ts_obs_zs = [z for _ ∈ ts_obs_xlocs for z ∈ ts_obs_zlocs]
@@ -89,6 +90,10 @@ inds_es_obs = (1:nes_obs) .+ nts_obs .+ nps_obs
 Γ_ϵ = BlockDiagonal([Γ_ts, Γ_ps, Γ_es])
 ϵ_dist = MvNormal(Γ_ϵ)
 
+get_raw_temperatures(us) = reshape(us[inds_ts_raw], nx, nz)
+get_raw_pressures(us) = reshape(us[inds_ps_raw], nfz, nt+1)
+get_raw_enthalpies(us) = reshape(us[inds_es_raw], nfz, nt+1)
+
 """Runs a combined natural state and production simulation, and returns a 
 complete list of steady-state temperatures and transient pressures and 
 enthalpies."""
@@ -99,7 +104,7 @@ function f(θs::AbstractVector)::Union{AbstractVector, Symbol}
     
     py"build_models"(
         model_path, mesh_path, ks, upflow_locs, [upflow_q], 
-        feedzone_locs, feedzone_qs, tmax, dt)
+        fz_locs, fz_qs, tmax, dt)
     
     py"run_model"("$(model_path)_NS")
     flag = py"run_info"("$(model_path)_NS")
@@ -121,17 +126,14 @@ function g(us::Union{AbstractVector, Symbol})
 
     us == :failure && return :failure
 
-    temps = reshape(us[inds_ts_raw], nx, nz)
-    temps = interpolate((xs, zs), temps, Gridded(Linear()))
-    temps = [temps(x, z) for (x, z) ∈ zip(ts_obs_xs, ts_obs_zs)]
+    temperatures = get_raw_temperatures(us)
+    temperatures = interpolate((xs, zs), temperatures, Gridded(Linear()))
+    temperatures = [temperatures(x, z) for (x, z) ∈ zip(ts_obs_xs, ts_obs_zs)]
 
-    pressures = reshape(us[inds_ps_raw], nfz, nt+1)
-    pressures = vec(pressures[:, t_obs])
+    pressures = vec(get_raw_pressures(us)[:, t_obs])
+    enthalpies = vec(get_raw_enthalpies(us)[:, t_obs])
 
-    enthalpies = reshape(us[inds_es_raw], nfz, nt+1)
-    enthalpies = vec(enthalpies[:, t_obs])
-
-    return vcat(temps, pressures, enthalpies)
+    return vcat(temperatures, pressures, enthalpies)
 
 end
 
@@ -140,7 +142,7 @@ mass_rate_bnds = [1.0e-1, 2.0e-1]
 depth_shal = -100.0
 
 μ_depth_clay = -300.0
-k_depth_clay = ExpSquaredKernel(80, 500)
+k_depth_clay = ExpSquaredKernel(100, 250)
 
 μ_perm_shal = -14.0
 μ_perm_clay = -16.0
