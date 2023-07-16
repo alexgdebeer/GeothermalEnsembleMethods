@@ -12,7 +12,6 @@ include("priors.jl")
 # TODO:
 # Make a finer grid for the truth
 
-# Random.seed!(10) # 12, 17
 Random.seed!(0)
 
 secs_per_week = 60.0 * 60.0 * 24.0 * 7.0
