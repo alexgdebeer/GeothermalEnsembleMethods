@@ -27,7 +27,7 @@ DENSITY = 2.5e+3
 SPECIFIC_HEAT = 1.0e+3
 
 MASS_ENTHALPY = 1.5e+6
-HEAT_RATE = 1.0e+3
+HEAT_RATE = 0.2
 
 MAX_NS_TSTEPS = 500
 MAX_PR_TSTEPS = 1000
@@ -116,9 +116,9 @@ def build_ns_model(model_path, mesh, perms, upflow_locs, upflow_rates):
 
     model["source"] = [{
         "component": "energy",
-        "rate": HEAT_RATE,
-        "cells": heat_cells
-    }]
+        "rate": HEAT_RATE * mesh.cell[cell].column.area,
+        "cell": cell
+    } for cell in heat_cells]
 
     model["source"].extend([{
         "component": "water",
