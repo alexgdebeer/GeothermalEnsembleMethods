@@ -18,20 +18,12 @@ ymax, ny = 50.0, 1
 zmax, nz = 1500.0, 25
 tmax, nt = 104.0 * secs_per_week, 24
 
-nx_f = 2nx
-ny_f = ny 
-nz_f = 2nz
-
-dx, dx_f = xmax / nx, xmax / nx_f 
-dz, dz_f = zmax / nz, zmax / nz_f 
+dx = xmax / nx
+dz = zmax / nz
 dt = tmax / nt
 
 xs = collect(range(dx, xmax-dx, nx))
 zs = collect(range(dz, zmax-dz, nz)) .- zmax
-
-xs_f = collect(range(dx_f, xmax-dx_f, nx_f))
-zs_f = collect(range(dz_f, zmax-dz_f, nz_f)) .- zmax
-
 ts = collect(range(0, tmax, nt+1))
 
 n_blocks = nx * nz
@@ -39,25 +31,14 @@ n_blocks = nx * nz
 mesh_path = "models/gSQ$n_blocks"
 model_path = "models/SQ$n_blocks"
 
-mesh_path_f = "models/gSQ$(4n_blocks)"
-model_path_f = "models/SQ$(4n_blocks)"
-
 py"build_base_model"(
     xmax, ymax, zmax, nx, ny, nz,
     model_path, mesh_path)
-
-py"build_base_model"(
-    xmax, ymax, zmax, nx_f, ny_f, nz_f, 
-    model_path_f, mesh_path_f)
 
 # Upflow locations 
 uf_xs = [0.5xmax]
 uf_zs = [-zmax+0.5dz]
 uf_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(uf_xs, uf_zs)]
-
-uf_xs_f = [0.5xmax-0.5dx_f, 0.5xmax+0.5dx_f]
-uf_zs_f = [-zmax+0.5dz_f, -zmax+0.5dz_f]
-uf_locs_f = [(x, 0.5ymax, z) for (x, z) ∈ zip(uf_xs_f, uf_zs_f)]
 
 # Feedzone locations
 fz_xs = [200, 475, 750, 1025, 1300]
@@ -66,7 +47,6 @@ fz_qs = [-2.0, -2.0, -2.0, -2.0, -2.0]
 fz_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(fz_xs, fz_zs)]
 
 fz_cells = py"get_feedzone_cells"(mesh_path, fz_locs)
-fz_cells_f = py"get_feedzone_cells"(mesh_path_f, fz_locs)
 
 # Natural state temperature observations
 ts_obs_xlocs = [200, 475, 750, 1025, 1300]
@@ -78,6 +58,17 @@ t_obs = [1, 4, 7, 10, 13]
 
 nfz = length(fz_locs)
 nt_obs = length(t_obs)
+
+# Define indices for extracting raw data and observations
+nts_raw = n_blocks 
+nps_raw = nfz * (nt+1)
+nes_raw = nfz * (nt+1)
+
+n_obs_raw = nts_raw + nps_raw + nes_raw
+
+inds_ts_raw = 1:nts_raw
+inds_ps_raw = (1:nps_raw) .+ nts_raw 
+inds_es_raw = (1:nes_raw) .+ nts_raw .+ nps_raw
 
 nts_obs = length(ts_obs_xs)
 nps_obs = nfz * nt_obs
@@ -98,6 +89,10 @@ inds_es_obs = (1:nes_obs) .+ nts_obs .+ nps_obs
 
 Γ_ϵ = BlockDiagonal([Γ_ts, Γ_ps, Γ_es])
 ϵ_dist = MvNormal(Γ_ϵ)
+
+get_raw_temperatures(us) = reshape(us[inds_ts_raw], nx, nz)
+get_raw_pressures(us) = reshape(us[inds_ps_raw], nfz, nt+1)
+get_raw_enthalpies(us) = reshape(us[inds_es_raw], nfz, nt+1)
 
 # ----------------
 # Prior 
@@ -128,27 +123,75 @@ p = GeothermalPrior(
     xs, reverse(zs)
 )
 
-θs = rand(p)
-q = get_mass_rate(p, θs)
-logks = get_perms(p, θs)
-ks = reshape(10 .^ logks, nx, nz)
+# ----------------
+# Truth and data generation
+# ----------------
 
-ks_f = zeros(nx_f, nz_f)
+function generate_data(ks)
 
-for i ∈ 1:nx, j ∈ 1:nz
-    ks_f[2i-1, 2j-1] = ks[i, j]
-    ks_f[2i, 2j-1] = ks[i, j]
-    ks_f[2i-1, 2j] = ks[i, j]
-    ks_f[2i, 2j] = ks[i, j]
+    nts_raw_f = 4n_blocks
+    inds_ts_raw_f = 1:nts_raw_f
+    inds_ps_raw_f = (1:nps_raw) .+ nts_raw_f 
+    inds_es_raw_f = (1:nes_raw) .+ nts_raw_f .+ nps_raw
+
+    uf_locs_f = [
+        (0.5xmax-0.25dx, 0.5ymax, -zmax+0.25dz), 
+        (0.5xmax+0.25dx, 0.5ymax, -zmax+0.25dz)
+    ]
+
+    xs_f = collect(range(0.5dx, xmax-0.5dx, 2nx))
+    zs_f = collect(range(0.5dz, zmax-0.5dz, 2nz)) .- zmax
+
+    # Upscale permeabilities
+    ks = reshape(ks, nx, nz)
+    ks_f = zeros(2nx, 2nz)
+
+    for i ∈ 1:nx, j ∈ 1:nz
+        ks_f[2i-1, 2j-1] = ks[i, j]
+        ks_f[2i, 2j-1] = ks[i, j]
+        ks_f[2i-1, 2j] = ks[i, j]
+        ks_f[2i, 2j] = ks[i, j]
+    end
+
+    mesh_path_f = "models/gSQ$(4n_blocks)"
+    model_path_f = "models/SQ$(4n_blocks)"
+
+    py"build_base_model"(
+        xmax, ymax, zmax, 2nx, ny, 2nz, 
+        model_path_f, mesh_path_f)
+
+    py"build_models"(
+        model_path_f, mesh_path_f, vec(ks_f), uf_locs_f, [0.5q_t, 0.5q_t], 
+        fz_locs, fz_qs, tmax, dt)
+
+    py"run_simulation"("$(model_path_f)_NS")
+    flag = py"run_info"("$(model_path_f)_NS")
+    flag != "success" && error("NS simulation failed. Flag: $(flag).")
+    
+    py"run_simulation"("$(model_path_f)_PR")
+    flag = py"run_info"("$(model_path_f)_PR")
+    flag != "success" && error("PR simulation failed. Flag: $(flag).")
+
+    fz_cells_f = py"get_feedzone_cells"(mesh_path_f, fz_locs)
+    us = py"get_pr_data"("$(model_path_f)_PR", nfz, fz_cells_f)
+
+    temperatures = reshape(us[inds_ts_raw_f], 2nx, 2nz)
+    temperatures = interpolate((xs_f, zs_f), temperatures, Gridded(Linear()))
+    temperatures = [temperatures(x, z) for (x, z) ∈ zip(ts_obs_xs, ts_obs_zs)]
+
+    pressures = vec(reshape(us[inds_ps_raw_f], nfz, nt+1)[:, t_obs])
+    enthalpies = vec(reshape(us[inds_es_raw_f], nfz, nt+1)[:, t_obs])
+
+    return vcat(temperatures, pressures, enthalpies)
+
 end
 
-py"build_models"(
-    model_path, mesh_path, vec(ks), uf_locs, [q], 
-    fz_locs, fz_qs, tmax, dt)
+θs_t = rand(p)
+q_t = get_mass_rate(p, θs_t)
+logks_t = get_perms(p, θs_t)
+ks_t = 10 .^ logks_t
 
-py"build_models"(
-    model_path_f, mesh_path_f, vec(ks_f), uf_locs_f, [0.5q, 0.5q], 
-    fz_locs, fz_qs, tmax, dt)
+us_o = generate_data(ks_t)
 
 py"run_simulation"("$(model_path)_NS")
 flag = py"run_info"("$(model_path)_NS")
@@ -158,13 +201,4 @@ py"run_simulation"("$(model_path)_PR")
 flag = py"run_info"("$(model_path)_PR")
 flag != "success" && @warn "PR simulation failed. Flag: $(flag)."
 
-py"run_simulation"("$(model_path_f)_NS")
-flag = py"run_info"("$(model_path_f)_NS")
-flag != "success" && @warn "NS simulation failed. Flag: $(flag)."
-
-py"run_simulation"("$(model_path_f)_PR")
-flag = py"run_info"("$(model_path_f)_PR")
-flag != "success" && @warn "PR simulation failed. Flag: $(flag)."
-
 us = py"get_pr_data"("$(model_path)_PR", nfz, fz_cells)
-us_f = py"get_pr_data"("$(model_path_f)_PR", nfz, fz_cells)
