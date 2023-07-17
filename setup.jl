@@ -11,9 +11,9 @@ include("priors.jl")
 
 # TODO:
 # Make a finer grid for the truth
-# TODO: check non-uniqueness of steady states?
+# Check non-uniqueness of steady states?
 
-Random.seed!(0)
+Random.seed!(4)
 
 secs_per_week = 60.0 * 60.0 * 24.0 * 7.0
 
@@ -46,7 +46,7 @@ upflow_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(upflow_xs, upflow_zs)]
 
 fz_xs = [200, 475, 750, 1025, 1300]
 fz_zs = [-500, -500, -500, -500, -500]
-fz_qs = [-4.0, -4.0, -4.0, -4.0, -4.0]
+fz_qs = [-2.0, -2.0, -2.0, -2.0, -2.0]
 fz_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(fz_xs, fz_zs)]
 fz_cells = py"get_feedzone_cells"(mesh_path, fz_locs)
 
@@ -57,7 +57,7 @@ ts_obs_zs = [z for _ ∈ ts_obs_xlocs for z ∈ ts_obs_zlocs]
 
 t_obs = [1, 4, 7, 10, 13]
 
-nfz = length(fz_cells)
+nfz = length(fz_locs)
 nt_obs = length(t_obs)
 
 # Define indices for extracting raw data and observations
