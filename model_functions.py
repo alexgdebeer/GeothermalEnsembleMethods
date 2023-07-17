@@ -123,7 +123,7 @@ def build_ns_model(model_path, mesh, perms, upflow_locs, upflow_rates):
     model["source"].extend([{
         "component": "water",
         "enthalpy": MASS_ENTHALPY, 
-        "rate": rate / len(upflow_locs),
+        "rate": rate,
         "cell": cell
     } for cell, rate in zip(upflow_cells, upflow_rates)])
 
