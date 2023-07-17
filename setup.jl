@@ -11,6 +11,7 @@ include("priors.jl")
 
 # TODO:
 # Make a finer grid for the truth
+# TODO: check non-uniqueness of steady states?
 
 Random.seed!(0)
 
@@ -45,7 +46,7 @@ upflow_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(upflow_xs, upflow_zs)]
 
 fz_xs = [200, 475, 750, 1025, 1300]
 fz_zs = [-500, -500, -500, -500, -500]
-fz_qs = [-2.0, -2.0, -2.0, -2.0, -2.0]
+fz_qs = [-4.0, -4.0, -4.0, -4.0, -4.0]
 fz_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(fz_xs, fz_zs)]
 fz_cells = py"get_feedzone_cells"(mesh_path, fz_locs)
 

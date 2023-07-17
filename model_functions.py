@@ -103,7 +103,7 @@ def build_ns_model(model_path, mesh, perms, upflow_locs, upflow_rates):
     if os.path.isfile(f"{model_path}_incon.h5"):
         model["initial"] = {"filename": f"{model_path}_incon.h5"}
     else:
-        warn("incon file not found.")
+        warn("incon file not found. Improvising...")
         model["initial"] = {"primary": [P0, T0], "region": 1}
 
     upflow_cells = [
