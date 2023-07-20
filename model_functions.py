@@ -65,7 +65,7 @@ def build_mesh(xmax, ymax, zmax, nx, ny, nz, path):
 
 
 def build_ns_model(model_path, mesh_path, incon_path, dy, 
-                   perms, upflow_locs, upflow_rates):
+                   permeabilities, upflow_locs, upflow_rates):
 
     mesh = lm.mesh(f"{mesh_path}.h5")
 
@@ -83,6 +83,7 @@ def build_ns_model(model_path, mesh_path, incon_path, dy,
     model["rock"] = {"types" : [{
         "name": f"{c.index}",
         "porosity": POROSITY, 
+        "permeability": permeabilities[c.index],
         "cells": [c.index],
         "wet_conductivity": CONDUCTIVITY,
         "dry_conductivity": CONDUCTIVITY,
@@ -127,8 +128,8 @@ def build_ns_model(model_path, mesh_path, incon_path, dy,
         "cell": cell
     } for cell, rate in zip(upflow_cells, upflow_rates)])
 
-    for rt in model["rock"]["types"]:
-        rt["permeability"] = perms[rt["cells"][0]]
+    # for rt in model["rock"]["types"]:
+    #     rt["permeability"] = perms[rt["cells"][0]]
 
     model["time"] = {
         "step": {
@@ -203,6 +204,20 @@ def build_models(model_path, mesh_path, incon_path,
 def get_feedzone_cells(mesh_path, feedzone_locs):
     mesh = lm.mesh(f"{mesh_path}.h5")
     return [mesh.find(loc, indices=True) for loc in feedzone_locs]
+
+
+def generate_dockerignore(model_path, mesh_path, incon_path):
+    
+    with open(".dockerignore", "w") as f:
+        
+        f.write("*\n")
+        f.write("\n".join([
+            f"!{model_path}_NS.json",
+            f"!{model_path}_PR.json",
+            f"!{mesh_path}.msh"]))
+
+        if incon_path is not None:
+            f.write(f"!{incon_path}.h5\n")
 
 
 def run_simulation(model_path):

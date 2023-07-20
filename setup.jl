@@ -116,6 +116,8 @@ function f(θs::AbstractVector, n_it, n_model, incon_num)
         model_path, mesh_path, incon_path,
         ks, uf_locs, [uf_q], 
         fz_locs, fz_qs, dy, tmax, dt)
+
+    py"generate_dockerignore"(model_path, mesh_path, incon_path)
     
     py"run_simulation"("$(model_path)_NS")
     flag = py"run_info"("$(model_path)_NS")
