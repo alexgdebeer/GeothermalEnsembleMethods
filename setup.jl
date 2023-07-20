@@ -9,40 +9,37 @@ using SimIntensiveInference
 include("priors.jl")
 @pyinclude "model_functions.py"
 
-# TODO:
-# Make a finer grid for the truth
-# Check non-uniqueness of steady states?
-
 Random.seed!(4)
 
-secs_per_week = 60.0 * 60.0 * 24.0 * 7.0
+SECS_PER_WEEK = 60.0 * 60.0 * 24.0 * 7.0
 
 xmax, nx = 1500.0, 25
 ymax, ny = 60.0, 1
 zmax, nz = 1500.0, 25
-tmax, nt = 104.0 * secs_per_week, 24
+tmax, nt = 104.0 * SECS_PER_WEEK, 24
 
 dx = xmax / nx
+dy = ymax / ny
 dz = zmax / nz
 dt = tmax / nt
 
-xs = collect(range(dx, xmax-dx, nx))
-zs = collect(range(dz, zmax-dz, nz)) .- zmax
+xs = collect(range(0.5dx, xmax-0.5dx, nx))
+zs = collect(range(0.5dz, zmax-0.5dz, nz)) .- zmax
 ts = collect(range(0, tmax, nt+1))
 
 n_blocks = nx * nz
 
 model_folder = "models"
 mesh_name = "gSQ$n_blocks"
-model_name = "SQ$n_blocks"
 mesh_path = "$model_folder/$mesh_name"
-model_path = "$model_folder/$model_name"
+model_name_base = "SQ$n_blocks"
+model_path_base = "$model_folder/$model_name_base"
 
-py"build_base_model"(xmax, ymax, zmax, nx, ny, nz, model_path, mesh_path)
+py"build_mesh"(xmax, ymax, zmax, nx, ny, nz, mesh_path)
 
-upflow_xs = [0.5xmax]
-upflow_zs = [-zmax+0.5dz]
-upflow_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(upflow_xs, upflow_zs)]
+uf_xs = [0.5xmax]
+uf_zs = [-zmax+0.5dz]
+uf_locs = [(x, 0.5ymax, z) for (x, z) ∈ zip(uf_xs, uf_zs)]
 
 fz_xs = [200, 475, 750, 1025, 1300]
 fz_zs = [-500, -500, -500, -500, -500]
@@ -52,8 +49,6 @@ fz_cells = py"get_feedzone_cells"(mesh_path, fz_locs)
 
 ts_obs_xlocs = [200, 475, 750, 1025, 1300]
 ts_obs_zlocs = [-300, -500, -700, -900, -1100, -1300]
-ts_obs_xs = [x for x ∈ ts_obs_xlocs for _ ∈ ts_obs_zlocs]
-ts_obs_zs = [z for _ ∈ ts_obs_xlocs for z ∈ ts_obs_zlocs]
 
 t_obs = [1, 4, 7, 10, 13]
 
@@ -71,7 +66,7 @@ inds_ts_raw = 1:nts_raw
 inds_ps_raw = (1:nps_raw) .+ nts_raw 
 inds_es_raw = (1:nes_raw) .+ nts_raw .+ nps_raw
 
-nts_obs = length(ts_obs_xs)
+nts_obs = length(ts_obs_xlocs) * length(ts_obs_zlocs)
 nps_obs = nfz * nt_obs
 nes_obs = nfz * nt_obs
 
@@ -91,21 +86,36 @@ inds_es_obs = (1:nes_obs) .+ nts_obs .+ nps_obs
 Γ_ϵ = BlockDiagonal([Γ_ts, Γ_ps, Γ_es])
 ϵ_dist = MvNormal(Γ_ϵ)
 
-get_raw_temperatures(us) = reshape(us[inds_ts_raw], nx, nz)
-get_raw_pressures(us) = reshape(us[inds_ps_raw], nfz, nt+1)
-get_raw_enthalpies(us) = reshape(us[inds_es_raw], nfz, nt+1)
+get_raw_temps(us, is, nx, nz) = reshape(us[is], nx, nz)
+get_raw_pressures(us, is, nfz, nt) = reshape(us[is], nfz, nt+1)
+get_raw_enthalpies(us, is, nfz, nt) = reshape(us[is], nfz, nt+1)
+
+function get_temp_obs(temps, xs, zs, xs_o, zs_o)
+    temperatures = interpolate((xs, zs), temps, Gridded(Linear()))
+    return [temperatures(x, z) for x ∈ xs_o for z ∈ zs_o]
+end
+
+get_pressure_obs(pressures, t_obs) = vec(pressures[:, t_obs])
+get_enthalpy_obs(enthalpies, t_obs) = vec(enthalpies[:, t_obs])
 
 """Runs a combined natural state and production simulation, and returns a 
 complete list of steady-state temperatures and transient pressures and 
 enthalpies."""
-function f(θs::AbstractVector)::Union{AbstractVector, Symbol}
+function f(θs::AbstractVector, n_it, n_model, incon_num)
 
-    upflow_q = get_mass_rate(p, θs)
+    uf_q = get_mass_rate(p, θs)
     ks = 10 .^ get_perms(p, θs)
     
+    model_path = "$(model_path_base)_$(n_it)_$(n_model)"
+
+    incon_path = incon_num !== nothing ? 
+        "$(model_path_base)_$(n_it-1)_$(incon_num)_NS" : 
+        nothing
+
     py"build_models"(
-        model_path, mesh_path, ks, upflow_locs, [upflow_q], 
-        fz_locs, fz_qs, tmax, dt)
+        model_path, mesh_path, incon_path,
+        ks, uf_locs, [uf_q], 
+        fz_locs, fz_qs, dy, tmax, dt)
     
     py"run_simulation"("$(model_path)_NS")
     flag = py"run_info"("$(model_path)_NS")
@@ -127,22 +137,23 @@ function g(us::Union{AbstractVector, Symbol})
 
     us == :failure && return :failure
 
-    temperatures = get_raw_temperatures(us)
-    temperatures = interpolate((xs, zs), temperatures, Gridded(Linear()))
-    temperatures = [temperatures(x, z) for (x, z) ∈ zip(ts_obs_xs, ts_obs_zs)]
+    temps = get_raw_temps(us, inds_ts_raw, nx, nz)
+    pressures = get_raw_pressures(us, inds_ps_raw, nfz, nt)
+    enthalpies = get_raw_enthalpies(us, inds_es_raw, nfz, nt)
 
-    pressures = vec(get_raw_pressures(us)[:, t_obs])
-    enthalpies = vec(get_raw_enthalpies(us)[:, t_obs])
+    temps = get_temp_obs(temps, xs, zs, ts_obs_xlocs, ts_obs_zlocs)
+    pressures = get_pressure_obs(pressures, t_obs)
+    enthalpies = get_enthalpy_obs(enthalpies, t_obs)
 
-    return vcat(temperatures, pressures, enthalpies)
+    return vcat(temps, pressures, enthalpies)
 
 end
 
 # Define prior parameters
 mass_rate_bnds = [1.0e-1, 2.0e-1]
-depth_shal = -100.0
+depth_shal = -60.0
 
-μ_depth_clay = -300.0
+μ_depth_clay = -250.0
 k_depth_clay = ExpSquaredKernel(80, 500)
 
 μ_perm_shal = -14.0
@@ -170,10 +181,10 @@ q_t = get_mass_rate(p, θs_t)
 logks_t = get_perms(p, θs_t)
 ks_t = 10 .^ logks_t
 
-us_t = @time f(vec(θs_t))
+us_t = @time f(vec(θs_t), 0, 0, nothing)
 us_o = g(us_t) + rand(ϵ_dist)
 
 # Set up the likelihood
 L = MvNormal(us_o, Γ_ϵ)
 
-# py"slice_plot"(model_folder, mesh_name, logps_t, cmap="turbo")
+# py"slice_plot"(model_folder, mesh_name, logks_t, cmap="turbo")

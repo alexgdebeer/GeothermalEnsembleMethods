@@ -35,7 +35,7 @@ NS_STEPSIZE = 1.0e+16
 
 
 def warn(msg):
-    print(f"{YELLOW}Warning: {msg}{END_COLOUR}")
+    print(f"{YELLOW}[Warning]{END_COLOUR} {msg}")
 
 
 def load_json(fname):
@@ -49,7 +49,7 @@ def save_json(model, fname):
         json.dump(model, f, indent=2, sort_keys=True)
 
 
-def build_base_model(xmax, ymax, zmax, nx, ny, nz, model_path, mesh_path):
+def build_mesh(xmax, ymax, zmax, nx, ny, nz, path):
 
     dx = xmax / nx
     dy = ymax / ny
@@ -60,8 +60,14 @@ def build_base_model(xmax, ymax, zmax, nx, ny, nz, model_path, mesh_path):
     dzs = [dz] * nz
 
     m = lm.mesh(rectangular=(dxs, dys, dzs))
-    m.write(f"{mesh_path}.h5")
-    m.export(f"{mesh_path}.msh", fmt="gmsh22")
+    m.write(f"{path}.h5")
+    m.export(f"{path}.msh", fmt="gmsh22")
+
+
+def build_ns_model(model_path, mesh_path, incon_path, dy, 
+                   perms, upflow_locs, upflow_rates):
+
+    mesh = lm.mesh(f"{mesh_path}.h5")
 
     model = {
         "eos": {"name" : "we"},
@@ -82,28 +88,22 @@ def build_base_model(xmax, ymax, zmax, nx, ny, nz, model_path, mesh_path):
         "dry_conductivity": CONDUCTIVITY,
         "density": DENSITY,
         "specific_heat": SPECIFIC_HEAT
-    } for c in m.cell]}
+    } for c in mesh.cell]}
 
     model["boundaries"] = [{
         "primary": [P_ATM, T_ATM], 
         "region": 1,
         "faces": {
-            "cells": [c.index for c in m.surface_cells],
+            "cells": [c.index for c in mesh.surface_cells],
             "normal": [0, 0, 1]
         }
     }]
 
-    save_json(model, f"{model_path}_base.json")
-
-
-def build_ns_model(model_path, mesh, perms, upflow_locs, upflow_rates):
-
-    model = load_json(f"{model_path}_base.json")
-
-    if os.path.isfile(f"{model_path}_incon.h5"):
-        model["initial"] = {"filename": f"{model_path}_incon.h5"}
+    if incon_path is not None and os.path.isfile(f"{incon_path}.h5"):
+        model["initial"] = {"filename": f"{incon_path}.h5"}
     else:
-        warn("incon file not found. Improvising...")
+        if incon_path is not None:
+            warn(f"{incon_path}.h5 not found. Improvising...")
         model["initial"] = {"primary": [P0, T0], "region": 1}
 
     upflow_cells = [
@@ -149,8 +149,10 @@ def build_ns_model(model_path, mesh, perms, upflow_locs, upflow_rates):
     return model
 
 
-def build_pr_model(model, model_path, mesh, feedzone_locs, feedzone_rates, 
-                   tmax, dt):
+def build_pr_model(model, model_path, mesh_path, 
+                   feedzone_locs, feedzone_rates, tmax, dt):
+
+    mesh = lm.mesh(f"{mesh_path}.h5")
 
     model["source"].extend([{
         "component": "water",
@@ -182,17 +184,16 @@ def build_pr_model(model, model_path, mesh, feedzone_locs, feedzone_rates,
     return model
 
 
-def build_models(model_path, mesh_path, perms, upflow_locs, upflow_rates, 
-                 feedzone_locs, feedzone_rates, tmax, dt):
-
-    mesh = lm.mesh(f"{mesh_path}.h5")
+def build_models(model_path, mesh_path, incon_path,
+                 perms, upflow_locs, upflow_rates, 
+                 feedzone_locs, feedzone_rates, dy, tmax, dt):
 
     ns_model = build_ns_model(
-        model_path, mesh, perms, 
-        upflow_locs, upflow_rates)
+        model_path, mesh_path, incon_path, dy,
+        perms, upflow_locs, upflow_rates)
     
     pr_model = build_pr_model(
-        copy.deepcopy(ns_model), model_path, mesh, 
+        copy.deepcopy(ns_model), model_path, mesh_path, 
         feedzone_locs, feedzone_rates, tmax, dt)
 
     save_json(ns_model, f"{model_path}_NS.json")
