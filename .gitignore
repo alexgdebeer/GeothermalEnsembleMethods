@@ -4,6 +4,7 @@ results/
 
 .cid
 .idcheck
+.dockerignore
 
 .DS_Store
 
