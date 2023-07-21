@@ -18,7 +18,7 @@ function run_ensemble(
 
     for i ∈ inds
 
-        fθ = @time f(θs[:,i], n_it, i, incon_num)
+        fθ = f(θs[:,i], n_it, i, incon_num)
         if fθ != :failure 
             fs[:,i] = fθ
             ys[:,i] = g(fθ)

@@ -69,44 +69,6 @@ def build_ns_model(model_path, mesh_path, incon_path, dy,
 
     mesh = lm.mesh(f"{mesh_path}.h5")
 
-    model = {
-        "eos": {"name" : "we"},
-        "gravity": GRAVITY,
-        "logfile": {"echo" : False},
-        "mesh": {
-            "filename": f"{mesh_path}.msh", 
-            "thickness": dy
-        },
-        "title": "2D model"
-    }
-
-    model["rock"] = {"types" : [{
-        "name": f"{c.index}",
-        "porosity": POROSITY, 
-        "permeability": permeabilities[c.index],
-        "cells": [c.index],
-        "wet_conductivity": CONDUCTIVITY,
-        "dry_conductivity": CONDUCTIVITY,
-        "density": DENSITY,
-        "specific_heat": SPECIFIC_HEAT
-    } for c in mesh.cell]}
-
-    model["boundaries"] = [{
-        "primary": [P_ATM, T_ATM], 
-        "region": 1,
-        "faces": {
-            "cells": [c.index for c in mesh.surface_cells],
-            "normal": [0, 0, 1]
-        }
-    }]
-
-    if incon_path is not None and os.path.isfile(f"{incon_path}.h5"):
-        model["initial"] = {"filename": f"{incon_path}.h5"}
-    else:
-        if incon_path is not None:
-            warn(f"{incon_path}.h5 not found. Improvising...")
-        model["initial"] = {"primary": [P0, T0], "region": 1}
-
     upflow_cells = [
         mesh.find(loc, indices=True) 
         for loc in upflow_locs]
@@ -115,37 +77,75 @@ def build_ns_model(model_path, mesh_path, incon_path, dy,
         c.cell[-1].index for c in mesh.column 
         if c.cell[-1].index not in upflow_cells]
 
-    model["source"] = [{
-        "component": "energy",
-        "rate": HEAT_RATE * mesh.cell[cell].column.area,
-        "cell": cell
-    } for cell in heat_cells]
-
-    model["source"].extend([{
-        "component": "water",
-        "enthalpy": MASS_ENTHALPY, 
-        "rate": rate,
-        "cell": cell
-    } for cell, rate in zip(upflow_cells, upflow_rates)])
-
-    # for rt in model["rock"]["types"]:
-    #     rt["permeability"] = perms[rt["cells"][0]]
-
-    model["time"] = {
-        "step": {
-            "size": 1.0e+6,
-            "adapt": {"on": True}, 
-            "maximum": {"number": MAX_NS_TSTEPS},
-            "method": "beuler",
-            "stop": {"size": {"maximum": NS_STEPSIZE}}
-        }
+    model = {
+        "boundaries": [
+            {
+                "primary": [P_ATM, T_ATM], 
+                "region": 1,
+                "faces": {
+                    "cells": [c.index for c in mesh.surface_cells],
+                    "normal": [0, 0, 1]
+                }
+            }
+        ],
+        "eos": {"name" : "we"},
+        "gravity": GRAVITY,
+        "logfile": {"echo" : False},
+        "mesh": {
+            "filename": f"{mesh_path}.msh", 
+            "thickness": dy
+        },
+        "output": {
+            "frequency": 0, 
+            "initial": False, 
+            "final": True
+        },
+        "rock" : {
+            "types" : [
+                {
+                    "name": f"{c.index}",
+                    "porosity": POROSITY, 
+                    "permeability": permeabilities[c.index],
+                    "cells": [c.index],
+                    "wet_conductivity": CONDUCTIVITY,
+                    "dry_conductivity": CONDUCTIVITY,
+                    "density": DENSITY,
+                    "specific_heat": SPECIFIC_HEAT
+                } for c in mesh.cell
+            ]
+        },
+        "source": [
+            {
+                "component": "energy",
+                "rate": HEAT_RATE * mesh.cell[cell].column.area,
+                "cell": cell
+            } for cell in heat_cells
+        ] + [
+            {
+                "component": "water",
+                "enthalpy": MASS_ENTHALPY, 
+                "rate": rate,
+                "cell": cell
+            } for cell, rate in zip(upflow_cells, upflow_rates)
+        ],
+        "time": {
+            "step": {
+                "size": 1.0e+6,
+                "adapt": {"on": True}, 
+                "maximum": {"number": MAX_NS_TSTEPS},
+                "method": "beuler",
+                "stop": {"size": {"maximum": NS_STEPSIZE}}
+            }
+        },
+        "title": "Slice model"
     }
 
-    model["output"] = {
-        "frequency": 0, 
-        "initial": False, 
-        "final": True
-    }
+    if incon_path is not None and os.path.isfile(f"{incon_path}.h5"):
+        model["initial"] = {"filename": f"{incon_path}.h5"}
+    else:
+        if incon_path is not None:
+            warn(f"{incon_path}.h5 not found. Improvising...")
+        model["initial"] = {"primary": [P0, T0], "region": 1}
 
     return model
 

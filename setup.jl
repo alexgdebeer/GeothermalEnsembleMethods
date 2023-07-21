@@ -13,9 +13,9 @@ Random.seed!(4)
 
 SECS_PER_WEEK = 60.0 * 60.0 * 24.0 * 7.0
 
-xmax, nx = 1500.0, 25
+xmax, nx = 1500.0, 50
 ymax, ny = 60.0, 1
-zmax, nz = 1500.0, 25
+zmax, nz = 1500.0, 50
 tmax, nt = 104.0 * SECS_PER_WEEK, 24
 
 dx = xmax / nx
@@ -119,12 +119,12 @@ function f(θs::AbstractVector, n_it, n_model, incon_num)
 
     py"generate_dockerignore"(model_path, mesh_path, incon_path)
     
-    py"run_simulation"("$(model_path)_NS")
+    @time py"run_simulation"("$(model_path)_NS")
     flag = py"run_info"("$(model_path)_NS")
     flag != "success" && @warn "NS simulation failed. Flag: $(flag)."
     flag != "success" && return :failure 
 
-    py"run_simulation"("$(model_path)_PR")
+    @time py"run_simulation"("$(model_path)_PR")
     flag = py"run_info"("$(model_path)_PR")
     flag != "success" && @warn "PR simulation failed. Flag: $(flag)."
     flag != "success" && return :failure 
