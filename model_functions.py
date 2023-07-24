@@ -64,7 +64,7 @@ def build_mesh(xmax, ymax, zmax, nx, ny, nz, path):
     m.export(f"{path}.msh", fmt="gmsh22")
 
 
-def build_ns_model(model_path, mesh_path, incon_path, dy, 
+def build_ns_model(model_path, mesh_path, dy, 
                    permeabilities, upflow_locs, upflow_rates):
 
     mesh = lm.mesh(f"{mesh_path}.h5")
@@ -140,11 +140,10 @@ def build_ns_model(model_path, mesh_path, incon_path, dy,
         "title": "Slice model"
     }
 
-    if incon_path is not None and os.path.isfile(f"{incon_path}.h5"):
-        model["initial"] = {"filename": f"{incon_path}.h5"}
+    if os.path.isfile(f"{model_path}_incon.h5"):
+        model["initial"] = {"filename": f"{model_path}_incon.h5"}
     else:
-        if incon_path is not None:
-            warn(f"{incon_path}.h5 not found. Improvising...")
+        warn(f"{model_path}_incon.h5 not found. Improvising...")
         model["initial"] = {"primary": [P0, T0], "region": 1}
 
     return model
@@ -185,12 +184,12 @@ def build_pr_model(model, model_path, mesh_path,
     return model
 
 
-def build_models(model_path, mesh_path, incon_path,
+def build_models(model_path, mesh_path,
                  perms, upflow_locs, upflow_rates, 
                  feedzone_locs, feedzone_rates, dy, tmax, dt):
 
     ns_model = build_ns_model(
-        model_path, mesh_path, incon_path, dy,
+        model_path, mesh_path, dy,
         perms, upflow_locs, upflow_rates)
     
     pr_model = build_pr_model(
