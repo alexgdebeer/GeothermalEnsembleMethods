@@ -3,9 +3,9 @@ import scipy.sparse as sparse
 import scipy.stats as stats
 
 
-"""Discretised Gaussian process with exponential-squared 
+"""1D Gaussian distribution with exponential-squared 
 covariance function."""
-class GaussianProcess():
+class Gaussian1D():
     
     def __init__(self, mu, std, l, xs):
         
@@ -21,13 +21,13 @@ class GaussianProcess():
     def _generate_cov(self):
 
         x_dists = self.xs[:, np.newaxis] - self.xs.T 
-        cor = np.exp(-0.5 * (x_dists / self.l) ** 2)
-        self.cov = self.std ** 2 * cor + 1e-8 * np.eye(self.nx) 
+        self.cor = np.exp(-0.5 * (x_dists / self.l) ** 2)
+        self.cov = self.std ** 2 * self.cor + 1e-8 * np.eye(self.nx) 
         
 
-"""Discretised Gaussian random field with exponential-squared 
+"""2D Gaussian distribution with exponential-squared 
 covariance function."""
-class GaussianRF():
+class Gaussian2D():
 
     def __init__(self, mu, std, lx, lz, cells):
         
@@ -48,9 +48,9 @@ class GaussianRF():
         x_dists = self.cell_xs[:, np.newaxis] - self.cell_xs.T
         z_dists = self.cell_zs[:, np.newaxis] - self.cell_zs.T
 
-        cor = np.exp(-0.5 * (x_dists / self.lx) ** 2 + \
-                     -0.5 * (z_dists / self.lz) ** 2)
-        self.cov = self.std ** 2 * cor + 1e-8 * np.eye(self.n_cells)
+        self.cor = np.exp(-0.5 * (x_dists / self.lx) ** 2 + \
+                          -0.5 * (z_dists / self.lz) ** 2)
+        self.cov = self.std ** 2 * self.cor + 1e-8 * np.eye(self.n_cells)
 
 
 class SlicePrior():
@@ -138,10 +138,10 @@ class SlicePrior():
         return 10 ** perms
 
     def sample(self, n=1):
-        ws = np.random.normal(size=(len(self.mu), n))
-        return self.mu[:, np.newaxis] + self.chol_inv @ ws
+        return np.random.normal(size=(len(self.mu), n))
 
     def transform(self, thetas):
+        thetas = self.mu + self.chol_inv @ thetas
         *perms, mass_rate = np.squeeze(thetas)
         perms = self._transform_perms(perms)
         mass_rate = self._transform_mass_rate(mass_rate)

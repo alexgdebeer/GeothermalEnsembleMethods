@@ -1,15 +1,14 @@
 from copy import deepcopy
 from enum import Enum
 import h5py
-import json
 import layermesh.mesh as lm
 import numpy as np
 import os
 import pywaiwera
+import time
 import yaml
 
-YELLOW = "\033[93m"
-END_COLOUR = "\033[0m"
+import utils
 
 P0 = 1.0e+5
 T0 = 20.0
@@ -42,26 +41,11 @@ class ExitFlag(Enum):
     ABORTED = 3
 
 
-def warn(msg):
-    print(f"{YELLOW}[Warning]{END_COLOUR} {msg}")
-
-
-def load_json(fname):
-    with open(fname, "r") as f:
-        model = json.load(f)
-    return model
-
-
-def save_json(model, fname):
-    with open(fname, "w") as f:
-        json.dump(model, f, indent=2, sort_keys=True)
-
-
 class Mesh():
 
-    def __init__(self, fname, xmax, ymax, zmax, nx, ny, nz):
+    def __init__(self, name, xmax, ymax, zmax, nx, ny, nz):
 
-        self.fname = fname
+        self.name = name
 
         self.xmax = xmax 
         self.ymax = ymax 
@@ -83,13 +67,18 @@ class Mesh():
 
         self.cell_xs = np.array([c.centre[0] for c in self.m.cell])
         self.cell_zs = np.array([c.centre[-1] for c in self.m.cell])
+
         self.xs = np.array([c.centre[0] for c in self.m.column])
         self.zs = np.array([l.centre for l in self.m.layer])
 
     def write_to_file(self):
         
-        self.m.write(f"{self.fname}.h5")
-        self.m.export(f"{self.fname}.msh", fmt="gmsh22")
+        if os.path.exists(f"{self.name}.msh"):
+            utils.info("Mesh already written to file.")
+            return
+
+        self.m.write(f"{self.name}.h5")
+        self.m.export(f"{self.name}.msh", fmt="gmsh22")
 
 
 class MassUpflow():
@@ -104,18 +93,10 @@ class Feedzone():
         self.rate = rate
 
 
-class Well():
-    def __init__(self, feedzone, obs_times):
-        self.feedzone = feedzone 
-        self.obs_times = obs_times
-
-
 class Model():
 
-    def __init__(self, path: str, mesh: Mesh, 
-                 perms: list, wells: "list[Well]", 
-                 upflows: "list[MassUpflow]",
-                 dt: float, tmax: float):
+    def __init__(self, path, mesh, perms, 
+                 feedzones, upflows, dt, tmax):
         
         self.ns_path = f"{path}_NS"
         self.pr_path = f"{path}_PR"
@@ -123,12 +104,12 @@ class Model():
 
         self.mesh = mesh
         self.perms = perms
-        self.wells = wells 
+        self.feedzones = feedzones 
         self.upflows = upflows
 
         self.feedzone_cells = [
-            self.mesh.m.find(w.feedzone.loc, indices=True) 
-            for w in self.wells]
+            self.mesh.m.find(f.loc, indices=True) 
+            for f in self.feedzones]
 
         self.dt = dt
         self.tmax = tmax
@@ -194,16 +175,16 @@ class Model():
 
         self.pr_model["source"].extend([{
             "component": "water",
-            "rate": w.feedzone.rate,
-            "cell": self.mesh.m.find(w.feedzone.loc, indices=True)
-        } for w in self.wells])
+            "rate": f.rate,
+            "cell": self.mesh.m.find(f.loc, indices=True)
+        } for f in self.feedzones])
 
     def _add_ns_incon(self):
 
         if os.path.isfile(f"{self.incon_path}.h5"):
             self.ns_model["initial"] = {"filename": f"{self.incon_path}.h5"}
         else:
-            warn("Initial condition not found. Improvising...")
+            # utils.warn("Initial condition not found. Improvising...")
             self.ns_model["initial"] = {"primary": [P0, T0], "region": 1}
 
     def _add_pr_incon(self):
@@ -259,7 +240,7 @@ class Model():
             "gravity": GRAVITY,
             "logfile": {"echo": False},
             "mesh": {
-                "filename": f"{self.mesh.fname}.msh", 
+                "filename": f"{self.mesh.name}.msh", 
                 "thickness": self.mesh.dy
             },
             "title": "Slice model"
@@ -272,7 +253,7 @@ class Model():
         self._add_ns_timestepping()
         self._add_ns_output()
 
-        save_json(self.ns_model, f"{self.ns_path}.json")
+        utils.save_json(self.ns_model, f"{self.ns_path}.json")
 
     def _generate_pr(self):
 
@@ -283,17 +264,30 @@ class Model():
         self._add_pr_output()
         self._add_pr_incon()
 
-        save_json(self.pr_model, f"{self.pr_path}.json")
+        utils.save_json(self.pr_model, f"{self.pr_path}.json")
 
-    def run(self):
+    def run(self, timed=True):
+
+        if timed:
+            t0 = time.time()
 
         env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
-        
         env.run_waiwera(f"{self.ns_path}.json", noupdate=True)
         flag = self._get_exitflag(self.ns_path)
-        if flag != ExitFlag.SUCCESS: return flag 
+
+        if timed: 
+            t1 = time.time()
+            utils.info(f"NS simulation finished in {round(t1-t0, 2)} seconds.")
+
+        if flag != ExitFlag.SUCCESS: 
+            return flag
 
         env.run_waiwera(f"{self.pr_path}.json", noupdate=True)
+
+        if timed: 
+            t2 = time.time()
+            utils.info(f"PR simulation finished in {round(t2-t1, 2)} seconds.")
+
         return self._get_exitflag(self.pr_path)
 
     def _get_exitflag(self, log_path):
@@ -310,11 +304,11 @@ class Model():
                 return ExitFlag.SUCCESS
 
             elif msg[:3] == MSG_MAX_ITS:
-                warn("Model failed (max iterations).")
+                utils.warn("Simulation failed (max iterations).")
                 return ExitFlag.MAX_ITS
 
             elif msg[:3] == MSG_ABORTED:
-                warn("Model failed (aborted).")
+                utils.warn("Simulation failed (aborted).")
                 return ExitFlag.ABORTED
 
         raise Exception(f"Unknown exit condition. Check {log_path}.yaml.")
@@ -331,7 +325,7 @@ class Model():
             ps = [p[cell_inds][self.feedzone_cells]
                   for p in f["cell_fields"]["fluid_pressure"]]   
             
-            es = [e[src_inds][-len(self.wells):] 
+            es = [e[src_inds][-len(self.feedzones):] 
                   for e in f["source_fields"]["source_enthalpy"]]
 
         return np.concatenate((np.array(ts).flatten(order="F"), 
