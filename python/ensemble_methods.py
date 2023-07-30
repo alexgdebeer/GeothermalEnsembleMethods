@@ -4,68 +4,69 @@ import itertools as it
 import numpy as np
 
 import geo_models as gm
-import utils
-
+import utils as utils
 
 class EnsembleProblem():
 
     def __init__(self, f, g, prior, likelihood, Nf, Ne):
         
-        self.prior = prior 
-        self.likelihood = likelihood 
+        self.pri = prior 
+        self.lik = likelihood 
 
         self.f = f
         self.g = g 
+        self.y = self.lik.mu
 
-        self.Nt = len(prior.mu)
+        self.Nt = len(self.pri.mu)
+        self.Ng = len(self.lik.mu)
+        self.Ny = len(self.lik.mu)
         self.Nf = Nf
-        self.Ng = len(likelihood.mu)
         self.Ne = Ne
-        self.ensemble_inds = list(range(Ne))
+
+        self.en_inds = list(range(self.Ne))
+
+        self.ts = []
+        self.fs = []
+        self.gs = []
 
     def _generate_initial_ensemble(self):
-        return self.prior.sample(self.Ne)
+        self.ts.append(self.pri.sample(self.Ne))
         
-    def _run_ensemble(self, ts):
+    def _run_ensemble(self):
 
-        fs = np.zeros((self.Nf, self.Ne))
-        gs = np.zeros((self.Ng, self.Ne))
+        fs_i = np.zeros((self.Nf, self.Ne))
+        gs_i = np.zeros((self.Ng, self.Ne))
 
-        for i in range(self.Ne):
-            if i in self.ensemble_inds:
-                
-                f_t = self.f(ts[:, i])
-                if type(f_t) != gm.ExitFlag:
-                    fs[:, i] = f_t
-                    gs[:, i] = self.g(f_t)
+        for (i, t) in enumerate(self.ts[-1].T):
+            if i in self.en_inds:
+                if type(f_t := self.f(t)) == gm.ExitFlag:
+                    self.en_inds.remove(i)
                 else:
-                    self.ensemble_inds.remove(i)
+                    fs_i[:, i] = f_t
+                    gs_i[:, i] = self.g(f_t)
 
-        return fs, gs
+        self.fs.append(fs_i)
+        self.gs.append(gs_i)
 
     """Returns a matrix of rescaled deviations from the mean (for 
     the ensemble members or the ensemble predictions)."""
-    def _calculate_deltas(self, q):
-        deltas = q - np.mean(q, axis=1)[:, np.newaxis]
-        return deltas / np.sqrt(len(self.ensemble_inds) - 1)
+    def _compute_deltas(self, q):
+
+        q_filtered = q[:,self.en_inds]
+        deltas = q_filtered - np.mean(q_filtered, axis=1)[:, np.newaxis]
+        
+        return deltas / np.sqrt(len(self.en_inds) - 1)
     
+    def _compute_S(self):
+
+        diffs = self.y[:, None] - self.gs[-1][:, self.en_inds]
+        Ss = 0.5 * np.sum((self.lik.cov_inv_sq @ diffs) ** 2, axis=1)
+        
+        return np.mean(Ss), np.var(Ss)
+
     """Returns the ensemble estimate of the model Jacobian."""
-    def _calculate_J(self, delta_t, delta_g):
+    def _compute_jac(self, delta_t, delta_g):
         return delta_g @ np.linalg.pinv(delta_t)
-
-    """Calculates ensemble (cross-)covariance matrices."""
-    def _calculate_covs(self, delta_t, delta_g):
-
-        if not self.loc_mat:
-            cov_tg = delta_t @ delta_g.T
-            cov_gg = delta_g @ delta_g.T
-            return cov_tg, cov_gg
-
-        cov_tt = self.loc_mat * (delta_t * delta_t.T)
-        J = self._calculate_J(delta_t, delta_g)
-        cov_tg = cov_tt @ J.T
-        cov_gg = J @ cov_tt @ J.T
-        return cov_tg, cov_gg
 
     def save_results(self, fname):
         with h5py.File(f"{fname}.h5", "w") as f:
@@ -75,81 +76,136 @@ class EnsembleProblem():
 
 class ESMDAProblem(EnsembleProblem):
 
-    def run(self, Ni, loc_mat=None):
+    def __init__(self, *args, loc_mat=None):
+        
+        super().__init__(*args)
 
         self.loc_mat = loc_mat
-
-        ts = np.zeros((self.Nt, self.Ne, Ni+1))
-        fs = np.zeros((self.Nf, self.Ne, Ni+1))
-        gs = np.zeros((self.Ng, self.Ne, Ni+1))
-
-        ts[:,:,0] = self._generate_initial_ensemble()
-        fs[:,:,0], gs[:,:,0] = self._run_ensemble(ts[:,:,0])
-
-        alphas = Ni * np.ones(Ni)
-
-        for i in range(Ni):
-
-            utils.info(f"Beginning iteration {i}...")
-
-            # TODO: clean up
-            gs_p = np.random.multivariate_normal(self.likelihood.mu, 
-                                                 alphas[i] * self.likelihood.cov, 
-                                                 size=(self.Ne, )).T
-
-            delta_t = self._calculate_deltas(ts[:,:,0])
-            delta_g = self._calculate_deltas(gs[:,:,0])
-
-            cov_tg, cov_gg = self._calculate_covs(delta_t, delta_g)
-            K = cov_tg @ np.linalg.inv(cov_gg + alphas[i] * self.likelihood.cov)
-
-            ts[:,:,i+1] = ts[:,:,i] + K @ (gs_p - gs[:,:,i])
-            fs[:,:,i+1], gs[:,:,i+1] = self._run_ensemble(ts[:,:,i+1])
+        self._as = []
+        self.t = 0.0
 
         self.results = {
-            "ts": ts, 
-            "fs": fs, 
-            "gs": gs, 
-            "alphas": alphas, 
-            "inds": self.ensemble_inds 
+            "ts": self.ts, 
+            "fs": self.fs, 
+            "gs": self.gs, 
+            "alphas": self._as, 
+            "inds": self.en_inds
         }
+
+    """Calculates ensemble (cross-)covariance matrices."""
+    def _compute_covs(self):
+
+        delta_t = self._compute_deltas(self.ts[-1])
+        delta_g = self._compute_deltas(self.gs[-1])
+
+        if not self.loc_mat:
+            cov_tg = delta_t @ delta_g.T
+            cov_gg = delta_g @ delta_g.T
+            return cov_tg, cov_gg
+
+        cov_tt = self.loc_mat * (delta_t @ delta_t.T)
+        jac = self._compute_jac(delta_t, delta_g)
+        cov_tg = cov_tt @ jac.T
+        cov_gg = jac @ cov_tt @ jac.T
+
+        return cov_tg, cov_gg
+
+    def _compute_gain(self):
+
+        cov_tg, cov_gg = self._compute_covs()
+        K = cov_tg @ np.linalg.inv(cov_gg + self._as[-1] * self.lik.cov) # TODO: TSVD
+
+        return K
+    
+    def _update_ensemble(self):
+
+        # TODO: clean up
+        ys_p = np.random.multivariate_normal(
+            self.y, 
+            self._as[-1] * self.lik.cov, 
+            size=(self.Ne, )
+        ).T
+        
+        K = self._compute_gain()
+
+        ts_updated = self.ts[-1] + K @ (ys_p - self.gs[-1])
+        self.ts.append(ts_updated)
+        
+        return
+
+    def _compute_alpha(self):
+
+        mu_S, var_S = self._compute_S()
+        
+        q1 = self.Ny / (2 * mu_S)
+        q2 = np.sqrt(self.Ny / (2 * var_S))
+        a_inv = min(max(q1, q2), 1.0 - self.t)
+
+        self.t += a_inv
+        self._as.append(a_inv ** -1.0)
+
+    def _is_converged(self):
+        return np.abs(self.t-1.0) < 1e-8
+
+    def run(self):
+
+        self._generate_initial_ensemble()
+        self._run_ensemble()
+
+        while True:
+
+            self._compute_alpha()
+            utils.info(f"It: {len(self._as)} | a: {self._as[-1]:.4f} | t: {self.t:.4f}")
+            self._update_ensemble()
+            self._run_ensemble()
+
+            if self._is_converged():
+                return
 
 
 class EnRMLProblem(EnsembleProblem):
 
-    def _calculate_s(self, gs, ys_p, cov_error_sq_inv):
-        log_liks = np.sum((cov_error_sq_inv * \
-            (gs[:,self.ensemble_inds]-ys_p[:,self.ensemble_inds])) ** 2, axis=1)
-        return np.mean(log_liks)
-    
-    def _calculate_dt_max(self, ts, ts_prev):
-        dts = (ts[:,self.ensemble_inds] - ts_prev[:,self.ensemble_inds]) / \
-            ts[:,self.ensemble_inds]
-        return np.maximum(np.abs(dts))
+    def __init__(self, *args):
+        
+        super().__init__(*args)
 
-    def _compute_gain(self, dts, Ug, Sg, Vg, cov_eta_sqi, l):
+        self.ss = []
+        self.ls = []
+
+        self.results = {
+            "ts": self.ts, 
+            "fs": self.fs, 
+            "gs": self.gs, 
+            "ss": self.ss, 
+            "inds": self.en_inds
+        }
+    
+    def _compute_dt_max(self):
+        dts = self.ts[-1][:,self.en_inds] - self.ts[-2][:,self.en_inds]
+        return np.abs(dts).max()
+
+    def _compute_gain(self, dts, Ug, Sg, Vg, l):
         psi = np.diag(1.0 / (l + 1.0 + Sg ** 2))
-        return dts @ Vg @ Sg @ psi @ Ug.T @ cov_eta_sqi
+        return dts @ Vg @ np.diag(Sg) @ psi @ Ug.T @ self.lik.cov_inv_sq
 
     """Carries out bootstrapping-based localisation procedure described 
     by Zhang and Oliver (2010)."""
-    def _localise_bootstrap(self, K, ts, gs, cov_eta_sqi, l, 
+    def _localise_bootstrap(self, K, ts, gs, l, 
                             Nb=100, sigalpha_sq=0.6**2):
 
         Ks = np.zeros(self.Nt, self.Ng, Nb)
         loc_mat = np.zeros(self.Nt, self.Ng)
 
-        inds_r = copy(self.ensemble_inds)
+        inds_r = copy(self.en_inds)
 
         for k in range(Nb):
 
             np.random.shuffle(inds_r)
-            dts = self._calculate_deltas(ts[:,inds_r])
-            dgs = self._calculate_deltas(gs[:,inds_r])
+            dts = self._compute_deltas(ts[:,inds_r])
+            dgs = self._compute_deltas(gs[:,inds_r])
 
-            Ug_r, Sg_r, Vg_r = tsvd(cov_eta_sqi * dgs)
-            Ks[:,:,k] = self._compute_gain(dts, Ug_r, Sg_r, Vg_r, 
-                                           cov_eta_sqi, l)
+            Ug_r, Sg_r, Vg_r = tsvd(self.lik.cov_inv_sq * dgs)
+            Ks[:,:,k] = self._compute_gain(dts, Ug_r, Sg_r, Vg_r, l)
             
         for (i, j) in it.product(range(self.Nt), range(self.Ng)):
             r_sq = np.mean((Ks[i, j, :] - K[i, j]) ** 2) / K[i, j] ** 2
@@ -157,98 +213,93 @@ class EnRMLProblem(EnsembleProblem):
 
         return K * loc_mat
 
-    def run(self, i_max, gamma, l_min, max_cuts):
+    def run(self, i_max, gamma, l_min, max_cuts, 
+            ds_min = 0.01, dt_min = 0.1):
 
-        ds_min = 0.01
-        dt_min = 0.01
+        # NOTE: This isn't needed for current problem because it is just the identity
+        cov_sc_sqi = np.diag((1.0 / np.diag(self.pri.cov)) ** 0.25)
 
-        ts = np.zeros((self.Nt, self.Ne, i_max+1))
-        fs = np.zeros((self.Nf, self.Ne, i_max+1))
-        gs = np.zeros((self.Ng, self.Ne, i_max+1))
+        self._generate_initial_ensemble()
+        self._run_ensemble()
 
-        ss = np.zeros(i_max+1)
-        ls = np.zeros(i_max+1)
+        ys_p = self.lik.sample(self.Ne)
 
-        cov_eta_sqi = np.sqrt(np.linalg.inv(self.likelihood.cov))
-        cov_sc_i = np.diag((1.0 / np.diag(self.prior.cov)) ** 0.25)
+        s = self._compute_S()
+        l = 10 ** np.floor(np.log10(s / (2 * self.Ny)))
 
-        ts[:,:,0] = self.prior.sample(self.Ne)
-        ys_p = self.likelihood.sample(self.Ne)
-        fs[:,:,0], gs[:,:,0] = self._run_ensemble(ts[:,:,0])
+        self.ss.append(s)
+        self.ls.append(l)
 
-        ss[0] = self._calculate_s(gs[:,:,1], ys_p, cov_eta_sqi)
-        ls[0] = 10 ** np.floor(np.log10(ss[0] / (2 * self.Ny)))
-
-        dts_prior = self._calculate_deltas(ts[:,:,0])
-        Ut_p, St_p, _ = tsvd(cov_sc_i * dts_prior)
+        dts_prior = self._compute_deltas(self.ts[0])
+        Ut_p, St_p, _ = tsvd(cov_sc_sqi @ dts_prior)
 
         i = 0
         n_cuts = 0
 
         while i < i_max:
 
-            dts = self._calculate_deltas(ts[:,:,i])
-            dgs = self._calculate_deltas(gs[:,:,i])
+            dts = self._compute_deltas(self.ts[-1])
+            dgs = self._compute_deltas(self.gs[-1])
 
-            Ug, Sg, Vg = tsvd(cov_eta_sqi * dgs)
+            Ug, Sg, Vg = tsvd(self.lik.cov_inv_sq @ dgs)
 
-            K = self._compute_gain(dts, Ug, Sg, Vg, cov_eta_sqi, ls[i])
+            K = self._compute_gain(dts, Ug, Sg, Vg, self.ls[-1])
             
             # TODO: localise
 
-            # Calculate corrections based on prior deviations
             dt_prior = dts @ Vg @ \
-                np.diag((ls[i] + 1.0 + Sg ** 2) ** -1) @ \
-                Vg.T @ dts.T @ cov_sc_i @ Ut_p @ \
-                np.diag(1.0 / St_p ** 2) @ Ut_p.T @ cov_sc_i @ \
-                (ts[:,:,i] - ts[:,:,0])
+                np.diag((self.ls[-1] + 1.0 + Sg ** 2) ** -1) @ \
+                Vg.T @ dts.T @ cov_sc_sqi @ Ut_p @ \
+                np.diag(1.0 / St_p ** 2) @ Ut_p.T @ cov_sc_sqi @ \
+                (self.ts[-1] - self.ts[0])
 
-            # Calculate corrections based on data misfit
-            dt_lik = K @ (fs[:,:,i] - ys_p) 
+            dt_lik = K @ (self.gs[-1] - ys_p) 
 
-            ts[:,:,i+1] = ts[:,:,i] - dt_prior - dt_lik
-            fs[:,:,i+1], gs[:,:,i+1] = self._run_ensemble(ts[:,:,i+1])
-            ss[i+1] = self._calculate_s(gs[:,:,i+1], ys_p, cov_eta_sqi)
+            self.ts.append(self.ts[-1] - dt_prior - dt_lik)
+            self._run_ensemble()
+            self.ss.append(self._compute_S(self.gs[-1]))
 
-            if ss[i+1] <= ss[i]:
+            if self.ss[-1] <= self.ss[-2]:
 
                 n_cuts = 0
-                ds = 1-ss[i+1]/ss[i]
-                dt_max = self._calculate_dt_max(ts[:,:,i+1], ts[:,:,i])
+                ds = 1.0 - (self.ss[-1]/self.ss[-2])
+                dt_max = self._compute_dt_max()
 
-                utils.info(f"Δs: {ds} | Δθ_max: {dt_max}")
+                utils.info(f"ds: {ds:.2%} | ds_max: {dt_max:.2f}")
 
                 # Check for convergence
                 if (ds <= ds_min) and (dt_max <= dt_min):
-                    self.results = {"ts": ts[:,:,1:i+1], "fs": fs[:,:,1:i+1], 
-                                    "gs": gs[:,:,1:i+1], "ss": ss[1:i+1], 
-                                    "inds": self.ensemble_inds}
                     return
                 
                 i += 1
-                ls[i] = np.max(ls[i-1]/gamma, l_min)
-                utils.info(f"Step accepted. λ is now {ls[i]}.")
+                self.ls.append(max(self.ls[-1]/gamma, l_min))
+                utils.info(f"Step accepted. λ is now {self.ls[-1]}.")
                 
             else:
 
                 n_cuts += 1
                 if n_cuts == max_cuts:
                     utils.info("Maximum number of failed steps reached.")
-                    self.results = {"ts": ts[:,:,1:i], "fs": fs[:,:,1:i], 
-                                    "gs": gs[:,:,1:i], "ss": ss[1:i], 
-                                    "inds": self.ensemble_inds}
                     return
 
-                ls[i] *= gamma
-                utils.info(f"Step rejected. λ is now f{ls[i]}.")
+                # Remove all the stuff corresponding to the failed step
+                self.ts.pop()
+                self.gs.pop()
+                self.fs.pop()
+                self.ss.pop()
+                self.ls[-1] *= gamma
+                utils.info(f"Step rejected. λ is now {self.ls[-1]}.")
 
-        self.results = {"ts": ts[:,:,1:i], "fs": fs[:,:,1:i],
-                        "gs": gs[:,:,1:i], "ss": ss[1:i], 
-                        "inds": self.ensemble_inds}
         return
 
 
-def tsvd(A):
-    # TODO: make into tsvd...?
+def tsvd(A, energy=0.99):
+
     U, S, Vt = np.linalg.svd(A, full_matrices=False)
-    return U, S, Vt.T
+
+    S_cum = np.cumsum(S)
+    for (i, c) in enumerate(S_cum):
+        if c / S_cum[-1] >= energy:
+            return U[:, :i], S[:i], Vt.T[:, :i]
+        
+    raise Exception("Error in TSVD function.")

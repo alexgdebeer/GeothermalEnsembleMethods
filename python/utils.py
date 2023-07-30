@@ -1,4 +1,6 @@
+import functools
 import json
+import time
 
 BLUE = "\033[94m"
 YELLOW = "\033[93m"
@@ -9,6 +11,16 @@ def info(msg):
 
 def warn(msg):
     print(f"{YELLOW}[Warning]{END_COLOUR} {msg}")
+
+def timer(func):
+    @functools.wraps(func)
+    def wrapper_timer(*args, **kwargs):
+        t0 = time.perf_counter()
+        value = func(*args, **kwargs)
+        t1 = time.perf_counter()
+        info(f"Finished in {(t1-t0):.1f} seconds.")
+        return value
+    return wrapper_timer
 
 def load_json(fname):
     with open(fname, "r") as f:

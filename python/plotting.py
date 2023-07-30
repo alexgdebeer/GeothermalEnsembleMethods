@@ -12,10 +12,10 @@ sns.axes_style("whitegrid")
 
 np.random.seed(1)
 
-plot_model_grid = True
-plot_logks_prior = True
-plot_truth = True
-plot_ensemble_results = True
+plot_model_grid = False
+plot_logks_prior = False
+plot_truth = False
+plot_ensemble_results = False
 
 logkmin = -16.5
 logkmax = -13.0
@@ -110,10 +110,10 @@ if plot_truth:
 
 if plot_ensemble_results:
 
-    with h5py.File("data/mda_test.h5", "r") as f:
+    with h5py.File("data/mda_test_2.h5", "r") as f:
         inds = f["inds"]
-        ts = f["ts"][:,inds,-1]
-        fs = f["fs"][:,inds,-1]
+        ts = f["ts"][-1][:,inds]
+        fs = f["fs"][-1][:,inds]
 
     ks_trans = np.array([prior.transform(t)[0] for t in ts.T]).T
     qs_trans = np.array([prior.transform(t)[1] for t in ts.T])
@@ -129,11 +129,8 @@ if plot_ensemble_results:
 
     fig, axes = plt.subplots(nrows=1, ncols=5, figsize=(15, 3))
 
-    plot_truth = axes[0].pcolormesh(mesh.xs, mesh.zs, logks_t, 
-                                    cmap="turbo", vmin=logkmin, vmax=logkmax)
-    
-    plot_mu = axes[1].pcolormesh(mesh.xs, mesh.zs, mu_post,
-                                 cmap="turbo", vmin=logkmin, vmax=logkmax)
+    plot_tr = axes[0].pcolormesh(mesh.xs, mesh.zs, logks_t, cmap="turbo", vmin=logkmin, vmax=logkmax)
+    plot_mu = axes[1].pcolormesh(mesh.xs, mesh.zs, mu_post, cmap="turbo", vmin=logkmin, vmax=logkmax)
 
     in_range = (q_lower <= logks_t) & (logks_t <= q_upper)
     p3 = axes[2].pcolormesh(mesh.xs, mesh.zs, std_post, cmap="turbo")
@@ -149,7 +146,7 @@ if plot_ensemble_results:
     axes[1].set_title("Mean", fontsize=16)
     axes[2].set_title("Standard deviations", fontsize=16)
     axes[3].set_title("In central 95\% of ensemble?", fontsize=16)
-    axes[4].set_title("Mean - 3SD", fontsize=16)
+    axes[4].set_title("Upflow distribution", fontsize=16)
 
     axes[0].set_ylabel("ES-MDA")
 
@@ -166,7 +163,16 @@ if plot_ensemble_results:
 #     ts = f["ts"][:,inds,-1]
 #     fs = f["fs"][:,inds,-1]
 
+with h5py.File("data/mda_test_2.h5", "r") as f:
+    fs = f["fs"][0][:, f["inds"]]
 
+for f_i in fs.T:
+    ts, ps, es = unpack_data_raw(f_i)
+    plt.plot(ps[:,2])
+
+ts, ps, es = unpack_data_raw(f_t)
+plt.plot(ps[:,2])
+plt.show()
 
 # plt.plot(es_t.T)
 # plt.show()

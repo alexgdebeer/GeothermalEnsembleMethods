@@ -1,10 +1,9 @@
+import ensemble_methods as em
 import scipy.sparse as sparse
 
 from setup import *
-from ensemble_methods import EnsembleProblem
 
-Ni = 4
-Ne = 25
+Ne = 50
 
 # Define localisation matrix
 loc_mat = sparse.block_diag((
@@ -15,7 +14,7 @@ loc_mat = sparse.block_diag((
     [1.0]
 )).toarray()
 
-prob = EnsembleProblem(f, g, prior, likelihood, Nf, Ne)
+prob = em.ESMDAProblem(f, g, prior, likelihood, Nf, Ne)
 
-prob.run_es_mda(Ni)
-prob.save_results(fname="data/mda_test")
+prob.run()
+prob.save_results(fname="data/mda_50_noloc")

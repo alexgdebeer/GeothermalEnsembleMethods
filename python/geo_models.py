@@ -5,7 +5,6 @@ import layermesh.mesh as lm
 import numpy as np
 import os
 import pywaiwera
-import time
 import yaml
 
 import utils
@@ -37,8 +36,7 @@ MSG_ABORTED = ["warn", "timestep", "aborted"]
 
 class ExitFlag(Enum):
     SUCCESS = 1
-    MAX_ITS = 2
-    ABORTED = 3
+    FAILURE = 2
 
 
 class Mesh():
@@ -71,12 +69,11 @@ class Mesh():
         self.xs = np.array([c.centre[0] for c in self.m.column])
         self.zs = np.array([l.centre for l in self.m.layer])
 
-    def write_to_file(self):
-        
-        if os.path.exists(f"{self.name}.msh"):
-            utils.info("Mesh already written to file.")
-            return
+        if not os.path.exists(f"{self.name}.msh"):
+            utils.info("Writing mesh to file...")
+            self.write_to_file()
 
+    def write_to_file(self):
         self.m.write(f"{self.name}.h5")
         self.m.export(f"{self.name}.msh", fmt="gmsh22")
 
@@ -266,28 +263,17 @@ class Model():
 
         utils.save_json(self.pr_model, f"{self.pr_path}.json")
 
-    def run(self, timed=True):
-
-        if timed:
-            t0 = time.time()
+    @utils.timer
+    def run(self):
 
         env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
         env.run_waiwera(f"{self.ns_path}.json", noupdate=True)
+        
         flag = self._get_exitflag(self.ns_path)
-
-        if timed: 
-            t1 = time.time()
-            utils.info(f"NS simulation finished in {round(t1-t0, 2)} seconds.")
-
-        if flag != ExitFlag.SUCCESS: 
+        if flag == ExitFlag.FAILURE: 
             return flag
 
         env.run_waiwera(f"{self.pr_path}.json", noupdate=True)
-
-        if timed: 
-            t2 = time.time()
-            utils.info(f"PR simulation finished in {round(t2-t1, 2)} seconds.")
-
         return self._get_exitflag(self.pr_path)
 
     def _get_exitflag(self, log_path):
@@ -297,19 +283,16 @@ class Model():
 
         for msg in log[:-50:-1]:
 
-            if msg[:3] == MSG_END_TIME:
-                return ExitFlag.SUCCESS
-            
-            elif msg[:3] == MSG_MAX_STEP:
+            if msg[:3] in [MSG_END_TIME, MSG_MAX_STEP]:
                 return ExitFlag.SUCCESS
 
             elif msg[:3] == MSG_MAX_ITS:
                 utils.warn("Simulation failed (max iterations).")
-                return ExitFlag.MAX_ITS
+                return ExitFlag.FAILURE
 
             elif msg[:3] == MSG_ABORTED:
                 utils.warn("Simulation failed (aborted).")
-                return ExitFlag.ABORTED
+                return ExitFlag.FAILURE
 
         raise Exception(f"Unknown exit condition. Check {log_path}.yaml.")
 
@@ -328,6 +311,6 @@ class Model():
             es = [e[src_inds][-len(self.feedzones):] 
                   for e in f["source_fields"]["source_enthalpy"]]
 
-        return np.concatenate((np.array(ts).flatten(order="F"), 
-                               np.array(ps).flatten(order="F"), 
-                               np.array(es).flatten(order="F")))
+        return np.concatenate((np.array(ts).flatten(), 
+                               np.array(ps).flatten(), 
+                               np.array(es).flatten()))
