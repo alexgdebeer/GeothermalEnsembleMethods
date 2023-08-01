@@ -1,11 +1,5 @@
-models/
-results/
-*.jld2
+__pycache__
+.DS_Store
 
 .cid
 .idcheck
-.dockerignore
-
-.DS_Store
-
-Manifest.toml
