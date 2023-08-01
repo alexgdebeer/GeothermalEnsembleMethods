@@ -20,6 +20,8 @@ struct GeothermalPrior <: Prior
     ys::AbstractVector
     cxs::AbstractVector
     cys::AbstractVector
+    cxs_shal::AbstractVector 
+    cys_shal::AbstractVector
     cxs_deep::AbstractVector 
     cys_deep::AbstractVector
 
@@ -70,7 +72,11 @@ struct GeothermalPrior <: Prior
             fill(μ_perm_deep, Nis_deep)
         )
 
-        Γ_depth_clay = generate_cov(xs, xs, k_depth_clay)
+        ds = (xs .- xs').^2 ./ k_depth_clay.γ^2
+        Γ_depth_clay = k_depth_clay.σ^2 * exp.(-0.5ds)
+        Γ_depth_clay += 1.0e-8 * Diagonal(diag(Γ_depth_clay))
+
+        # Γ_depth_clay = generate_cov(xs, xs, k_depth_clay)
         Γ_perm_shal = generate_cov(cxs[is_shal], cys[is_shal], k_perm_shal)
         Γ_perm_clay = generate_cov(cxs[is_deep], cys[is_deep], k_perm_clay)
         Γ_perm_deep = generate_cov(cxs[is_deep], cys[is_deep], k_perm_deep)
@@ -87,14 +93,16 @@ struct GeothermalPrior <: Prior
         dist = MvNormal(μ, Γ)
         mass_rate_dist = Normal()
 
+        cxs_shal = cxs[is_shal]
+        cys_shal = cys[is_shal]
         cxs_deep = cxs[is_deep]
         cys_deep = cys[is_deep]
 
         Nθ = length(μ)
 
         return new(
-            mass_rate_bnds, mass_rate_dist, level_width, 
-            μ, Γ, L, dist, xs, ys, cxs, cys, cxs_deep, cys_deep, 
+            mass_rate_bnds, mass_rate_dist, level_width, μ, Γ, L, dist, 
+            xs, ys, cxs, cys, cxs_shal, cys_shal, cxs_deep, cys_deep, 
             Nx, Nθ, Nis_shal, Nis_deep
         )
 

@@ -97,7 +97,7 @@ PyPlot.clf()
 
 PyPlot.figure(figsize=(6, 6))
 
-well_num = 2
+well_num = 3
 
 enthalpies_t = get_raw_enthalpies(us_t, inds_es_raw, nfz, nt)
 enthalpies_obs = reshape(us_o[inds_es_obs], nfz, nt_obs)
@@ -119,6 +119,96 @@ PyPlot.ylabel("Enthalpy [kJ/kg]", fontsize=14)
 
 #PyPlot.tight_layout()
 PyPlot.savefig("plots/enthalpies.pdf")
+
+# ----------------
+# Pressure plotting
+# ----------------
+
+PyPlot.figure(figsize=(6, 6))
+
+well_num = 3
+
+pressures_t = get_raw_pressures(us_t, inds_ps_raw, nfz, nt)
+pressures_obs = reshape(us_o[inds_ps_obs], nfz, nt_obs)
+
+pressures_t = pressures_t[well_num, :]
+pressures_obs = pressures_obs[well_num, :]
+
+pressures_ensemble = reduce(hcat, [
+    get_raw_pressures(fs[:,i,end], inds_ps_raw, nfz, nt)[well_num, :] 
+        for i ∈ inds])
+
+PyPlot.plot(ts ./ SECS_PER_MONTH, pressures_ensemble ./ 1e6, zorder=1, color="royalblue")
+PyPlot.plot(ts ./ SECS_PER_MONTH, pressures_t ./ 1e6, zorder=2, color="k", linewidth=2)
+PyPlot.scatter(ts[t_obs] ./ SECS_PER_MONTH, pressures_obs ./ 1e6, zorder=3, color="k")
+
+PyPlot.gca().set_box_aspect(1)
+PyPlot.xlabel("Time [months]", fontsize=14)
+PyPlot.ylabel("Pressure [MPa]", fontsize=14)
+
+#PyPlot.tight_layout()
+PyPlot.savefig("plots/pressures.pdf")
+
+# ----------------
+# Stuff for Ru
+# ----------------
+
+# fig, ax = PyPlot.subplots()
+
+# n = Normal()
+
+# mass_rates_pri = [mass_rate_bnds[1] + (mass_rate_bnds[2]-mass_rate_bnds[1]) * cdf(n, θ) for θ ∈ θs[1,inds,1]]
+# mass_rates_post = [mass_rate_bnds[1] + (mass_rate_bnds[2]-mass_rate_bnds[1]) * cdf(n, θ) for θ ∈ θs[1,inds,end]]
+
+# mass_rate_t = mass_rate_bnds[1] + (mass_rate_bnds[2]-mass_rate_bnds[1]) * cdf(n, θs_t[1])
+
+# ax.hist(mass_rates_pri, bins=0.1:0.005:0.2, density=true, alpha=0.8, label="Prior")
+# ax.hist(mass_rates_post, bins=0.1:0.005:0.2, density=true, alpha=0.8, label="Posterior")
+# ax.axvline(mass_rate_t, color="k", label="Truth")
+
+# ax.set_title("Prior and posterior mass flow rates")
+# ax.set_xlabel("Mass rate [kg/s]")
+# ax.set_ylabel("Density")
+
+# PyPlot.legend()
+# PyPlot.tight_layout()
+# PyPlot.savefig("plots/mass_rates.pdf")
+
+fig, axes = PyPlot.subplots(nrows=1, ncols=5, figsize=(15, 3))
+
+p1 = axes[1].pcolormesh(xs, zs, rotl90(logks_t), cmap="turbo", vmin=kmin, vmax=kmax)
+p2 = axes[2].pcolormesh(xs, zs, rotl90(μ_post), cmap="turbo", vmin=kmin, vmax=kmax)
+p3 = axes[3].pcolormesh(xs, zs, rotl90(σ_post), cmap="turbo")
+p4 = axes[4].pcolormesh(xs, zs, rotl90(μ_post .+ 3σ_post), cmap="turbo", vmin=kmin, vmax=kmax)
+p5 = axes[5].pcolormesh(xs, zs, rotl90(μ_post .- 3σ_post), cmap="turbo", vmin=kmin, vmax=kmax)
+
+perm_label = "log(Permeability) [log(m"*L"^2"*")]"
+
+c1 = fig.colorbar(p1, ax=axes[1], shrink=0.8)
+c2 = fig.colorbar(p2, ax=axes[2], shrink=0.8)
+c3 = fig.colorbar(p3, ax=axes[3], shrink=0.8)
+c4 = fig.colorbar(p4, ax=axes[4], shrink=0.8)
+c5 = fig.colorbar(p5, ax=axes[5], shrink=0.8)
+
+axes[1].set_title("Truth")
+axes[2].set_title("Mean")
+axes[3].set_title("Standard deviations")
+axes[4].set_title("Mean + 3SD")
+axes[5].set_title("Mean - 3SD")
+
+c1.set_label(perm_label, fontsize=12)
+c2.set_label(perm_label, fontsize=12)
+c3.set_label(perm_label, fontsize=12)
+c4.set_label(perm_label, fontsize=12)
+c5.set_label(perm_label, fontsize=12)
+
+for ax ∈ axes 
+    ax.set_aspect(1)
+    ax.axis("off")
+end
+
+PyPlot.tight_layout()
+PyPlot.savefig("plots/mda.pdf")
 
 # fnames = [
 #     "mda_25_4_no_loc.jld2",
