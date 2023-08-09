@@ -464,7 +464,7 @@ for alg in ALG_DATA:
     cov_ts = np.cov(ts_e)
     cov_ts += 1e-10 * np.diag(np.diag(cov_ts))
 
-    cov_inv = np.linalg.inv(cov_ts) # Unstable??
+    cov_inv = np.linalg.inv(cov_ts) # Unstable?
     m_d = np.sqrt((ts_t - mu).T @ cov_inv @ (ts_t - mu))
 
     print(f"{alg}: {m_d}")
