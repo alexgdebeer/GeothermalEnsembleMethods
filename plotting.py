@@ -32,6 +32,7 @@ PLOT_PREDICTIONS = True
 PLOT_UPFLOWS = True
 PLOT_TRANSIENT_DATA = True
 PLOT_ENSEMBLE = True
+CALC_MAHALANOBIS_DISTS = False
 
 LOGK_MIN = -16.5
 LOGK_MAX = -13.0
@@ -451,20 +452,22 @@ if PLOT_ENSEMBLE:
     plt.clf()
 
 
-ts_t = np.concatenate((logks_t.flatten(), [q_t]))
+if CALC_MAHALANOBIS_DISTS:
 
-for alg in ALG_DATA:
+    ts_t = np.concatenate((logks_t.flatten(), [q_t]))
 
-    mu = np.concatenate((ALG_DATA[alg]["mu_post"].flatten(), [np.mean(ALG_DATA[alg]["qs"])]))
+    for alg in ALG_DATA:
 
-    ts_e = np.concatenate((
-        ALG_DATA[alg]["logks"],
-        ALG_DATA[alg]["qs"][np.newaxis, :]))
+        mu = np.concatenate((ALG_DATA[alg]["mu_post"].flatten(), [np.mean(ALG_DATA[alg]["qs"])]))
 
-    cov_ts = np.cov(ts_e)
-    cov_ts += 1e-10 * np.diag(np.diag(cov_ts))
+        ts_e = np.concatenate((
+            ALG_DATA[alg]["logks"],
+            ALG_DATA[alg]["qs"][np.newaxis, :]))
 
-    cov_inv = np.linalg.inv(cov_ts) # Unstable?
-    m_d = np.sqrt((ts_t - mu).T @ cov_inv @ (ts_t - mu))
+        cov_ts = np.cov(ts_e)
+        cov_ts += 1e-10 * np.diag(np.diag(cov_ts))
 
-    print(f"{alg}: {m_d}")
+        cov_inv = np.linalg.inv(cov_ts) # Unstable?
+        m_d = np.sqrt((ts_t - mu).T @ cov_inv @ (ts_t - mu))
+
+        print(f"{alg}: {m_d}")
