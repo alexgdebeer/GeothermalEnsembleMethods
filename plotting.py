@@ -23,15 +23,15 @@ CMAP_BINARY = ListedColormap(["crimson", "lightgrey"])
 CMAP_TEST = ListedColormap(["whitesmoke", "gainsboro", "silver"])
 
 READ_DATA = True
-PLOT_MESH = False
-PLOT_SAMPLES = False
-PLOT_TRUTH = False
-PLOT_POSTERIORS = False
-PLOT_INTERVALS = False
-PLOT_PREDICTIONS = False
-PLOT_UPFLOWS = False
-PLOT_TRANSIENT_DATA = False
-PLOT_ENSEMBLE = False
+PLOT_MESH = True
+PLOT_SAMPLES = True
+PLOT_TRUTH = True
+PLOT_POSTERIORS = True
+PLOT_INTERVALS = True
+PLOT_PREDICTIONS = True
+PLOT_UPFLOWS = True
+PLOT_TRANSIENT_DATA = True
+PLOT_ENSEMBLE = True
 
 LOGK_MIN = -16.5
 LOGK_MAX = -13.0
@@ -346,7 +346,7 @@ if PLOT_UPFLOWS:
         sns.histplot(ALG_DATA[alg]["qs"], ax=axes[i], 
                      binwidth=0.01, stat="density", 
                      color="orange", edgecolor="darkorange", 
-                     alpha=0.6, binrange=mass_rate_bounds)
+                     binrange=mass_rate_bounds)
         
         axes[i].axvline(q_t, color="k", linewidth=1.5)
 
@@ -362,7 +362,7 @@ if PLOT_UPFLOWS:
         ax.tick_params(labelsize=TICK_SIZE)
 
     legend_elements = [
-        Patch(facecolor="orange", edgecolor="darkorange", alpha=0.6, label="Ensemble"),
+        Patch(facecolor="orange", edgecolor="darkorange", label="Ensemble"),
         Line2D([0], [0], c="k", label="Truth")
     ]
 
@@ -383,9 +383,9 @@ if PLOT_TRANSIENT_DATA:
     for j, alg in enumerate(ALG_DATA):
 
         axes[0][j].plot(ALG_DATA[alg]["ps"] / 1e+6, color="royalblue", 
-                        zorder=1, linewidth=1.0, alpha=0.6)
+                        zorder=1, linewidth=1.0)
         axes[1][j].plot(ALG_DATA[alg]["es"] / 1e+3, color="seagreen", 
-                        zorder=1, linewidth=1.0, alpha=0.6)
+                        zorder=1, linewidth=1.0)
 
         axes[0][j].plot(PS_T / 1e+6, color="k", linewidth=1.5, zorder=2)
         axes[1][j].plot(ES_T / 1e+3, color="k", linewidth=1.5, zorder=2)
