@@ -3,7 +3,7 @@ import scipy.sparse as sparse
 
 from setup import *
 
-Ne = 25
+Ne = 100
 
 # # Define localisation matrix
 # loc_mat = sparse.block_diag((
@@ -17,7 +17,7 @@ Ne = 25
 #     [1.0]
 # )).toarray()
 
-prob = em.ESMDAProblem(f, g, prior, likelihood, Nf, Ne)#, loc_type="linearised", loc_mat=loc_mat)
+prob = em.ESMDAProblem(f, g, prior, likelihood, Nf, Ne, loc_type="cycle")#, loc_mat=loc_mat)
 
 prob.run()
-prob.save_results(fname=f"data/mda_{Ne}")
+prob.save_results(fname=f"data/mda_{Ne}_cycle")
