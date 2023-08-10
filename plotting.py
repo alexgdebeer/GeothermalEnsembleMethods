@@ -10,14 +10,16 @@ import seaborn as sns
 
 from setup import *
 
-# plt.rc("text", usetex=True)
-sns.set_style("whitegrid", {"font.family": "serif", "grid.linestyle": ""})
+sns.set_style("whitegrid", {"grid.linestyle": ""})
+plt.rc("text", usetex=True)
+plt.rc("font", family="serif")
 
 np.random.seed(1)
 
-TICK_SIZE = 10
-LABEL_SIZE = 12
 TITLE_SIZE = 14
+LABEL_SIZE = 12
+LEGEND_SIZE = 12
+TICK_SIZE = 10
 
 CMAP_BINARY = ListedColormap(["crimson", "lightgrey"])
 CMAP_TEST = ListedColormap(["whitesmoke", "gainsboro", "silver"])
@@ -208,13 +210,14 @@ if PLOT_MESH:
         Patch(facecolor="silver", edgecolor="darkgrey", label="$\Omega_{1}$"),
         Patch(facecolor="gainsboro", edgecolor="darkgrey", label="$\Omega_{2}$"),
         Patch(facecolor="whitesmoke", edgecolor="darkgrey", label="$\Omega_{3}$"),
-        Line2D([0], [0], color="k", linestyle=(0, (5, 1)), label="$\omega_{1}(x)$"),
-        Line2D([0], [0], color="k", label="$\omega_{2}(x)$"),
-        Line2D([0], [0], color="royalblue", label="Well tracks"),
-        Line2D([0], [0], color="royalblue", marker="o", markersize=5, linestyle="", label="Feedzones"),
+        Line2D([0], [0], c="k", ls=(0, (5, 1)), label="$\omega_{1}(x)$"),
+        Line2D([0], [0], c="k", label="$\omega_{2}(x)$"),
+        Line2D([0], [0], c="royalblue", label="Well tracks"),
+        Line2D([0], [0], c="royalblue", marker="o", ms=5, ls="", label="Feedzones"),
     ]
 
-    ax.legend(handles=legend_elements, bbox_to_anchor=(1.55, 0.80), frameon=False, fontsize=TICK_SIZE)
+    ax.legend(handles=legend_elements, bbox_to_anchor=(1.55, 0.80), 
+              frameon=False, fontsize=TICK_SIZE)
 
     for s in ax.spines.values():
         s.set_edgecolor("darkgrey")
@@ -311,9 +314,7 @@ if PLOT_INTERVALS:
                              sharex=True, sharey=True)
 
     for i, alg in enumerate(ALG_DATA):
-
         axes[i].set_title(alg, fontsize=TITLE_SIZE)
-
         axes[i].pcolormesh(
             mesh.xs, mesh.zs, ALG_DATA[alg]["in_range"],
             cmap=CMAP_BINARY)
@@ -328,7 +329,7 @@ if PLOT_INTERVALS:
     ]
 
     fig.legend(handles=legend_elements, loc="center", bbox_to_anchor=(0.50, 0.08), 
-               frameon=False, ncols=len(legend_elements), fontsize=TICK_SIZE)
+               frameon=False, ncols=len(legend_elements), fontsize=LEGEND_SIZE)
 
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.15)
@@ -347,7 +348,7 @@ if PLOT_UPFLOWS:
 
         axes[i].hist(ALG_DATA[alg]["qs"], 
                      bins=bins, density=True, 
-                     color="orange", edgecolor="darkorange")
+                     color="gold", edgecolor="darkorange")
         
         axes[i].axvline(q_t, color="k", linewidth=1.5)
 
@@ -363,12 +364,12 @@ if PLOT_UPFLOWS:
         ax.tick_params(labelsize=TICK_SIZE)
 
     legend_elements = [
-        Patch(facecolor="orange", edgecolor="darkorange", label="Ensemble"),
+        Patch(facecolor="gold", edgecolor="darkorange", label="Ensemble"),
         Line2D([0], [0], c="k", label="Truth")
     ]
 
     fig.legend(handles=legend_elements, loc="center", bbox_to_anchor=(0.50, 0.05), 
-               frameon=False, ncols=len(legend_elements), fontsize=TICK_SIZE)
+               frameon=False, ncols=len(legend_elements), fontsize=LEGEND_SIZE)
 
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.15)
@@ -423,7 +424,7 @@ if PLOT_TRANSIENT_DATA:
     ]
 
     fig.legend(handles=legend_elements, loc="center", bbox_to_anchor=(0.5, 0.05), 
-               frameon=False, ncols=len(legend_elements), fontsize=TICK_SIZE)
+               frameon=False, ncols=len(legend_elements), fontsize=LEGEND_SIZE)
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.15)
     plt.savefig("plots/transient_data.pdf")
