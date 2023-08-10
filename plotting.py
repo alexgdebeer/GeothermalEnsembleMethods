@@ -10,7 +10,7 @@ import seaborn as sns
 
 from setup import *
 
-plt.rc("text", usetex=True)
+# plt.rc("text", usetex=True)
 sns.set_style("whitegrid", {"font.family": "serif", "grid.linestyle": ""})
 
 np.random.seed(1)
@@ -336,18 +336,18 @@ if PLOT_INTERVALS:
     plt.clf()
 
 
-
 if PLOT_UPFLOWS:
 
     fig, axes = plt.subplots(nrows=1, ncols=N_ALGS, 
                              figsize=(11, 3.0), sharey=True)
 
+    bins = np.linspace(*mass_rate_bounds, 11)
+
     for i, alg in enumerate(ALG_DATA):
 
-        sns.histplot(ALG_DATA[alg]["qs"], ax=axes[i], 
-                     binwidth=0.01, stat="density", 
-                     color="orange", edgecolor="darkorange", 
-                     binrange=mass_rate_bounds)
+        axes[i].hist(ALG_DATA[alg]["qs"], 
+                     bins=bins, density=True, 
+                     color="orange", edgecolor="darkorange")
         
         axes[i].axvline(q_t, color="k", linewidth=1.5)
 
