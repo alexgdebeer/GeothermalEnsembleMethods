@@ -1,14 +1,16 @@
+import itertools as it
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy import linalg
 from scipy import sparse
+from scipy import spatial
 
 np.random.seed(0)
 
-SAMPLE_1D = False
-SAMPLE_2D = False
-SAMPLE_2D_ANISOTROPIC = False
-SAMPLE_FEM = True
+SAMPLE_1D = True
+SAMPLE_2D = True
+SAMPLE_2D_ANISOTROPIC = True
+SAMPLE_FEM = False
 
 # TODO: benchmark on something
 # TODO: use non-periodic finite difference boundary conditions
@@ -103,10 +105,6 @@ if SAMPLE_2D_ANISOTROPIC:
     plt.show()
 
 
-import skfem as fm
-from skfem.helpers import dot, grad
-from skfem.visuals.matplotlib import plot
-
 # TODO: compute redo manually and compute integrals numerically
 
 if SAMPLE_FEM:
@@ -114,50 +112,45 @@ if SAMPLE_FEM:
     alpha = 1.0
     l = 0.5
 
-    @fm.BilinearForm
-    def m(phi, varphi, _):
-        return phi * varphi
-    
-    @fm.BilinearForm
-    def s(phi, varphi, _):
-        return dot(grad(phi), grad(varphi))
+    xs = np.linspace(0, 10, 11)
+    ys = np.linspace(0, 10, 11)
 
-    @fm.BilinearForm
-    def g(phi, varphi, _):
-        return phi * varphi
+    mesh = spatial.Delaunay([(x, y) for x in xs for y in ys])
 
-    # Generate mesh
-    mesh = fm.MeshTri().refined(5)
+    # Row and column in the matrix for each basis function
+    A = sparse.lil_matrix((mesh.npoints, mesh.npoints))
 
-    # Define a basis
-    Vh = fm.Basis(mesh, fm.ElementTriP1())
+    # Iterate through the simplices
+    for i, simplex in enumerate(mesh.simplices):
+        
+        points = mesh.points[simplex, :]
 
-    # Assemble matrices
-    M = m.assemble(Vh)
-    S = s.assemble(Vh)
-    G = g.assemble(Vh)
+        # Iterate through each pair of coordinates in the simplex
+        for j in range(3):
 
-    H = M + l**2 * S 
-    G = alpha * l**2 * G
+            # Extract the index of the point under consideration
+            pj = simplex[j]
 
-    H_inv = sparse.linalg.inv(H)
+            # Generate the transformation matrix
+            T = np.delete(points, j, axis=0).T # TODO: check by hand that this is actually working
+            dT = np.abs(np.linalg.det(T))
 
-    mu = np.zeros((M.shape[0], ))
-    cov = H_inv @ G @ H_inv
-    cov = cov.toarray()
+            for k in range(3): 
+                
+                pk = simplex[k]
 
-    # G_inv = sparse.linalg.inv(G)
-    # R = linalg.cholesky(G_inv.toarray())
+                integral = 1/12 if j == k else 1/24
+                A[pj, pk] += dT * integral
 
-    print(cov.shape)
 
-    ws = np.random.multivariate_normal(mean=mu, cov=cov)
-    nx = int(np.sqrt(len(ws)))
+    # Each row of the matrix corresponds to a node 
+    # For each node, locate its neighbours -- these will be the non-zero elements of the matrix
+    # Extract the coordinates of the simplex each pair of nodes is part of
+    # Generate mapping to standard triangle
+    # Evaluate integral of basis functions corresponding to the two points over the standardised triangle
+    # Transform to get original triangle
 
-    d = np.diag(cov)
-
-    # Generate mesh
-    plt.pcolormesh(cov)
+    spatial.delaunay_plot_2d(mesh)
     plt.show()
 
     pass
