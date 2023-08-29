@@ -1,16 +1,16 @@
-import itertools as it
+from collections import deque
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy import linalg
 from scipy import sparse
 from scipy import spatial
+from scipy.special import gamma
 
-np.random.seed(0)
+# np.random.seed(0)
 
-SAMPLE_1D = True
-SAMPLE_2D = True
-SAMPLE_2D_ANISOTROPIC = True
-SAMPLE_FEM = False
+SAMPLE_1D = False
+SAMPLE_2D = False
+SAMPLE_2D_ANISOTROPIC = False
+SAMPLE_FEM = True
 
 # TODO: benchmark on something
 # TODO: use non-periodic finite difference boundary conditions
@@ -105,52 +105,91 @@ if SAMPLE_2D_ANISOTROPIC:
     plt.show()
 
 
-# TODO: compute redo manually and compute integrals numerically
+# TODO: compare to the ACF
+# Implement Robin condition and compare with 
+# Figure out how to do this the way in Chada (2018)?
+# Circular mesh?
 
 if SAMPLE_FEM:
 
-    alpha = 1.0
-    l = 0.5
+    # Define number of spatial dimensions of problem and smoothness parameter
+    d = 2
+    eta = 2 - d/2.0
 
-    xs = np.linspace(0, 10, 11)
-    ys = np.linspace(0, 10, 11)
+    # Define lengthscale and standard deviation
+    l = 2.0
+    sigma = 1.0
+    alpha = sigma**2 * (2**d * np.pi**(d/2) * gamma(eta + d/2)) / gamma(eta)
+
+    xs = np.linspace(1, 10, 40)
+    ys = np.linspace(1, 10, 40)
 
     mesh = spatial.Delaunay([(x, y) for x in xs for y in ys])
 
+    # Define gradients of basis functions in transformed simplex
+    gradients = np.array([[-1.0, -1.0], [1.0, 0.0], [0.0, 1.0]])
+
     # Row and column in the matrix for each basis function
-    A = sparse.lil_matrix((mesh.npoints, mesh.npoints))
+    M = sparse.lil_matrix((mesh.npoints, mesh.npoints))
+    S = sparse.lil_matrix((mesh.npoints, mesh.npoints))
 
-    # Iterate through the simplices
-    for i, simplex in enumerate(mesh.simplices):
+    for element in mesh.simplices:
         
-        points = mesh.points[simplex, :]
+        # Extract the global indices of the points on the current simplex
+        nodes = mesh.points[element, :]
 
-        # Iterate through each pair of coordinates in the simplex
-        for j in range(3):
+        inds = deque([0, 1, 2])
 
-            # Extract the index of the point under consideration
-            pj = simplex[j]
+        for _ in range(3):
 
-            # Generate the transformation matrix
-            T = np.delete(points, j, axis=0).T # TODO: check by hand that this is actually working
-            dT = np.abs(np.linalg.det(T))
+            # Extract the global index of the current point
+            pi = element[inds[0]]
+            
+            # Generate transformation matrix
+            T = np.array([nodes[inds[1]] - nodes[inds[0]],
+                          nodes[inds[2]] - nodes[inds[0]]]).T
+        
+            # Compute the absolute value of the determinant 
+            detT = np.abs(np.linalg.det(T))
 
-            for k in range(3): 
-                
-                pk = simplex[k]
+            for j in range(3):
 
-                integral = 1/12 if j == k else 1/24
-                A[pj, pk] += dT * integral
+                # Find the global index of point k
+                pj = element[inds[j]]
 
+                # Add the inner product of the basis functions of nodes i and j
+                # to the M matrix
+                M[pi, pj] += detT * (1/12 if j == 0 else 1/24) # TODO: tidy
 
-    # Each row of the matrix corresponds to a node 
-    # For each node, locate its neighbours -- these will be the non-zero elements of the matrix
-    # Extract the coordinates of the simplex each pair of nodes is part of
-    # Generate mapping to standard triangle
-    # Evaluate integral of basis functions corresponding to the two points over the standardised triangle
-    # Transform to get original triangle
+                # Add the inner product of the gradients of the basis functions 
+                # of points i and j over the current element to the S matrix
+                S[pi, pj] += detT * 0.5 * \
+                    gradients[0] @ np.linalg.inv(T.T @ T) @ gradients[j].T
 
-    spatial.delaunay_plot_2d(mesh)
+            # Rotate the simplex
+            inds.rotate(-1)
+
+    H = (M + l**2 * S).toarray()
+
+    G = alpha * l ** 2 * M
+
+    # plt.spy(G[0:50, 0:50])
+    # plt.show()
+
+    mu = np.zeros((mesh.npoints, ))
+
+    W = np.random.multivariate_normal(mean=mu, cov=G.toarray())
+
+    # print(np.max(np.abs(G.T - G)))
+
+    X = np.linalg.solve(H, W)
+    X = np.reshape(X, (len(xs), len(ys)))
+
+    plt.pcolormesh(xs, ys, X)
+    plt.colorbar()
     plt.show()
+
+    # spatial.delaunay_plot_2d(mesh)
+    # plt.show()
 
     pass
