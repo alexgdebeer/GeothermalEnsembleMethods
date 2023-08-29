@@ -4,6 +4,9 @@ from matplotlib import pyplot as plt
 from scipy import sparse
 from scipy.special import gamma
 
+from skfem import Basis, ElementTriP1, MeshTri
+from skfem.visuals.matplotlib import plot
+
 np.random.seed(0)
 
 SAMPLE_1D = False
@@ -105,11 +108,7 @@ if SAMPLE_2D_ANISOTROPIC:
 
 
 # TODO: compare to the ACF
-# Implement Robin condition and compare with 
-# Figure out how to do this the way in Chada (2018)?
-
-from skfem import MeshTri, Basis, ElementTriP1
-from skfem.visuals.matplotlib import plot
+# TODO: figure out how to do this the way in Chada (2018)?
 
 if SAMPLE_FEM:
 
@@ -122,7 +121,7 @@ if SAMPLE_FEM:
     sigma = 1.0
     alpha = sigma**2 * (2**d * np.pi**(d/2) * gamma(eta + d/2)) / gamma(eta)
 
-    mesh = MeshTri.init_circle(6)
+    mesh = MeshTri.init_circle(5)
     basis = Basis(mesh, ElementTriP1())
 
     npoints = mesh.nvertices
@@ -163,7 +162,7 @@ if SAMPLE_FEM:
 
                 # Add the inner product of the basis functions of nodes i and j
                 # to the M matrix
-                M[pi, pj] += detT * (1/12 if j == 0 else 1/24) # TODO: tidy
+                M[pi, pj] += detT * (1/12 if pi == pj else 1/24) # TODO: tidy
 
                 # Add the inner product of the gradients of the basis functions 
                 # of points i and j over the current element to the S matrix
@@ -177,15 +176,15 @@ if SAMPLE_FEM:
             # Rotate the simplex
             inds.rotate(-1)
 
-    lam = 1.42 * l
+    lam = 1.42 * l * 1e6
 
     # TODO: can I avoid the toarray?
-    H = (M + l**2 * S + (l**2 / lam) * N).toarray()
+    H = (M + l**2 * S + (l**2 / lam) * N)
     G = alpha * l ** 2 * M
     L = np.linalg.cholesky(G.toarray())
 
     W = np.random.normal(loc=0.0, scale=1.0, size=npoints)
-    plot(mesh, np.linalg.solve(H, L.T @ W), colorbar=True)
+    plot(mesh, sparse.linalg.spsolve(H, L.T @ W), colorbar=True)
     plt.show()
 
     nruns = 1000
@@ -195,7 +194,7 @@ if SAMPLE_FEM:
     for i in range(nruns):
 
         W = np.random.normal(loc=0.0, scale=1.0, size=npoints)
-        XS[:,i] = np.linalg.solve(H, L.T @ W)
+        XS[:,i] = sparse.linalg.spsolve(H, L.T @ W)
 
         if (i+1) % 10 == 0:
             print(f"{i+1} runs complete.")
