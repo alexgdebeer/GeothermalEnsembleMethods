@@ -2,10 +2,9 @@ from collections import deque
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy import sparse
-from scipy import spatial
 from scipy.special import gamma
 
-# np.random.seed(0)
+np.random.seed(0)
 
 SAMPLE_1D = False
 SAMPLE_2D = False
@@ -108,7 +107,9 @@ if SAMPLE_2D_ANISOTROPIC:
 # TODO: compare to the ACF
 # Implement Robin condition and compare with 
 # Figure out how to do this the way in Chada (2018)?
-# Circular mesh?
+
+from skfem import MeshTri, Basis, ElementTriP1
+from skfem.visuals.matplotlib import plot
 
 if SAMPLE_FEM:
 
@@ -117,26 +118,29 @@ if SAMPLE_FEM:
     eta = 2 - d/2.0
 
     # Define lengthscale and standard deviation
-    l = 2.0
+    l = 0.3
     sigma = 1.0
     alpha = sigma**2 * (2**d * np.pi**(d/2) * gamma(eta + d/2)) / gamma(eta)
 
-    xs = np.linspace(1, 10, 40)
-    ys = np.linspace(1, 10, 40)
+    mesh = MeshTri.init_circle(6)
+    basis = Basis(mesh, ElementTriP1())
 
-    mesh = spatial.Delaunay([(x, y) for x in xs for y in ys])
+    npoints = mesh.nvertices
+    elements = mesh.t.T
+    points = mesh.p.T
+    boundary_nodes = set(mesh.boundary_nodes())
 
     # Define gradients of basis functions in transformed simplex
     gradients = np.array([[-1.0, -1.0], [1.0, 0.0], [0.0, 1.0]])
 
-    # Row and column in the matrix for each basis function
-    M = sparse.lil_matrix((mesh.npoints, mesh.npoints))
-    S = sparse.lil_matrix((mesh.npoints, mesh.npoints))
+    M = sparse.lil_matrix((npoints, npoints))
+    S = sparse.lil_matrix((npoints, npoints))
+    N = sparse.lil_matrix((npoints, npoints))
 
-    for element in mesh.simplices:
+    for element in elements:
         
         # Extract the global indices of the points on the current simplex
-        nodes = mesh.points[element, :]
+        nodes = points[element, :]
 
         inds = deque([0, 1, 2])
 
@@ -165,28 +169,38 @@ if SAMPLE_FEM:
                 # of points i and j over the current element to the S matrix
                 S[pi, pj] += detT * 0.5 * \
                     gradients[0] @ np.linalg.inv(T.T @ T) @ gradients[j].T
+                
+                # Neumann boundary stuff
+                if pi in boundary_nodes and pj in boundary_nodes and pi != pj:
+                    N[pi, pj] += np.linalg.norm(points[pi] - points[pj]) / 6
 
             # Rotate the simplex
             inds.rotate(-1)
 
-    H = (M + l**2 * S).toarray()
+    lam = 1.42 * l
 
+    # TODO: can I avoid the toarray?
+    H = (M + l**2 * S + (l**2 / lam) * N).toarray()
     G = alpha * l ** 2 * M
+    L = np.linalg.cholesky(G.toarray())
 
-    # plt.spy(G[0:50, 0:50])
-    # plt.show()
+    W = np.random.normal(loc=0.0, scale=1.0, size=npoints)
+    plot(mesh, np.linalg.solve(H, L.T @ W), colorbar=True)
+    plt.show()
 
-    mu = np.zeros((mesh.npoints, ))
+    nruns = 1000
 
-    W = np.random.multivariate_normal(mean=mu, cov=G.toarray())
+    XS = np.zeros((npoints, nruns))
 
-    # print(np.max(np.abs(G.T - G)))
+    for i in range(nruns):
 
-    X = np.linalg.solve(H, W)
-    X = np.reshape(X, (len(xs), len(ys)))
+        W = np.random.normal(loc=0.0, scale=1.0, size=npoints)
+        XS[:,i] = np.linalg.solve(H, L.T @ W)
 
-    plt.pcolormesh(xs, ys, X)
-    plt.colorbar()
+        if (i+1) % 10 == 0:
+            print(f"{i+1} runs complete.")
+
+    plot(mesh, np.std(XS, axis=1), colorbar=True, vmin=0, vmax=2)
     plt.show()
 
     # spatial.delaunay_plot_2d(mesh)
