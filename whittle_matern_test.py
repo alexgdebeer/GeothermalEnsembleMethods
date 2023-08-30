@@ -9,6 +9,9 @@ from skfem.visuals.matplotlib import plot
 
 np.random.seed(0)
 
+plt.rc("text", usetex=True)
+plt.rc("font", family="serif")
+
 SAMPLE_1D = False
 SAMPLE_2D = False
 SAMPLE_2D_ANISOTROPIC = False
@@ -114,14 +117,14 @@ if SAMPLE_FEM:
 
     # Define number of spatial dimensions of problem and smoothness parameter
     d = 2
-    eta = 2 - d/2.0
+    nu = 2 - d/2.0
 
     # Define lengthscale and standard deviation
     l = 0.3
     sigma = 1.0
-    alpha = sigma**2 * (2**d * np.pi**(d/2) * gamma(eta + d/2)) / gamma(eta)
+    alpha = sigma**2 * (2**d * np.pi**(d/2) * gamma(nu + d/2)) / gamma(nu)
 
-    mesh = MeshTri.init_circle(5)
+    mesh = MeshTri.init_circle(6)
     basis = Basis(mesh, ElementTriP1())
 
     npoints = mesh.nvertices
@@ -176,31 +179,83 @@ if SAMPLE_FEM:
             # Rotate the simplex
             inds.rotate(-1)
 
-    lam = 1.42 * l * 1e6
+    PLOT_SAMPLES = True
+    PLOT_BOUNDARIES = False
 
-    # TODO: can I avoid the toarray?
-    H = (M + l**2 * S + (l**2 / lam) * N)
-    G = alpha * l ** 2 * M
-    L = np.linalg.cholesky(G.toarray())
+    if PLOT_SAMPLES:
 
-    W = np.random.normal(loc=0.0, scale=1.0, size=npoints)
-    plot(mesh, sparse.linalg.spsolve(H, L.T @ W), colorbar=True)
-    plt.show()
-
-    nruns = 1000
-
-    XS = np.zeros((npoints, nruns))
-
-    for i in range(nruns):
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(6, 6))
 
         W = np.random.normal(loc=0.0, scale=1.0, size=npoints)
-        XS[:,i] = sparse.linalg.spsolve(H, L.T @ W)
 
-        if (i+1) % 10 == 0:
-            print(f"{i+1} runs complete.")
+        for l, ax in zip([0.05, 0.1, 0.25, 0.5], axes.flat):
 
-    plot(mesh, np.std(XS, axis=1), colorbar=True, vmin=0, vmax=2)
-    plt.show()
+            lam = 1.42 * l
+
+            H = M + l**2 * S + (l**2 / lam) * N
+            G = alpha * l ** 2 * M
+            L = np.linalg.cholesky(G.toarray()) # TODO: sparse Cholesky?
+
+            X = sparse.linalg.spsolve(H, L.T @ W)
+
+            plot(mesh, X, ax=ax)
+            ax.axis("off")
+            ax.set_aspect("equal", "box")
+            ax.set_title(f"$l$ = {l}")
+
+        plt.savefig("samples.pdf")
+
+    if PLOT_BOUNDARIES:
+
+        nruns = 1000
+
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(6, 3))
+
+        # Neumann
+        H = M + l**2 * S
+        G = alpha * l ** 2 * M 
+        L = np.linalg.cholesky(G.toarray()) # TODO: sparse Cholesky?
+        XS = np.zeros((npoints, nruns))
+
+        for i in range(nruns):
+
+            W = np.random.normal(loc=0.0, scale=1.0, size=npoints)
+            XS[:,i] = sparse.linalg.spsolve(H, L.T @ W)
+
+            if (i+1) % 10 == 0:
+                print(f"{i+1} runs complete.")
+
+        stds = np.std(XS, axis=1)
+        plot(mesh, stds, ax=axes[0], colorbar=True, vmin=0, vmax=2)
+
+        # Robin
+        lam = 1.42 * l
+
+        H = M + l**2 * S + (l**2 / lam) * N
+        G = alpha * l ** 2 * M
+        L = np.linalg.cholesky(G.toarray()) # TODO: sparse Cholesky?
+        XS = np.zeros((npoints, nruns))
+
+        for i in range(nruns):
+
+            W = np.random.normal(loc=0.0, scale=1.0, size=npoints)
+            XS[:,i] = sparse.linalg.spsolve(H, L.T @ W)
+
+            if (i+1) % 10 == 0:
+                print(f"{i+1} runs complete.")
+
+        stds = np.std(XS, axis=1)
+        plot(mesh, stds, ax=axes[1], colorbar=True, vmin=0, vmax=2)
+
+        axes[0].axis("off")
+        axes[1].axis("off")
+        axes[0].set_aspect("equal", "box")
+        axes[1].set_aspect("equal", "box")
+        axes[0].set_title("Neumann")
+        axes[1].set_title("Robin")
+
+        plt.savefig("boundary_condition_comparison.pdf")
+
 
     # spatial.delaunay_plot_2d(mesh)
     # plt.show()
