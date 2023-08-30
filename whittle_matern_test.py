@@ -117,14 +117,14 @@ if SAMPLE_FEM:
 
     # Define number of spatial dimensions of problem and smoothness parameter
     d = 2
-    nu = 2 - d/2.0
+    nu = 2 - d/2.0 + 0.5
 
     # Define lengthscale and standard deviation
     l = 0.3
     sigma = 1.0
-    alpha = sigma**2 * (2**d * np.pi**(d/2) * gamma(nu + d/2)) / gamma(nu)
+    alpha = sigma**2 * (2**d * np.pi**(d/2) * gamma(nu + d/2.0)) / gamma(nu)
 
-    mesh = MeshTri.init_circle(6)
+    mesh = MeshTri.init_circle(5)
     basis = Basis(mesh, ElementTriP1())
 
     npoints = mesh.nvertices
@@ -193,6 +193,16 @@ if SAMPLE_FEM:
             lam = 1.42 * l
 
             H = M + l**2 * S + (l**2 / lam) * N
+
+            # Eigendecomposition of H (TODO: clean up)
+            V1, V2 = np.linalg.eigh(H.toarray())
+            Q = V2 @ np.diag(np.power(V1, 0.5 * (nu + d/2))) @ V2.T
+            H = sparse.csr_matrix(Q)
+
+            # Set very small values to 0
+            H.data[np.abs(H.data) < 1e-10] = 0
+            H.eliminate_zeros()
+
             G = alpha * l ** 2 * M
             L = np.linalg.cholesky(G.toarray()) # TODO: sparse Cholesky?
 
@@ -203,7 +213,7 @@ if SAMPLE_FEM:
             ax.set_aspect("equal", "box")
             ax.set_title(f"$l$ = {l}")
 
-        plt.savefig("samples.pdf")
+        plt.savefig("samples2.pdf")
 
     if PLOT_BOUNDARIES:
 
