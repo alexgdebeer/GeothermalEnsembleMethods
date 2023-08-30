@@ -129,7 +129,7 @@ if SAMPLE_FEM:
 
     npoints = mesh.nvertices
     elements = mesh.t.T
-    points = mesh.p.T
+    nodes = mesh.p.T
     boundary_nodes = set(mesh.boundary_nodes())
 
     # Define gradients of basis functions in transformed simplex
@@ -141,8 +141,8 @@ if SAMPLE_FEM:
 
     for element in elements:
         
-        # Extract the global indices of the points on the current simplex
-        nodes = points[element, :]
+        # Extract the global indices of the nodes of the current element
+        nodes_e = nodes[element, :]
 
         inds = deque([0, 1, 2])
 
@@ -152,8 +152,8 @@ if SAMPLE_FEM:
             pi = element[inds[0]]
             
             # Generate transformation matrix
-            T = np.array([nodes[inds[1]] - nodes[inds[0]],
-                          nodes[inds[2]] - nodes[inds[0]]]).T
+            T = np.array([nodes_e[inds[1]] - nodes_e[inds[0]],
+                          nodes_e[inds[2]] - nodes_e[inds[0]]]).T
         
             # Compute the absolute value of the determinant 
             detT = np.abs(np.linalg.det(T))
@@ -174,7 +174,7 @@ if SAMPLE_FEM:
                 
                 # Neumann boundary stuff
                 if pi in boundary_nodes and pj in boundary_nodes and pi != pj:
-                    N[pi, pj] += np.linalg.norm(points[pi] - points[pj]) / 6
+                    N[pi, pj] += np.linalg.norm(nodes[pi] - nodes[pj]) / 6
 
             # Rotate the simplex
             inds.rotate(-1)
