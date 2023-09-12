@@ -1,5 +1,6 @@
 import numpy as np
 from t2grids import mulgrid
+
 np.random.seed(0)
 
 MESH_NAME = "models/channel/gCH"
