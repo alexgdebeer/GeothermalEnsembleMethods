@@ -299,10 +299,10 @@ class MaternField3D():
         elif bcs == "neumann":
             self.H = self.M + K
         
-        # TEMP: calculate empirical standard deviations
-        inv_H = np.linalg.inv(self.H.toarray())
-        cov = alpha * lx * ly * lz * inv_H @ self.M.toarray() @ inv_H.T
-        return np.sqrt(np.diag(cov))
+        # # TEMP: calculate empirical standard deviations
+        # inv_H = np.linalg.inv(self.H.toarray())
+        # cov = alpha * lx * ly * lz * inv_H @ self.M.toarray() @ inv_H.T
+        # return np.sqrt(np.diag(cov))
 
         b = np.sqrt(alpha * lx * ly * lz) * self.L.T @ W
         X = linalg.spsolve(self.H, b)
@@ -315,123 +315,3 @@ class MaternField3D():
 
     def slice_plot(self, values, **kwargs):
         self.geo.slice_plot(value=self.B@values, **kwargs)
-
-def generate_fem_matrices_2D(points, elements, boundary_facets):
-    """
-    Builds the FEM matrices required for generating Matern fields in two
-    dimensions.
-
-    Parameters:
-    ----------------
-    points: np.ndarray 
-        Array of point locations. The ith row contains the coordinates of 
-        point i.
-    elements: np.ndarray 
-        Array of indices of points in each element. The ith row contains the 
-        indices of the points of element i.
-    boundary_facets: np.ndarray
-        Array of indices of points on each facet that makes up the boundary.
-
-    Returns:
-    ----------------
-    M: scipy.sparse.lil_matrix
-        Mass matrix.
-    Kx: scipy.sparse.lil_matrix
-        Contributions to stiffness matrix in the x direction.
-    Ky: scipy.sparse.lil_matrix
-        Contributions to stiffness matrix in the y direction.
-    N: scipy.sparse.lil_matrix
-        Inner products of each pair of basis functions over the mesh boundary
-        (used when implementing Robin boundary conditions).
-    """
-    
-    n_points = len(points)
-
-    M = sparse.lil_matrix((n_points, n_points))
-    Kx = sparse.lil_matrix((n_points, n_points))
-    Ky = sparse.lil_matrix((n_points, n_points))
-    N = sparse.lil_matrix((n_points, n_points))
-
-    for e in elements:        
-        
-        for i in range(3):
-            
-            T = np.array([points[e[(i+1)%3]] - points[e[i]],
-                          points[e[(i+2)%3]] - points[e[i]]]).T
-            detT = np.abs(np.linalg.det(T))
-            invT = np.linalg.inv(T)
-
-            for j in range(3):
-                
-                if i == j:
-                    M[e[i], e[j]] += detT * 1/12
-                else: 
-                    M[e[i], e[j]] += detT * 1/24
-
-                kl = 1/2 * detT * GRAD_2D[:, 0].T @ invT 
-                kr = invT.T @ GRAD_2D[:, (j-i)%3]
-
-                Kx[e[i], e[j]] += kl.flat[0] * kr.flat[0]
-                Ky[e[i], e[j]] += kl.flat[1] * kr.flat[1]
-
-    for (pi, pj) in boundary_facets:
-        n = np.linalg.norm(points[pi] - points[pj])
-        N[pi, pi] += n * 1/3
-        N[pj, pj] += n * 1/3
-        N[pi, pj] += n * 1/6
-        N[pj, pi] += n * 1/6
-
-    return M, Kx, Ky, N
-
-
-def generate_fem_matrices_3D(points, elements, boundary_facets):
-    """Builds the FEM matrices required to generate Matern fields in three 
-    dimensions."""
-
-    n_points = len(points)
-
-    M = sparse.lil_matrix((n_points, n_points))
-    Kx = sparse.lil_matrix((n_points, n_points))
-    Ky = sparse.lil_matrix((n_points, n_points))
-    Kz = sparse.lil_matrix((n_points, n_points))
-    N = sparse.lil_matrix((n_points, n_points))
-
-    for e in elements:
-
-        for i in range(4):
-
-            T = np.array([points[e[(i+1)%4]] - points[e[i]],
-                          points[e[(i+2)%4]] - points[e[i]],
-                          points[e[(i+3)%4]] - points[e[i]]]).T
-
-            detT = np.abs(np.linalg.det(T))
-            invT = np.linalg.inv(T)
-
-            for j in range(4):
-                
-                if i == j: 
-                    M[e[i], e[j]] += detT * 1/60
-                else: 
-                    M[e[i], e[j]] += detT * 1/120
-
-                kl = 1/6 * detT * GRAD_3D[:, 0].T @ invT 
-                kr = invT.T @ GRAD_3D[:, (j-i)%4]
-
-                Kx[e[i], e[j]] += kl.flat[0] * kr.flat[0]
-                Ky[e[i], e[j]] += kl.flat[1] * kr.flat[1]
-                Kz[e[i], e[j]] += kl.flat[2] * kr.flat[2]
-    
-    for f in boundary_facets:
-
-        for i in range(3):
-
-            detTb = np.linalg.norm(np.cross(points[f[(i+1)%3]] - points[f[i]], 
-                                            points[f[(i+2)%3]] - points[f[i]]))
-
-            for j in range(3):
-                if i == j:
-                    N[f[i], f[j]] += detTb * 1/12
-                else:
-                    N[f[i], f[j]] += detTb * 1/24
-
-    return M, Kx, Ky, Kz, N
