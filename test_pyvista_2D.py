@@ -7,7 +7,7 @@ MESH_PATH = "models/channel/gCH"
 
 geo = lm.mesh(f"{MESH_PATH}.h5")
 mesh = pv.PolyData([[*col.centre, 0.0] for col in geo.column]).delaunay_2d()
-# mesh = pv.UnstructuredGrid("test/mesh_tri.msh").delaunay_2d().scale(10)
+# mesh = pv.UnstructuredGrid("models/test/mesh_tri.msh").delaunay_2d().scale(10)
 
 matern_field = MaternField2D(geo, mesh)
 

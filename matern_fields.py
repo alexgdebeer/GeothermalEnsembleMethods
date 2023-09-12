@@ -5,7 +5,6 @@ from scipy.special import gamma
 import pyvista as pv
 import utils
 
-# Gradients of basis functions
 GRAD_2D = np.array([[-1.0, 1.0, 0.0], 
                     [-1.0, 0.0, 1.0]])
 
@@ -32,7 +31,6 @@ class MaternField2D():
 
         self.mesh["point_inds"] = np.arange(self.mesh.n_points, dtype=np.int64)
 
-        self.n_points = self.mesh.n_points
         self.points = self.mesh.points[:, :2]
         self.elements = self.mesh.regular_faces
 
@@ -44,6 +42,10 @@ class MaternField2D():
         boundary_points = boundary.cast_to_pointset()["point_inds"]
         boundary_facets = boundary.lines.reshape(-1, 3)[:, 1:]
         self.boundary_facets = [boundary_points[f] for f in boundary_facets]
+        
+        self.n_points = self.mesh.n_points
+        self.n_elements = self.mesh.n_cells
+        self.n_boundary_facets = len(self.boundary_facets)
 
     def build_fem_matrices(self):
         """Builds the FEM matrices required for generating Matern fields in two
@@ -51,11 +53,19 @@ class MaternField2D():
 
         utils.info("Constructing FEM matrices...")
 
-        M = sparse.lil_matrix((self.n_points, self.n_points))
-        Kx = sparse.lil_matrix((self.n_points, self.n_points))
-        Ky = sparse.lil_matrix((self.n_points, self.n_points))
-        N = sparse.lil_matrix((self.n_points, self.n_points))
+        M_i = np.zeros((9 * self.n_elements, ))
+        M_j = np.zeros((9 * self.n_elements, ))
+        M_v = np.zeros((9 * self.n_elements, ))
 
+        K_i = np.zeros((9 * self.n_elements, ))
+        K_j = np.zeros((9 * self.n_elements, ))
+        K_v = np.zeros((2, 9 * self.n_elements))
+
+        N_i = np.zeros((4 * self.n_boundary_facets, ))
+        N_j = np.zeros((4 * self.n_boundary_facets, ))
+        N_v = np.zeros((4 * self.n_boundary_facets, ))
+
+        n = 0
         for e in self.elements:
             
             for i in range(3):
@@ -66,30 +76,39 @@ class MaternField2D():
                 invT = np.linalg.inv(T)
 
                 for j in range(3):
-                    
-                    if i == j:
-                        M[e[i], e[j]] += detT * 1/12
-                    else: 
-                        M[e[i], e[j]] += detT * 1/24
+
+                    M_i[n] = e[i]
+                    M_j[n] = e[j]
+                    M_v[n] = (detT * 1/12) if i == j else (detT * 1/24)
 
                     kl = 1/2 * detT * GRAD_2D[:, 0].T @ invT 
                     kr = invT.T @ GRAD_2D[:, (j-i)%3]
 
-                    Kx[e[i], e[j]] += kl.flat[0] * kr.flat[0]
-                    Ky[e[i], e[j]] += kl.flat[1] * kr.flat[1]
+                    K_i[n] = e[i]
+                    K_j[n] = e[j]
+                    K_v[:, n] = kl.flatten() * kr.flatten()
 
+                    n += 1
+
+        n = 0
         for (fi, fj) in self.boundary_facets:
-            n = np.linalg.norm(self.points[fi] - self.points[fj])
-            N[fi, fi] += n * 1/3
-            N[fj, fj] += n * 1/3
-            N[fi, fj] += n * 1/6
-            N[fj, fi] += n * 1/6
+            
+            det = np.linalg.norm(self.points[fi] - self.points[fj])
 
-        self.M = M
-        self.L = np.linalg.cholesky(M.toarray()) # TODO: sparse cholesky?
-        self.Kx = Kx 
-        self.Ky = Ky
-        self.N = N
+            N_i[n:n+4] = np.array([fi, fj, fi, fj])
+            N_j[n:n+4] = np.array([fi, fj, fj, fi])
+            N_v[n:n+4] = np.array([det * 1/3, det * 1/3, det * 1/6, det * 1/6])
+
+            n += 4
+
+        shape = (self.n_points, self.n_points)
+
+        self.M = sparse.coo_matrix((M_v, (M_i, M_j)), shape=shape)
+        self.Kx = sparse.coo_matrix((K_v[0], (K_i, K_j)), shape=shape)
+        self.Ky = sparse.coo_matrix((K_v[1], (K_i, K_j)), shape=shape)
+        self.N = sparse.coo_matrix((N_v, (N_i, N_j)), shape=shape)
+
+        self.L = np.linalg.cholesky(self.M.toarray())
 
         utils.info("FEM matrices constructed.")
 
@@ -151,7 +170,6 @@ class MaternField3D():
 
         self.mesh["point_inds"] = np.arange(self.mesh.n_points, dtype=np.int64)
 
-        self.n_points = self.mesh.n_points 
         self.points = self.mesh.points 
         self.elements = self.mesh.cells_dict[10]
 
@@ -160,18 +178,29 @@ class MaternField3D():
         boundary_facets = boundary.faces.reshape(-1, 4)[:, 1:]
         self.boundary_facets = [boundary_points[f] for f in boundary_facets]
 
+        self.n_points = self.mesh.n_points 
+        self.n_elements = self.mesh.n_cells
+        self.n_boundary_facets = len(self.boundary_facets)
+
     def build_fem_matrices(self):
         """Builds the FEM matrices required to generate Matern fields in three 
         dimensions."""
 
         utils.info("Constructing FEM matrices...")
 
-        M = sparse.lil_matrix((self.n_points, self.n_points))
-        Kx = sparse.lil_matrix((self.n_points, self.n_points))
-        Ky = sparse.lil_matrix((self.n_points, self.n_points))
-        Kz = sparse.lil_matrix((self.n_points, self.n_points))
-        N = sparse.lil_matrix((self.n_points, self.n_points))
+        M_i = np.zeros((16 * self.n_elements, ))
+        M_j = np.zeros((16 * self.n_elements, ))
+        M_v = np.zeros((16 * self.n_elements, ))
 
+        K_i = np.zeros((16 * self.n_elements, ))
+        K_j = np.zeros((16 * self.n_elements, ))
+        K_v = np.zeros((3, 16 * self.n_elements))
+
+        N_i = np.zeros((9 * self.n_boundary_facets, ))
+        N_j = np.zeros((9 * self.n_boundary_facets, ))
+        N_v = np.zeros((9 * self.n_boundary_facets, ))
+
+        n = 0
         for e in self.elements:
 
             for i in range(4):
@@ -185,37 +214,43 @@ class MaternField3D():
 
                 for j in range(4):
                     
-                    if i == j: 
-                        M[e[i], e[j]] += detT * 1/60
-                    else: 
-                        M[e[i], e[j]] += detT * 1/120
+                    M_i[n] = e[i]
+                    M_j[n] = e[j]
+                    M_v[n] = (detT * 1/60) if i == j else (detT * 1/120)
 
                     kl = 1/6 * detT * GRAD_3D[:, 0].T @ invT 
                     kr = invT.T @ GRAD_3D[:, (j-i)%4]
 
-                    Kx[e[i], e[j]] += kl.flat[0] * kr.flat[0]
-                    Ky[e[i], e[j]] += kl.flat[1] * kr.flat[1]
-                    Kz[e[i], e[j]] += kl.flat[2] * kr.flat[2]
+                    K_i[n] = e[i]
+                    K_j[n] = e[j]
+                    K_v[:, n] = kl.flatten() * kr.flatten()
+
+                    n += 1
         
+        n = 0
         for f in self.boundary_facets:
 
             for i in range(3):
                 
-                detTb = np.linalg.norm(np.cross(self.points[f[(i+1)%3]] - self.points[f[i]], 
+                detTf = np.linalg.norm(np.cross(self.points[f[(i+1)%3]] - self.points[f[i]], 
                                                 self.points[f[(i+2)%3]] - self.points[f[i]]))
 
                 for j in range(3):
-                    if i == j:
-                        N[f[i], f[j]] += detTb * 1/12
-                    else:
-                        N[f[i], f[j]] += detTb * 1/24
+                    
+                    N_i[n] = f[i]
+                    N_j[n] = f[j]
+                    N_v[n] = (detTf * 1/12) if i == j else (detTf * 1/24)
 
-        self.M = M
-        self.L = np.linalg.cholesky(M.toarray())
-        self.Kx = Kx
-        self.Ky = Ky 
-        self.Kz = Kz 
-        self.N = N
+                    n += 1
+
+        shape = (self.n_points, self.n_points)
+
+        self.M = sparse.coo_matrix((M_v, (M_i, M_j)), shape=shape)
+        self.Kx = sparse.coo_matrix((K_v[0], (K_i, K_j)), shape=shape)
+        self.Ky = sparse.coo_matrix((K_v[1], (K_i, K_j)), shape=shape)
+        self.Kz = sparse.coo_matrix((K_v[2], (K_i, K_j)), shape=shape)
+        self.N = sparse.coo_matrix((N_v, (N_i, N_j)), shape=shape)
+        self.L = np.linalg.cholesky(self.M.toarray())
 
         utils.info("FEM matrices constructed.")
 
@@ -245,7 +280,7 @@ class MaternField3D():
 
         self.B = B
 
-        utils.info("geo to mesh mapping constructed.")
+        utils.info("Mapping from geo to mesh constructed.")
 
     def generate_field(self, W, sigma, lx, ly, lz, bcs="robin", lam=None):
         """Generates a Matern field."""
@@ -264,10 +299,10 @@ class MaternField3D():
         elif bcs == "neumann":
             self.H = self.M + K
         
-        # # TEMP: calculate empirical standard deviations
-        # inv_H = np.linalg.inv(self.H.toarray())
-        # cov = alpha * lx * ly * lz * inv_H @ self.M.toarray() @ inv_H.T
-        # return np.sqrt(np.diag(cov))
+        # TEMP: calculate empirical standard deviations
+        inv_H = np.linalg.inv(self.H.toarray())
+        cov = alpha * lx * ly * lz * inv_H @ self.M.toarray() @ inv_H.T
+        return np.sqrt(np.diag(cov))
 
         b = np.sqrt(alpha * lx * ly * lz) * self.L.T @ W
         X = linalg.spsolve(self.H, b)
