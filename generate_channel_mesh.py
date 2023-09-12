@@ -1,28 +1,28 @@
 import numpy as np
-from t2grids import mulgrid
+from layermesh import mesh as lm
+from matplotlib import pyplot as plt
 
 np.random.seed(0)
+plt.rc("text", usetex=True)
+plt.rc("font", family="serif")
 
 MESH_NAME = "models/channel/gCH"
 
-def refine_geometry(geo, poly_to_refine, poly_inner, poly_outer):
+def refine_geometry(geo, poly_to_refine):
     """Refines the columns of the model geometry within a given polygon, then 
     optimises the node placement in the region between another two polygons."""
 
-    cols_to_refine = geo.columns_in_polygon(poly_to_refine)
+    cols_to_refine = geo.find(poly_to_refine)
     geo.refine(cols_to_refine)
 
-    nodenames_inner = [n.name for n in geo.nodes_in_polygon(poly_inner)]
-    nodenames_outer = [n.name for n in geo.nodes_in_polygon(poly_outer)]
-    nodenames = [n for n in nodenames_outer if n not in nodenames_inner]
+    triangles = geo.type_columns(3)
+    geo.optimize(columns=triangles)
 
-    geo.optimize(nodenames=nodenames)
-
-def fit_surface(geo, mu, sd, l, plot=False):
+def fit_surface(geo: lm.mesh, mu, sd, l, plot=False):
     """Generates the top surface of the model geometry using a 
     squared-exponential kernel."""
 
-    col_centres = [c.centre for c in geo.column.values()]
+    col_centres = [c.centre for c in geo.column]
 
     cxs = np.array([c[0] for c in col_centres])
     cys = np.array([c[1] for c in col_centres])
@@ -39,31 +39,30 @@ def fit_surface(geo, mu, sd, l, plot=False):
     geo.fit_surface(surf)
 
     if plot:
-        geo.layer_plot(layer=-500, variable=czs, colourmap="coolwarm")
-        geo.slice_plot()
+        geo.slice_plot(title="Slice view")
+        geo.layer_plot(title="Top view", 
+                       value=[czs[c.column.index] for c in geo.cell])
 
-def save(geo):
+def save(geo: lm.mesh):
     """Writes the model geometry to an h5 file (for use with Layermesh), a
     gmsh file (for use with Waiwera) and a vtu file (for use with PyVista)."""
 
-    geo.layermesh.write(f"{MESH_NAME}.h5")
-    geo.layermesh.export(f"{MESH_NAME}.msh", fmt="gmsh22")
-    geo.layermesh.export(f"{MESH_NAME}.vtu")
+    geo.write(f"{MESH_NAME}.h5")
+    geo.export(f"{MESH_NAME}.msh", fmt="gmsh22")
+    geo.export(f"{MESH_NAME}.vtu")
 
 xs = [100] * 15
 ys = [100] * 15
 zs = [25] * 10 + [50] * 5 + [100] * 5
 
-geo = mulgrid().rectangular(xs, ys, zs, atmos_type=1, origin=[0, 0, 0])
+geo = lm.mesh(rectangular=(xs, ys, zs))
 
-poly_to_refine = [[450, 450], [1050, 1050]]
-poly_inner = [[425, 425], [1075, 1075]]
-poly_outer = [[250, 250], [1250, 1250]]
+poly_to_refine = [(450, 450), (1050, 1050)]
 
 mu_surf = -75
 sd_surf = 30
 l_surf = 500
 
-refine_geometry(geo, poly_to_refine, poly_inner, poly_outer)
+refine_geometry(geo, poly_to_refine)
 fit_surface(geo, mu_surf, sd_surf, l_surf, plot=True)
 save(geo)
