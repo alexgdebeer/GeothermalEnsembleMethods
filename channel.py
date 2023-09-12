@@ -1,8 +1,5 @@
 import numpy as np
-import scipy.special as special
-
 from t2grids import *
-import layermesh.mesh as lm
 
 geo = mulgrid("models/channel/gCH.dat").layermesh
 

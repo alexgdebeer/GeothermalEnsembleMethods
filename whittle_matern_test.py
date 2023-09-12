@@ -112,6 +112,7 @@ if SAMPLE_2D_ANISOTROPIC:
 
 # TODO: compare to the ACF
 # TODO: figure out how to do this the way in Chada (2018)?
+# TODO: anisotropic Laplacian?
 
 if SAMPLE_FEM:
 
@@ -195,6 +196,7 @@ if SAMPLE_FEM:
             H = M + l**2 * S + (l**2 / lam) * N
 
             # Eigendecomposition of H (TODO: clean up)
+            # Can I just grab the N largest eigenpairs (for some small N?)
             V1, V2 = np.linalg.eigh(H.toarray())
             Q = V2 @ np.diag(np.power(V1, 0.5 * (nu + d/2))) @ V2.T
             H = sparse.csr_matrix(Q)
