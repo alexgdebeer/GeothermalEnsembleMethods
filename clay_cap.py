@@ -1,67 +1,72 @@
 import itertools as it
 import numpy as np
-from matplotlib import pyplot as plt
-from t2grids import *
+from layermesh import mesh as lm
+import pyvista as pv
+import utils
 
-# TODO: think about number of coefficients
-# TODO: think about correlating coefficients
-# TODO: think about adding mean or alpha as additional parameters
+MESH_NAME = "models/channel/gCH"
 
-# Define important constants
-N_TERMS = 10     # Number of terms in Fourier series to retain
+# Fourier stuff
+N_TERMS = 5
+COEF_SDS = 5
 
-WIDTH_H = 500   # Mean width in horizontal direction
-ALPHA = 1.0     # Mean width of vertical direction relative to horizontal direction
+@utils.timer
+def get_cap_radii(cell_centres, cap_centre, width_h, width_v, dip, cs):
+    """Returns the radius of the clay cap in the direction of each cell."""
 
-COEF_SDS = 1
+    ds = cell_centres - cap_centre
 
-CAP_CENTRE = np.array([750, 750, -200])
+    # Give cap a curved appearance
+    # TODO: should this be width_h, or mean(width_h)?
+    ds[:, 2] += (dip / width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
 
-A, B, C = 500, 500, 50
+    rs = np.linalg.norm(ds, axis=1)
+    phis = np.arccos(ds[:, 2] / rs)
+    thetas = np.arctan2(ds[:, 1], ds[:, 0])
 
-"""Returns the radius of the clay cap in a given direction"""
-def get_radius(phi, theta, cs):
-
-    # Compute the radius of the corresponding point on the ellipse
-    re = np.sqrt(((np.sin(phi) * np.cos(theta) / A)**2 + \
-                  (np.sin(phi) * np.sin(theta) / B)**2 + \
-                    (np.cos(phi) / C)**2) ** -1)
-
+    rs_cap = np.sqrt(((np.sin(phis) * np.cos(thetas) / width_h)**2 + \
+                      (np.sin(phis) * np.sin(thetas) / width_h)**2 + \
+                      (np.cos(phis) / width_v)**2) ** -1)
+    
     for n, m in it.product(range(N_TERMS), range(N_TERMS)):
         
-        re += cs[n, m, 0] * np.cos(n * theta) * np.cos(m * phi) + \
-              cs[n, m, 1] * np.cos(n * theta) * np.sin(m * phi) + \
-              cs[n, m, 2] * np.sin(n * theta) * np.cos(m * phi) + \
-              cs[n, m, 3] * np.sin(n * theta) * np.sin(m * phi)
+        rs_cap += cs[n, m, 0] * np.cos(n * thetas) * np.cos(m * phis) + \
+                  cs[n, m, 1] * np.cos(n * thetas) * np.sin(m * phis) + \
+                  cs[n, m, 2] * np.sin(n * thetas) * np.cos(m * phis) + \
+                  cs[n, m, 3] * np.sin(n * thetas) * np.sin(m * phis)
+        
+    cap = rs < rs_cap
+    return cap
 
-    return re 
+def plot(mesh, geo, cap):
 
-# Draw coefficients from Gaussian distribution
+    cap_mesh = np.zeros((mesh.n_cells, ))
+
+    containing_cells = mesh.find_containing_cell([c.centre for c in geo.cell])
+
+    cap_mesh[containing_cells] = cap[[c.index for c in geo.cell]]
+
+    mesh.cell_data["cap_mesh"] = cap_mesh
+    p = pv.Plotter()
+    p.add_mesh(mesh.threshold([0.9, 1.1]), cmap="coolwarm")
+    p.show()
+
+geo = lm.mesh(f"{MESH_NAME}.h5")
+mesh = pv.UnstructuredGrid(f"{MESH_NAME}.vtu")
+
+cell_centres = np.array([c.centre for c in geo.cell])
+
+cap_centre = np.array([np.random.uniform(700, 800), 
+                       np.random.uniform(700, 800),
+                       np.random.uniform(-300, -225)])
+width_h, width_v = 475, 50
+dip = np.random.uniform(50, 200) # Average difference in height between the centre of the cap and the edges 
+
+# Fourier coefficients
 cs = np.random.normal(loc=0.0, scale=COEF_SDS, size=(N_TERMS, N_TERMS, 4))
 
-# Read in mesh
-geo = mulgrid("models/channel/gCH.dat").layermesh
+cap = get_cap_radii(cell_centres, cap_centre, width_h, width_v, dip, cs)
 
-cap = np.zeros((geo.num_cells, ))
-
-for c in geo.cell:
-
-    # Get angles between cell and centre of clay cap
-    x, y, z = c.centre - CAP_CENTRE
-    z += (100 / 500**2) * (x**2 + y**2) # Give cap a curved appearance
-
-    r = np.sqrt(x**2 + y**2 + z**2)
-    phi = np.arccos(z / r)
-    theta = np.arctan2(y, x)
-    # if theta < 0: # TODO: check this fella
-    #     theta += 2 * np.pi
-
-    re = get_radius(phi, theta, cs)
-
-    if r < re:
-        cap[c.index] = 1.0
-
-    # cap[c.index] = np.sqrt(x**2 + y**2 + z**2)
-
-geo.slice_plot("y", value=cap)
-geo.layer_plot(elevation=-250, value=cap)
+plot(mesh, geo, cap)
+geo.slice_plot("y", value=cap, colourmap="coolwarm")
+# geo.layer_plot(elevation=-250, value=cap, colourmap="coolwarm")
