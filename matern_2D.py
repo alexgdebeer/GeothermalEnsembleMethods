@@ -20,7 +20,7 @@ lam = 1.42 * np.sqrt(lx * ly) # TODO: tune Robin parameter
 W = np.random.normal(loc=0.0, scale=1.0, size=matern_field.n_points)
 X = matern_field.generate_field(W, sigma, lx, ly, bcs="robin", lam=lam)
 
-matern_field.plot(show_edges=True, scalars=X, cmap="turbo")
+matern_field.plot(values=X, show_edges=True, cmap="turbo")
 matern_field.layer_plot(values=X, colourmap="turbo")
 
 # XS = np.zeros((mesh.n_points, 10_000))

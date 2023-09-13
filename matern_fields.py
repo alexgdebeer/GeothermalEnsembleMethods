@@ -29,7 +29,7 @@ class MaternField2D():
         """Extracts information on the points, elements and boundary facets 
         of the mesh."""
 
-        self.mesh["point_inds"] = np.arange(self.mesh.n_points, dtype=np.int64)
+        self.mesh["inds"] = np.arange(self.mesh.n_points, dtype=np.int64)
 
         self.points = self.mesh.points[:, :2]
         self.elements = self.mesh.regular_faces
@@ -39,7 +39,7 @@ class MaternField2D():
                                                    non_manifold_edges=False, 
                                                    manifold_edges=False)
 
-        boundary_points = boundary.cast_to_pointset()["point_inds"]
+        boundary_points = boundary.cast_to_pointset()["inds"]
         boundary_facets = boundary.lines.reshape(-1, 3)[:, 1:]
         self.boundary_facets = [boundary_points[f] for f in boundary_facets]
         
@@ -124,24 +124,24 @@ class MaternField2D():
         if bcs == "robin":
             if lam is None:
                 lam = 1.42 * np.sqrt(lx * ly)
-            self.H = self.M + K + (lx * ly / lam) * self.N 
+            A = self.M + K + (lx * ly / lam) * self.N 
 
         elif bcs == "neumann":
-            self.H = self.M + K 
+            A = self.M + K 
         
         # # TEMP: calculate empirical standard deviations
-        # inv_H = np.linalg.inv(self.H.toarray())
-        # cov = alpha * lx * ly * inv_H @ self.M.toarray() @ inv_H.T
+        # # TODO: correct marginal standard deviations?
+        # inv_A = np.linalg.inv(A.toarray())
+        # cov = alpha * lx * ly * inv_A @ self.M.toarray() @ inv_A.T
         # return np.sqrt(np.diag(cov))
-        # TODO: correct marginal standard deviations?
 
-        X = linalg.spsolve(self.H, np.sqrt(alpha * lx * ly) * self.L.T @ W)
-        return X
+        b = np.sqrt(alpha * lx * ly) * self.L.T @ W
+        return linalg.spsolve(A, b)
     
-    def plot(self, **kwargs):
+    def plot(self, values, **kwargs):
         """Generates a 3D visualisation of the mesh using PyVista."""
         p = pv.Plotter()
-        p.add_mesh(self.mesh, **kwargs)
+        p.add_mesh(self.mesh, scalars=values, **kwargs)
         p.show()
     
     def layer_plot(self, values, **kwargs):
@@ -163,18 +163,19 @@ class MaternField3D():
         self.get_mesh_data()
         self.build_fem_matrices()
         self.build_geo_to_mesh_mapping()
+        self.build_point_to_cell_mapping()
         
     def get_mesh_data(self):
         """Extracts information on the points, elements and facets of the 
         mesh."""
 
-        self.mesh["point_inds"] = np.arange(self.mesh.n_points, dtype=np.int64)
+        self.mesh["inds"] = np.arange(self.mesh.n_points, dtype=np.int64)
 
         self.points = self.mesh.points 
         self.elements = self.mesh.cells_dict[10]
 
         boundary = self.mesh.extract_geometry()
-        boundary_points = boundary.cast_to_pointset()["point_inds"]
+        boundary_points = boundary.cast_to_pointset()["inds"]
         boundary_facets = boundary.faces.reshape(-1, 4)[:, 1:]
         self.boundary_facets = [boundary_points[f] for f in boundary_facets]
 
@@ -182,6 +183,7 @@ class MaternField3D():
         self.n_elements = self.mesh.n_cells
         self.n_boundary_facets = len(self.boundary_facets)
 
+    @utils.timer
     def build_fem_matrices(self):
         """Builds the FEM matrices required to generate Matern fields in three 
         dimensions."""
@@ -258,29 +260,41 @@ class MaternField3D():
         """Generates an operator that maps the result from the FEM mesh back to 
         the cells in the model geometry."""
 
-        utils.info("Constructing geo to mesh mapping...")
+        cell_centres = [c.centre for c in self.geo.cell]
+        elements = self.mesh.find_containing_cell(cell_centres)
 
-        B = sparse.lil_matrix((self.geo.num_cells, self.mesh.n_points))
-        elements = self.mesh.find_containing_cell([c.centre for c in self.geo.cell])
+        G_i = np.array([[c.index] * 4 for c in self.geo.cell]).flatten()
+        G_j = np.array([self.elements[e] for e in elements]).flatten()
+        G_v = np.zeros((4 * self.geo.num_cells, ))
 
+        n = 0
         for c, e in zip(self.geo.cell, elements):
             
             ps = self.elements[e]
 
-            # Map cell centre back to the reference triangle
             T = np.array([self.points[ps[1]] - self.points[ps[0]],
                           self.points[ps[2]] - self.points[ps[0]],
                           self.points[ps[3]] - self.points[ps[0]]]).T
             
             x, y, z = np.linalg.inv(T) @ (c.centre - self.points[ps[0]])
-            B[c.index, ps[0]] = 1 - x - y - z
-            B[c.index, ps[1]] = x
-            B[c.index, ps[2]] = y
-            B[c.index, ps[3]] = z
+            G_v[n:n+4] = np.array([1-x-y-z, x, y, z])
+            
+            n += 4
 
-        self.B = B
+        shape = (self.geo.num_cells, self.n_points)
+        self.G = sparse.coo_matrix((G_v, (G_i, G_j)), shape=shape)
 
-        utils.info("Mapping from geo to mesh constructed.")
+    def build_point_to_cell_mapping(self):
+        """Generates an operator that maps the value at the points on the mesh 
+        to the corresponding values at the cell centres."""
+
+        P_i = np.array([[n] * 4 for n in range(self.n_elements)]).flatten()
+        P_j = np.array(self.elements).flatten()
+        P_v = np.full((4 * self.n_elements, ), 1/4)
+
+        self.P = sparse.coo_matrix((P_v, (P_i, P_j)), 
+                                   shape=(self.n_elements, self.n_points))
+
 
     def generate_field(self, W, sigma, lx, ly, lz, bcs="robin", lam=None):
         """Generates a Matern field."""
@@ -288,30 +302,33 @@ class MaternField3D():
         alpha = sigma**2 * (2**self.dim * np.pi**(self.dim/2) * \
                             gamma(self.nu + self.dim/2)) / gamma(self.nu)
 
-        # Form complete stiffness matrix
         K = lx**2 * self.Kx + ly**2 * self.Ky + lz**2 * self.Kz
         
         if bcs == "robin":
             if lam is None:
-                lam = 1.42 * np.sqrt(lx * ly * lz) # TODO: tune Robin parameter
-            self.H = self.M + K + (lx * ly * lz / lam) * self.N 
+                lam = 1.42 * np.sqrt(lx * ly * lz)
+            A = self.M + K + (lx * ly * lz / lam) * self.N 
 
         elif bcs == "neumann":
-            self.H = self.M + K
+            A = self.M + K
         
         # # TEMP: calculate empirical standard deviations
-        # inv_H = np.linalg.inv(self.H.toarray())
-        # cov = alpha * lx * ly * lz * inv_H @ self.M.toarray() @ inv_H.T
+        # inv_A = np.linalg.inv(A.toarray())
+        # cov = alpha * lx * ly * lz * inv_A @ self.M.toarray() @ inv_A.T
         # return np.sqrt(np.diag(cov))
 
         b = np.sqrt(alpha * lx * ly * lz) * self.L.T @ W
-        X = linalg.spsolve(self.H, b)
-        return X
+        return linalg.spsolve(A, b)
     
-    def plot(self, **kwargs):
+    def plot_points(self, values, **kwargs):
         p = pv.Plotter()
-        p.add_mesh(self.mesh, **kwargs)
+        p.add_mesh(self.mesh, scalars=values, **kwargs)
         p.show()
 
-    def slice_plot(self, values, **kwargs):
-        self.geo.slice_plot(value=self.B@values, **kwargs)
+    def plot_cells(self, values, **kwargs):
+        p = pv.Plotter()
+        p.add_mesh(self.mesh, scalars=self.P @ values, **kwargs)
+        p.show()
+
+    def plot_slice(self, values, **kwargs):
+        self.geo.slice_plot(value=self.G @ values, **kwargs)
