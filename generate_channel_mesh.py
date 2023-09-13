@@ -18,7 +18,7 @@ def refine_geometry(geo, poly_to_refine):
     triangles = geo.type_columns(3)
     geo.optimize(columns=triangles)
 
-def fit_surface(geo: lm.mesh, mu, sd, l, plot=False):
+def fit_surface(geo, mu, sd, l, plot=False):
     """Generates the top surface of the model geometry using a 
     squared-exponential kernel."""
 
@@ -53,14 +53,14 @@ def save(geo: lm.mesh):
 
 xs = [100] * 15
 ys = [100] * 15
-zs = [25] * 10 + [50] * 5 + [100] * 5
+zs = [25] * 16 + [50] * 4 + [100] * 4
 
 geo = lm.mesh(rectangular=(xs, ys, zs))
 
 poly_to_refine = [(450, 450), (1050, 1050)]
 
-mu_surf = -75
-sd_surf = 30
+mu_surf = -60
+sd_surf = 25
 l_surf = 500
 
 refine_geometry(geo, poly_to_refine)
