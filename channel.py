@@ -1,7 +1,7 @@
 import numpy as np
-from t2grids import *
+from layermesh import mesh as lm
 
-geo = mulgrid("models/channel/gCH.dat").layermesh
+geo = lm.mesh("models/channel/gCH.h5")
 
 cs_base = geo.layer[-1].cell
 is_base = np.array([c.index for c in cs_base])
