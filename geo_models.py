@@ -114,10 +114,10 @@ class Model():
         self.ns_model = None
         self.pr_model = None
         
-        self._generate_ns()
-        self._generate_pr()
+        self.generate_ns()
+        self.generate_pr()
 
-    def _add_boundaries(self):
+    def add_boundaries(self):
 
         self.ns_model["boundaries"] = [{
             "primary": [P_ATM, T_ATM], 
@@ -129,7 +129,7 @@ class Model():
             }
         }]
     
-    def _add_upflows(self):
+    def add_upflows(self):
 
         upflow_cells = [
             self.mesh.m.find(upflow.loc, indices=True) 
@@ -152,7 +152,7 @@ class Model():
             "cell": self.mesh.m.find(u.loc, indices=True)
         } for u in self.upflows])
 
-    def _add_rocktypes(self):
+    def add_rocktypes(self):
         
         if len(self.perms) != self.mesh.m.num_cells:
             raise Exception("Incorrect number of permeabilities.")
@@ -168,7 +168,7 @@ class Model():
             "specific_heat": SPECIFIC_HEAT
         } for c in self.mesh.m.cell]}
 
-    def _add_wells(self):
+    def add_wells(self):
 
         self.pr_model["source"].extend([{
             "component": "water",
@@ -176,7 +176,7 @@ class Model():
             "cell": self.mesh.m.find(f.loc, indices=True)
         } for f in self.feedzones])
 
-    def _add_ns_incon(self):
+    def add_ns_incon(self):
 
         if os.path.isfile(f"{self.incon_path}.h5"):
             self.ns_model["initial"] = {"filename": f"{self.incon_path}.h5"}
@@ -184,10 +184,10 @@ class Model():
             # utils.warn("Initial condition not found. Improvising...")
             self.ns_model["initial"] = {"primary": [P0, T0], "region": 1}
 
-    def _add_pr_incon(self):
+    def add_pr_incon(self):
         self.pr_model["initial"] = {"filename": f"{self.ns_path}.h5"}
 
-    def _add_ns_timestepping(self):
+    def add_ns_timestepping(self):
 
         self.ns_model["time"] = {
             "step": {
@@ -199,7 +199,7 @@ class Model():
             }
         }
     
-    def _add_pr_timestepping(self):
+    def add_pr_timestepping(self):
 
         self.pr_model["time"] = {
             "step": {
@@ -210,7 +210,7 @@ class Model():
             "stop": self.tmax
         }
 
-    def _add_ns_output(self):
+    def add_ns_output(self):
 
         self.ns_model["output"] = {
             "frequency": 0, 
@@ -218,7 +218,7 @@ class Model():
             "final": True
         }
 
-    def _add_pr_output(self):
+    def add_pr_output(self):
         
         self.pr_model["output"] = {
             "checkpoint": {
@@ -230,7 +230,7 @@ class Model():
             "final": False
         }
 
-    def _generate_ns(self):
+    def generate_ns(self):
         
         self.ns_model = {
             "eos": {"name": "we"},
@@ -243,23 +243,23 @@ class Model():
             "title": "Slice model"
         }
         
-        self._add_boundaries()
-        self._add_rocktypes()
-        self._add_upflows()
-        self._add_ns_incon()
-        self._add_ns_timestepping()
-        self._add_ns_output()
+        self.add_boundaries()
+        self.add_rocktypes()
+        self.add_upflows()
+        self.add_ns_incon()
+        self.add_ns_timestepping()
+        self.add_ns_output()
 
         utils.save_json(self.ns_model, f"{self.ns_path}.json")
 
-    def _generate_pr(self):
+    def generate_pr(self):
 
         self.pr_model = deepcopy(self.ns_model)
 
-        self._add_wells()
-        self._add_pr_timestepping()
-        self._add_pr_output()
-        self._add_pr_incon()
+        self.add_wells()
+        self.add_pr_timestepping()
+        self.add_pr_output()
+        self.add_pr_incon()
 
         utils.save_json(self.pr_model, f"{self.pr_path}.json")
 
@@ -269,14 +269,14 @@ class Model():
         env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
         env.run_waiwera(f"{self.ns_path}.json", noupdate=True)
         
-        flag = self._get_exitflag(self.ns_path)
+        flag = self.get_exitflag(self.ns_path)
         if flag == ExitFlag.FAILURE: 
             return flag
 
         env.run_waiwera(f"{self.pr_path}.json", noupdate=True)
-        return self._get_exitflag(self.pr_path)
+        return self.get_exitflag(self.pr_path)
 
-    def _get_exitflag(self, log_path):
+    def get_exitflag(self, log_path):
 
         with open(f"{log_path}.yaml", "r") as f:
             log = yaml.safe_load(f)
