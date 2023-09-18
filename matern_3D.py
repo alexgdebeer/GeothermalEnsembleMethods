@@ -12,10 +12,10 @@ mesh = pv.UnstructuredGrid(f"{MESH_NAME}.vtu").triangulate()
 matern_field = MaternField3D(geo, mesh)
 
 sigma = 1.0
-lx = 100
-ly = 100
-lz = 100
-lam = 30 * np.sqrt(lx * ly * lz) # TODO: tune Robin parameter
+lx = 1000
+ly = 1000
+lz = 300
+lam = 1000 * np.cbrt(lx * ly * lz) # TODO: tune Robin parameter
 
 W = np.random.normal(loc=0.0, scale=1.0, size=matern_field.n_points)
 X = matern_field.generate_field(W, sigma, lx, ly, lz, bcs=BC.ROBIN, lam=lam)
