@@ -1,6 +1,6 @@
 import itertools as it
-import numpy as np
 from layermesh import mesh as lm
+import numpy as np
 import pyvista as pv
 import utils
 
@@ -12,7 +12,7 @@ COEF_SDS = 5
 
 @utils.timer
 def get_cap_radii(cell_centres, cap_centre, width_h, width_v, dip, cs):
-    """Returns the radius of the clay cap in the direction of each cell."""
+    """Returns the cells that are part of the clay cap."""
 
     ds = cell_centres - cap_centre
 
@@ -39,16 +39,17 @@ def get_cap_radii(cell_centres, cap_centre, width_h, width_v, dip, cs):
     return cap
 
 def plot(mesh, geo, cap):
-
-    cap_mesh = np.zeros((mesh.n_cells, ))
+    """Generates a 3D plot of the cells that make up the clay cap."""
 
     containing_cells = mesh.find_containing_cell([c.centre for c in geo.cell])
 
+    cap_mesh = np.zeros((mesh.n_cells, ))
     cap_mesh[containing_cells] = cap[[c.index for c in geo.cell]]
 
     mesh.cell_data["cap_mesh"] = cap_mesh
     p = pv.Plotter()
-    p.add_mesh(mesh.threshold([0.9, 1.1]), cmap="coolwarm")
+    p.add_mesh(mesh.threshold([0.5, 1.5]), cmap="coolwarm")
+    p.add_mesh(mesh.threshold([-0.5, 0.5]),  opacity=0.5, cmap="coolwarm")
     p.show()
 
 geo = lm.mesh(f"{MESH_NAME}.h5")
@@ -68,5 +69,5 @@ cs = np.random.normal(loc=0.0, scale=COEF_SDS, size=(N_TERMS, N_TERMS, 4))
 cap = get_cap_radii(cell_centres, cap_centre, width_h, width_v, dip, cs)
 
 plot(mesh, geo, cap)
-geo.slice_plot("y", value=cap, colourmap="coolwarm")
+# geo.slice_plot("y", value=cap, colourmap="coolwarm")
 # geo.layer_plot(elevation=-250, value=cap, colourmap="coolwarm")
