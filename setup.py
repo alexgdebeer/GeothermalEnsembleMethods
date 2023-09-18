@@ -33,7 +33,7 @@ n_temps_per_well = 6
 mesh_name = f"models/gSL{n_blocks}"
 model_name = f"models/SL{n_blocks}"
 
-mesh = gm.Mesh(mesh_name, xmax, ymax, zmax, nx, ny, nz)
+mesh = gm.RegularMesh(mesh_name, xmax, ymax, zmax, nx, ny, nz)
 
 feedzone_xs = [200, 475, 750, 1025, 1300]
 feedzone_zs = [-500] * n_wells
@@ -87,7 +87,7 @@ def f(thetas):
     ks, q = prior.transform(thetas)
     upflows = [gm.MassUpflow(upflow_loc, q)]
     
-    model = gm.Model(model_name, mesh, ks, feedzones, upflows, dt, tmax)
+    model = gm.SliceModel(model_name, mesh, ks, feedzones, upflows, dt, tmax)
 
     if (flag := model.run()) == gm.ExitFlag.FAILURE: 
         return flag

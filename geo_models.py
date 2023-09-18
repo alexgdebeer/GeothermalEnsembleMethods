@@ -39,7 +39,7 @@ class ExitFlag(Enum):
     FAILURE = 2
 
 
-class Mesh():
+class RegularMesh():
 
     def __init__(self, name, xmax, ymax, zmax, nx, ny, nz):
 
@@ -78,6 +78,16 @@ class Mesh():
         self.m.export(f"{self.name}.msh", fmt="gmsh22")
 
 
+class IrregularMesh():
+
+    def __init__(self, name):
+
+        self.name = name
+        self.m = lm.mesh(f"{self.name}.h5")
+
+        # TODO: get cell centres etc.
+
+
 class MassUpflow():
     def __init__(self, loc, rate):
         self.loc = loc
@@ -90,7 +100,7 @@ class Feedzone():
         self.rate = rate
 
 
-class Model():
+class SliceModel():
 
     def __init__(self, path, mesh, perms, 
                  feedzones, upflows, dt, tmax):
