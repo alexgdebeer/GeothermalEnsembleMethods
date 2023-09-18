@@ -1,8 +1,9 @@
+from enum import Enum
 import numpy as np
+import pyvista as pv
 from scipy import sparse
 from scipy.sparse import linalg
 from scipy.special import gamma
-import pyvista as pv
 import utils
 
 GRAD_2D = np.array([[-1.0, 1.0, 0.0], 
@@ -11,6 +12,10 @@ GRAD_2D = np.array([[-1.0, 1.0, 0.0],
 GRAD_3D = np.array([[-1.0, 1.0, 0.0, 0.0], 
                     [-1.0, 0.0, 1.0, 0.0],
                     [-1.0, 0.0, 0.0, 1.0]])
+
+class BC(Enum):
+    NEUMANN = 1
+    ROBIN = 2
 
 class MaternField2D():
 
@@ -112,7 +117,7 @@ class MaternField2D():
 
         utils.info("FEM matrices constructed.")
 
-    def generate_field(self, W, sigma, lx, ly, bcs="robin", lam=None):
+    def generate_field(self, W, sigma, lx, ly, bcs=BC.ROBIN, lam=None):
         """Given a set of white noise and a set of hyperparameters,
         generates the corresponding Matern field."""
 
@@ -121,19 +126,18 @@ class MaternField2D():
         
         K = lx**2 * self.Kx + ly**2 * self.Ky 
 
-        if bcs == "robin":
+        if bcs == BC.ROBIN:
             if lam is None:
                 lam = 1.42 * np.sqrt(lx * ly)
             A = self.M + K + (lx * ly / lam) * self.N 
 
-        elif bcs == "neumann":
+        elif bcs == BC.NEUMANN:
             A = self.M + K 
         
-        # # TEMP: calculate empirical standard deviations
-        # # TODO: correct marginal standard deviations?
-        # inv_A = np.linalg.inv(A.toarray())
-        # cov = alpha * lx * ly * inv_A @ self.M.toarray() @ inv_A.T
-        # return np.sqrt(np.diag(cov))
+        # TEMP: calculate empirical standard deviations
+        inv_A = np.linalg.inv(A.toarray())
+        cov = alpha * lx * ly * inv_A @ self.M.toarray() @ inv_A.T
+        return np.sqrt(np.diag(cov))
 
         b = np.sqrt(alpha * lx * ly) * self.L.T @ W
         return linalg.spsolve(A, b)
@@ -148,7 +152,6 @@ class MaternField2D():
         """Generates a visualisation of the mesh using Layermesh."""
         col_values = [values[c.column.index] for c in self.geo.cell]
         self.geo.layer_plot(value=col_values, **kwargs)
-
 
 class MaternField3D():
 
@@ -296,7 +299,7 @@ class MaternField3D():
                                    shape=(self.n_elements, self.n_points))
 
 
-    def generate_field(self, W, sigma, lx, ly, lz, bcs="robin", lam=None):
+    def generate_field(self, W, sigma, lx, ly, lz, bcs=BC.ROBIN, lam=None):
         """Generates a Matern field."""
 
         alpha = sigma**2 * (2**self.dim * np.pi**(self.dim/2) * \
@@ -304,18 +307,18 @@ class MaternField3D():
 
         K = lx**2 * self.Kx + ly**2 * self.Ky + lz**2 * self.Kz
         
-        if bcs == "robin":
+        if bcs == BC.ROBIN:
             if lam is None:
                 lam = 1.42 * np.sqrt(lx * ly * lz)
             A = self.M + K + (lx * ly * lz / lam) * self.N 
 
-        elif bcs == "neumann":
+        elif bcs == BC.NEUMANN:
             A = self.M + K
         
-        # # TEMP: calculate empirical standard deviations
-        # inv_A = np.linalg.inv(A.toarray())
-        # cov = alpha * lx * ly * lz * inv_A @ self.M.toarray() @ inv_A.T
-        # return np.sqrt(np.diag(cov))
+        # TEMP: calculate empirical standard deviations
+        inv_A = np.linalg.inv(A.toarray())
+        cov = alpha * lx * ly * lz * inv_A @ self.M.toarray() @ inv_A.T
+        return np.sqrt(np.diag(cov))
 
         b = np.sqrt(alpha * lx * ly * lz) * self.L.T @ W
         return linalg.spsolve(A, b)
