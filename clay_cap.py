@@ -6,22 +6,26 @@ from scipy import stats
 
 MESH_NAME = "models/channel/gCH"
 
+def gaussian_to_uniform(x, lb, ub):
+    return lb + stats.norm.cdf(x) * (ub - lb)
+
 class ClayCap():
 
-    def __init__(self, cell_centres, centre_bounds, dip_bounds, width_h, width_v, 
-                 n_terms, coef_sds):
+    def __init__(self, cell_centres, centre_bounds, 
+                 width_h_bounds, width_v_bounds, 
+                 dip_bounds, n_terms, coef_sds):
         
         self.cell_centres = cell_centres
 
         self.centre_bounds = centre_bounds
         self.dip_bounds = dip_bounds
 
-        self.width_h = width_h 
-        self.width_v = width_v
+        self.width_h_bounds = width_h_bounds 
+        self.width_v_bounds = width_v_bounds
 
         self.n_terms = n_terms 
         self.coef_sds = coef_sds
-        self.n_params = 4 + 4 * self.n_terms ** 2
+        self.n_params = 6 + 4 * self.n_terms ** 2
 
     def cartesian_to_spherical(self, ds):
         rs = np.linalg.norm(ds, axis=1)
@@ -47,28 +51,31 @@ class ClayCap():
         
         return rs
     
-    def get_params(self, params):
+    def get_cap_params(self, params):
+        """Given a set of unit normal variables, generates the corresponding 
+        set of clay cap parameters."""
 
-        cap_centre = np.array([bnds[0] + stats.norm.cdf(params[i]) * (bnds[1] - bnds[0]) 
-                               for i, bnds in enumerate(self.centre_bounds)])
-        
-        cap_dip = self.dip_bounds[0] + stats.norm.cdf(params[3]) * (self.dip_bounds[1] - self.dip_bounds[0])
+        centre = np.array([gaussian_to_uniform(params[i], *bnds)
+                           for i, bnds in enumerate(self.centre_bounds)])
+        width_h = gaussian_to_uniform(params[3], *self.width_h_bounds)
+        width_v = gaussian_to_uniform(params[4], *self.width_v_bounds)
+        dip = gaussian_to_uniform(params[5], *self.dip_bounds)
 
-        coefs = self.coef_sds * params[4:]
+        coefs = self.coef_sds * params[6:]
         coefs = np.reshape(coefs, (self.n_terms, self.n_terms, 4))
 
-        return cap_centre, cap_dip, coefs
+        return centre, width_h, width_v, dip, coefs
 
     def get_cap_cells(self, params):
         """Returns an array of booleans that indicate whether each cell is 
         contained within the clay cap."""
 
-        cap_centre, cap_dip, coefs = self.get_params(params)
+        centre, width_h, width_v, dip, coefs = self.get_cap_params(params)
 
-        ds = self.cell_centres - cap_centre
+        ds = self.cell_centres - centre
 
         # TODO: should this be width_h, or mean(width_h)?
-        ds[:, -1] += (cap_dip / self.width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
+        ds[:, -1] += (dip / width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
 
         cell_radii, cell_phis, cell_thetas = self.cartesian_to_spherical(ds)
 
@@ -96,14 +103,15 @@ mesh = pv.UnstructuredGrid(f"{MESH_NAME}.vtu")
 
 cell_centres = np.array([c.centre for c in geo.cell])
 centre_bounds = [(700, 800), (700, 800), (-300, -225)]
+width_h_bounds = (425, 475)
+width_v_bounds = (50, 75)
 dip_bounds = (100, 200)
-width_h = 475
-width_v = 50
 
 n_terms = 5
 coef_sds = 5
 
-clay_cap = ClayCap(cell_centres, centre_bounds, dip_bounds, width_h, width_v, n_terms, coef_sds)
+clay_cap = ClayCap(cell_centres, centre_bounds, width_h_bounds, width_v_bounds, 
+                   dip_bounds, n_terms, coef_sds)
 
 params = np.random.normal(size=clay_cap.n_params)
 cap = clay_cap.get_cap_cells(params)
