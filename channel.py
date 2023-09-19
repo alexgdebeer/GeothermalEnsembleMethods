@@ -23,18 +23,16 @@ rates = np.random.multivariate_normal(mu, cov)
 upfls = np.zeros((geo.num_cells))
 upfls[is_base] = rates
 
-# Slope and intercept of underlying line
-m = 0.3
-c = 500
-
-# Channel amplitude, period, width
-a = 200
-p = 1200
-w = 200
+# Channel amplitude, period, angle, intercept, width
+a1 = np.random.uniform(100, 200)
+a2 = np.random.uniform(500, 1200)
+a3 = np.random.uniform(-np.pi/8, np.pi/8)
+a4 = np.random.uniform(500, 1000)
+a5 = np.random.uniform(75, 150)
 
 def channel_bounds(x):
-    ub = a * np.sin(2*np.pi*x / p) + m*x + c 
-    return ub-w, ub 
+    ub = a1 * np.sin(2*np.pi*x / a2) + np.tan(a3)*x + a4 
+    return ub-a5, ub+a5 
 
 for x, y, i in zip(cxs, cys, is_base):
 

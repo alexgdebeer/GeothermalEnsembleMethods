@@ -7,16 +7,35 @@ from GeothermalEnsembleMethods import grfs, likelihood, models
 
 np.random.seed(1)
 
-SECS_PER_WEEK = 60.0 * 60.0 * 24.0 * 7.0
-MESH_NAME = f"models/channel/gCH"
-MODEL_NAME = f"models/channel/CH"
+SECS_PER_WEEK = 60.0 ** 2 * 24.0 * 7.0
+MESH_NAME = "models/channel/gCH"
+MODEL_NAME = "models/channel/CH"
 
 """
 Classes
 """
 
-def gaussian_to_uniform(x, lb, ub):
+def gauss_to_unif(x, lb, ub):
     return lb + stats.norm.cdf(x) * (ub - lb)
+
+class Channel():
+    
+    def __init__(self, cols, bounds):
+        
+        self.cols = cols 
+        self.bounds = bounds
+
+    def get_cols_in_channel(self, ps):
+        """Returns the indices of the columns that are contained within the 
+        channel specified by a given set of parameters."""
+        
+        def in_channel(x, y, a1, a2, a3, a4, a5):
+            ub = a1 * np.sin(2*np.pi*x/a2) + np.tan(a3)*x + a4 
+            return ub-a5 <= y <= ub+a5 
+
+        ps = [gauss_to_unif(p, *self.bounds[i]) for i, p in enumerate(ps)]
+        cols_in_channel = [c for c in self.cols if in_channel(*c.centre, *ps)]
+        return cols_in_channel
 
 class ClayCap():
 
@@ -64,11 +83,11 @@ class ClayCap():
         """Given a set of unit normal variables, generates the corresponding 
         set of clay cap parameters."""
 
-        centre = np.array([gaussian_to_uniform(params[i], *bnds)
+        centre = np.array([gauss_to_unif(params[i], *bnds)
                            for i, bnds in enumerate(self.centre_bounds)])
-        width_h = gaussian_to_uniform(params[3], *self.width_h_bounds)
-        width_v = gaussian_to_uniform(params[4], *self.width_v_bounds)
-        dip = gaussian_to_uniform(params[5], *self.dip_bounds)
+        width_h = gauss_to_unif(params[3], *self.width_h_bounds)
+        width_v = gauss_to_unif(params[4], *self.width_v_bounds)
+        dip = gauss_to_unif(params[5], *self.dip_bounds)
 
         coefs = self.coef_sds * params[6:]
         coefs = np.reshape(coefs, (self.n_terms, self.n_terms, 4))
@@ -146,6 +165,16 @@ coef_sds = 5
 clay_cap = ClayCap(cell_centres, centre_bounds, 
                    width_h_bounds, width_v_bounds, 
                    dip_bounds, n_terms, coef_sds)
+
+"""
+Channel
+"""
+
+# Bounds for amplitude, period, angle, intercept, width
+bounds = [(100, 200), (500, 1200), (-np.pi/8, np.pi/8), 
+          (500, 1000), (75, 150)]
+
+channel = Channel(mesh.m.column, bounds)
 
 """
 Model functions
