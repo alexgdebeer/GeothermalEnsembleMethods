@@ -176,6 +176,15 @@ bounds = [(100, 200), (500, 1200), (-np.pi/8, np.pi/8),
 
 channel = Channel(mesh.m.column, bounds)
 
+grf_upflow = grfs.MaternField2D()
+
+"""
+Prior
+"""
+
+# TODO: make prior that contains channel, clay cap, random fields for inside 
+# and outside clay cap, random field for upflows at base of model
+
 """
 Model functions
 """

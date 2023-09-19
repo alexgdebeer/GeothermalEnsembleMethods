@@ -57,8 +57,6 @@ class MaternField2D():
         """Builds the FEM matrices required for generating Matern fields in two
         dimensions."""
 
-        utils.info("Constructing FEM matrices...")
-
         M_i = np.zeros((9 * self.n_elements, ))
         M_j = np.zeros((9 * self.n_elements, ))
         M_v = np.zeros((9 * self.n_elements, ))
@@ -115,8 +113,6 @@ class MaternField2D():
         self.N = sparse.coo_matrix((N_v, (N_i, N_j)), shape=shape)
 
         self.L = np.linalg.cholesky(self.M.toarray())
-
-        utils.info("FEM matrices constructed.")
 
     def generate_field(self, W, sigma, lx, ly, bcs=BC.ROBIN, lam=None):
         """Given a set of white noise and a set of hyperparameters,
@@ -192,7 +188,7 @@ class MaternField3D():
         """Builds the FEM matrices required to generate Matern fields in three 
         dimensions."""
 
-        utils.info("Constructing FEM matrices...")
+        utils.info(f"Constructing FEM matrices (points: {self.n_points})...")
 
         M_i = np.zeros((16 * self.n_elements, ))
         M_j = np.zeros((16 * self.n_elements, ))
