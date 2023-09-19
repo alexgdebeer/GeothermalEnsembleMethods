@@ -4,11 +4,12 @@ import h5py
 import layermesh.mesh as lm
 import numpy as np
 import os
+import pyvista as pv
 import pywaiwera
 import yaml
 
-from consts import *
-import utils
+from GeothermalEnsembleMethods.consts import *
+from GeothermalEnsembleMethods import utils
 
 
 class ExitFlag(Enum):
@@ -61,8 +62,12 @@ class IrregularMesh():
 
         self.name = name
         self.m = lm.mesh(f"{self.name}.h5")
-
-        # TODO: get cell centres etc.
+        
+        try: 
+            self.fem_mesh = pv.UnstructuredGrid(f"{self.name}.vtu").triangulate()
+        except FileNotFoundError:
+            utils.warn(".vtu mesh file was not found.")
+            self.fem_mesh = None
 
 
 class MassUpflow():

@@ -5,7 +5,7 @@ from scipy import sparse
 from scipy.sparse import linalg
 from scipy.special import gamma
 
-import utils as utils
+from GeothermalEnsembleMethods import utils
 
 GRAD_2D = np.array([[-1.0, 1.0, 0.0], 
                     [-1.0, 0.0, 1.0]])
@@ -20,13 +20,14 @@ class BC(Enum):
 
 class MaternField2D():
 
-    def __init__(self, geo, mesh):
+    def __init__(self, mesh):
 
         self.dim = 2
         self.nu = 2 - self.dim / 2
 
-        self.geo = geo
-        self.mesh = mesh
+        self.m = mesh.m
+        col_centres = [[*col.centre, 0.0] for col in self.m.column]
+        self.fem_mesh = pv.PolyData(col_centres).delaunay_2d()
 
         self.get_mesh_data()
         self.build_fem_matrices()
@@ -35,22 +36,22 @@ class MaternField2D():
         """Extracts information on the points, elements and boundary facets 
         of the mesh."""
 
-        self.mesh["inds"] = np.arange(self.mesh.n_points, dtype=np.int64)
+        self.fem_mesh["inds"] = np.arange(self.fem_mesh.n_points, dtype=np.int64)
 
-        self.points = self.mesh.points[:, :2]
-        self.elements = self.mesh.regular_faces
+        self.points = self.fem_mesh.points[:, :2]
+        self.elements = self.fem_mesh.regular_faces
 
-        boundary = self.mesh.extract_feature_edges(boundary_edges=True, 
-                                                   feature_edges=False, 
-                                                   non_manifold_edges=False, 
-                                                   manifold_edges=False)
+        boundary = self.fem_mesh.extract_feature_edges(boundary_edges=True, 
+                                                       feature_edges=False, 
+                                                       non_manifold_edges=False, 
+                                                       manifold_edges=False)
 
         boundary_points = boundary.cast_to_pointset()["inds"]
         boundary_facets = boundary.lines.reshape(-1, 3)[:, 1:]
         self.boundary_facets = [boundary_points[f] for f in boundary_facets]
         
-        self.n_points = self.mesh.n_points
-        self.n_elements = self.mesh.n_cells
+        self.n_points = self.fem_mesh.n_points
+        self.n_elements = self.fem_mesh.n_cells
         self.n_boundary_facets = len(self.boundary_facets)
 
     def build_fem_matrices(self):
@@ -131,10 +132,10 @@ class MaternField2D():
         elif bcs == BC.NEUMANN:
             A = self.M + K 
         
-        # TEMP: calculate empirical standard deviations
-        inv_A = np.linalg.inv(A.toarray())
-        cov = alpha * lx * ly * inv_A @ self.M.toarray() @ inv_A.T
-        return np.sqrt(np.diag(cov))
+        # # TEMP: calculate empirical standard deviations
+        # inv_A = np.linalg.inv(A.toarray())
+        # cov = alpha * lx * ly * inv_A @ self.M.toarray() @ inv_A.T
+        # return np.sqrt(np.diag(cov))
 
         b = np.sqrt(alpha * lx * ly) * self.L.T @ W
         return linalg.spsolve(A, b)
@@ -142,23 +143,23 @@ class MaternField2D():
     def plot(self, values, **kwargs):
         """Generates a 3D visualisation of the mesh using PyVista."""
         p = pv.Plotter()
-        p.add_mesh(self.mesh, scalars=values, **kwargs)
+        p.add_mesh(self.fem_mesh, scalars=values, **kwargs)
         p.show()
     
     def layer_plot(self, values, **kwargs):
         """Generates a visualisation of the mesh using Layermesh."""
-        col_values = [values[c.column.index] for c in self.geo.cell]
-        self.geo.layer_plot(value=col_values, **kwargs)
+        col_values = [values[c.column.index] for c in self.m.cell]
+        self.m.layer_plot(value=col_values, **kwargs)
 
 class MaternField3D():
 
-    def __init__(self, geo, mesh):
+    def __init__(self, mesh):
 
         self.dim = 3
         self.nu = 2 - self.dim / 2
 
-        self.geo = geo
-        self.mesh = mesh 
+        self.m = mesh.m
+        self.fem_mesh = mesh.fem_mesh 
 
         self.get_mesh_data()
         self.build_fem_matrices()
@@ -169,18 +170,18 @@ class MaternField3D():
         """Extracts information on the points, elements and facets of the 
         mesh."""
 
-        self.mesh["inds"] = np.arange(self.mesh.n_points, dtype=np.int64)
+        self.fem_mesh["inds"] = np.arange(self.fem_mesh.n_points, dtype=np.int64)
 
-        self.points = self.mesh.points 
-        self.elements = self.mesh.cells_dict[10]
+        self.points = self.fem_mesh.points 
+        self.elements = self.fem_mesh.cells_dict[10]
 
-        boundary = self.mesh.extract_geometry()
+        boundary = self.fem_mesh.extract_geometry()
         boundary_points = boundary.cast_to_pointset()["inds"]
         boundary_facets = boundary.faces.reshape(-1, 4)[:, 1:]
         self.boundary_facets = [boundary_points[f] for f in boundary_facets]
 
-        self.n_points = self.mesh.n_points 
-        self.n_elements = self.mesh.n_cells
+        self.n_points = self.fem_mesh.n_points 
+        self.n_elements = self.fem_mesh.n_cells
         self.n_boundary_facets = len(self.boundary_facets)
 
     @utils.timer
@@ -260,15 +261,15 @@ class MaternField3D():
         """Generates an operator that maps the result from the FEM mesh back to 
         the cells in the model geometry."""
 
-        cell_centres = [c.centre for c in self.geo.cell]
-        elements = self.mesh.find_containing_cell(cell_centres)
+        cell_centres = [c.centre for c in self.m.cell]
+        elements = self.fem_mesh.find_containing_cell(cell_centres)
 
-        G_i = np.array([[c.index] * 4 for c in self.geo.cell]).flatten()
+        G_i = np.array([[c.index] * 4 for c in self.m.cell]).flatten()
         G_j = np.array([self.elements[e] for e in elements]).flatten()
-        G_v = np.zeros((4 * self.geo.num_cells, ))
+        G_v = np.zeros((4 * self.m.num_cells, ))
 
         n = 0
-        for c, e in zip(self.geo.cell, elements):
+        for c, e in zip(self.m.cell, elements):
             
             ps = self.elements[e]
 
@@ -281,7 +282,7 @@ class MaternField3D():
             
             n += 4
 
-        shape = (self.geo.num_cells, self.n_points)
+        shape = (self.m.num_cells, self.n_points)
         self.G = sparse.coo_matrix((G_v, (G_i, G_j)), shape=shape)
 
     def build_point_to_cell_mapping(self):
@@ -312,26 +313,26 @@ class MaternField3D():
         elif bcs == BC.NEUMANN:
             A = self.M + K
         
-        # TEMP: calculate empirical standard deviations
-        inv_A = np.linalg.inv(A.toarray())
-        cov = alpha * lx * ly * lz * inv_A @ self.M.toarray() @ inv_A.T
-        return np.sqrt(np.diag(cov))
+        # # TEMP: calculate empirical standard deviations
+        # inv_A = np.linalg.inv(A.toarray())
+        # cov = alpha * lx * ly * lz * inv_A @ self.M.toarray() @ inv_A.T
+        # return np.sqrt(np.diag(cov))
 
         b = np.sqrt(alpha * lx * ly * lz) * self.L.T @ W
         return linalg.spsolve(A, b)
     
     def plot_points(self, values, **kwargs):
         p = pv.Plotter()
-        p.add_mesh(self.mesh, scalars=values, **kwargs)
+        p.add_mesh(self.fem_mesh, scalars=values, **kwargs)
         p.show()
 
     def plot_cells(self, values, **kwargs):
         p = pv.Plotter()
-        p.add_mesh(self.mesh, scalars=self.P @ values, **kwargs)
+        p.add_mesh(self.fem_mesh, scalars=self.P @ values, **kwargs)
         p.show()
 
     def plot_slice(self, values, **kwargs):
-        self.geo.slice_plot(value=self.G @ values, **kwargs)
+        self.m.slice_plot(value=self.G @ values, **kwargs)
 
 class Gaussian1D():
     """1D Gaussian distribution with squared-exponential covariance function."""

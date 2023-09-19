@@ -110,7 +110,7 @@ class ClayCap():
         
         return cell_radii < cap_radii
 
-class Prior():
+class ChannelPrior():
 
     # TODO: add mean to Matern fields...
 
@@ -176,7 +176,7 @@ bounds = [(100, 200), (500, 1200), (-np.pi/8, np.pi/8),
 
 channel = Channel(mesh.m.column, bounds)
 
-grf_upflow = grfs.MaternField2D()
+grf_upflow = grfs.MaternField2D(mesh)
 
 """
 Prior
