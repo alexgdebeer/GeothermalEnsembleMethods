@@ -131,5 +131,22 @@ feedzones = [models.Feedzone(loc, q)
              for (loc, q) in zip(feedzone_locs, feedzone_qs)]
 
 """
+Clay cap
+"""
+
+cell_centres = np.array([c.centre for c in mesh.m.cell])
+centre_bounds = [(700, 800), (700, 800), (-300, -225)]
+width_h_bounds = (425, 475)
+width_v_bounds = (50, 75)
+dip_bounds = (100, 200)
+
+n_terms = 5
+coef_sds = 5
+
+clay_cap = ClayCap(cell_centres, centre_bounds, 
+                   width_h_bounds, width_v_bounds, 
+                   dip_bounds, n_terms, coef_sds)
+
+"""
 Model functions
 """
