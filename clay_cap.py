@@ -73,8 +73,6 @@ class ClayCap():
         centre, width_h, width_v, dip, coefs = self.get_cap_params(params)
 
         ds = self.cell_centres - centre
-
-        # TODO: should this be width_h, or mean(width_h)?
         ds[:, -1] += (dip / width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
 
         cell_radii, cell_phis, cell_thetas = self.cartesian_to_spherical(ds)
