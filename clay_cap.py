@@ -2,7 +2,7 @@ import itertools as it
 from layermesh import mesh as lm
 import numpy as np
 import pyvista as pv
-import utils
+import GeothermalEnsembleMethods as gm
 
 MESH_NAME = "models/channel/gCH"
 
@@ -10,7 +10,7 @@ MESH_NAME = "models/channel/gCH"
 N_TERMS = 5
 COEF_SDS = 5
 
-@utils.timer
+@gm.timer
 def get_cap_radii(cell_centres, cap_centre, width_h, width_v, dip, cs):
     """Returns the cells that are part of the clay cap."""
 

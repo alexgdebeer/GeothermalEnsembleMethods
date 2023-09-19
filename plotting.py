@@ -8,7 +8,7 @@ from matplotlib.patches import Patch, Polygon
 import matplotlib.pyplot as plt 
 import seaborn as sns
 
-from setup import *
+from setup_slice import *
 
 sns.set_style("whitegrid", {"grid.linestyle": ""})
 plt.rc("text", usetex=True)

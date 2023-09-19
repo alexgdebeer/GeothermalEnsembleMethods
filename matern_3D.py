@@ -2,7 +2,7 @@ from layermesh import mesh as lm
 import numpy as np
 import pyvista as pv
 
-from matern_fields import BC, MaternField3D
+from GeothermalEnsembleMethods import BC, MaternField3D
 
 MESH_NAME = "models/channel/gCH"
 

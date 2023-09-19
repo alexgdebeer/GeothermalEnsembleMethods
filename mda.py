@@ -1,7 +1,7 @@
-import ensemble_methods as em
+import GeothermalEnsembleMethods as gm
 import scipy.sparse as sparse
 
-from setup import *
+from setup_slice import *
 
 Ne = 100
 
@@ -17,7 +17,7 @@ Ne = 100
 #     [1.0]
 # )).toarray()
 
-prob = em.ESMDAProblem(f, g, prior, likelihood, Nf, Ne, loc_type="cycle")#, loc_mat=loc_mat)
+prob = gm.ESMDAProblem(f, g, prior, likelihood, Nf, Ne, loc_type="cycle")#, loc_mat=loc_mat)
 
 prob.run()
 prob.save_results(fname=f"data/mda_{Ne}_cycle")

@@ -4,7 +4,8 @@ import pyvista as pv
 from scipy import sparse
 from scipy.sparse import linalg
 from scipy.special import gamma
-import utils
+
+import utils as utils
 
 GRAD_2D = np.array([[-1.0, 1.0, 0.0], 
                     [-1.0, 0.0, 1.0]])
@@ -335,3 +336,49 @@ class MaternField3D():
 
     def plot_slice(self, values, **kwargs):
         self.geo.slice_plot(value=self.G @ values, **kwargs)
+
+class Gaussian1D():
+    """1D Gaussian distribution with squared-exponential covariance function."""
+
+    def __init__(self, mu, std, l, xs):
+        
+        self.xs = xs
+        self.nx = len(xs)
+
+        self.std = std 
+        self.l = l
+
+        self.mu = np.array([mu] * self.nx)
+        self.generate_cov()
+
+    def generate_cov(self):
+
+        self.x_dists = self.xs[:, np.newaxis] - self.xs.T 
+        self.cor = np.exp(-0.5 * (self.x_dists / self.l) ** 2)
+        self.cov = self.std ** 2 * self.cor + 1e-8 * np.eye(self.nx) 
+        
+class Gaussian2D():
+    """2D Gaussian distribution with squared-exponential covariance function."""
+
+    def __init__(self, mu, std, lx, lz, cells):
+        
+        self.cells = cells
+        self.cell_xs = np.array([c.centre[0] for c in cells])
+        self.cell_zs = np.array([c.centre[-1] for c in cells])
+        self.n_cells = len(cells)
+
+        self.std = std 
+        self.lx = lx
+        self.lz = lz
+
+        self.mu = np.array([mu] * self.n_cells)
+        self.generate_cov()
+
+    def generate_cov(self):
+
+        self.x_dists = self.cell_xs[:, np.newaxis] - self.cell_xs.T
+        self.z_dists = self.cell_zs[:, np.newaxis] - self.cell_zs.T
+
+        self.cor = np.exp(-0.5 * (self.x_dists / self.lx) ** 2 + \
+                          -0.5 * (self.z_dists / self.lz) ** 2)
+        self.cov = self.std ** 2 * self.cor + 1e-8 * np.eye(self.n_cells)
