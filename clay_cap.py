@@ -2,15 +2,26 @@ import itertools as it
 from layermesh import mesh as lm
 import numpy as np
 import pyvista as pv
-from GeothermalEnsembleMethods import utils
+from scipy import stats
 
 MESH_NAME = "models/channel/gCH"
 
 class ClayCap():
 
-    def __init__(self, n_terms, coef_sds):
+    def __init__(self, cell_centres, centre_bounds, dip_bounds, width_h, width_v, 
+                 n_terms, coef_sds):
+        
+        self.cell_centres = cell_centres
+
+        self.centre_bounds = centre_bounds
+        self.dip_bounds = dip_bounds
+
+        self.width_h = width_h 
+        self.width_v = width_v
+
         self.n_terms = n_terms 
         self.coef_sds = coef_sds
+        self.n_params = 4 + 4 * self.n_terms ** 2
 
     def cartesian_to_spherical(self, ds):
         rs = np.linalg.norm(ds, axis=1)
@@ -35,17 +46,29 @@ class ClayCap():
                   coefs[n, m, 3] * np.sin(n * thetas) * np.sin(m * phis)
         
         return rs
+    
+    def get_params(self, params):
 
-    @utils.timer
-    def get_containing_cells(self, cell_centres, cap_centre, 
-                             width_h, width_v, dip, coefs):
+        cap_centre = np.array([bnds[0] + stats.norm.cdf(params[i]) * (bnds[1] - bnds[0]) 
+                               for i, bnds in enumerate(self.centre_bounds)])
+        
+        cap_dip = self.dip_bounds[0] + stats.norm.cdf(params[3]) * (self.dip_bounds[1] - self.dip_bounds[0])
+
+        coefs = self.coef_sds * params[4:]
+        coefs = np.reshape(coefs, (self.n_terms, self.n_terms, 4))
+
+        return cap_centre, cap_dip, coefs
+
+    def get_cap_cells(self, params):
         """Returns an array of booleans that indicate whether each cell is 
         contained within the clay cap."""
 
-        ds = cell_centres - cap_centre
+        cap_centre, cap_dip, coefs = self.get_params(params)
+
+        ds = self.cell_centres - cap_centre
 
         # TODO: should this be width_h, or mean(width_h)?
-        ds[:, -1] += (dip / width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
+        ds[:, -1] += (cap_dip / self.width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
 
         cell_radii, cell_phis, cell_thetas = self.cartesian_to_spherical(ds)
 
@@ -68,25 +91,22 @@ def plot(mesh, geo, cap):
     p.add_mesh(mesh.threshold([-0.5, 0.5]),  opacity=0.5, cmap="coolwarm")
     p.show()
 
-clay_cap = ClayCap(n_terms=5, coef_sds=5)
-
 geo = lm.mesh(f"{MESH_NAME}.h5")
 mesh = pv.UnstructuredGrid(f"{MESH_NAME}.vtu")
 
 cell_centres = np.array([c.centre for c in geo.cell])
+centre_bounds = [(700, 800), (700, 800), (-300, -225)]
+dip_bounds = (100, 200)
+width_h = 475
+width_v = 50
 
-cap_centre = np.array([np.random.uniform(700, 800), 
-                       np.random.uniform(700, 800),
-                       np.random.uniform(-300, -225)])
-width_h, width_v = 475, 50
-dip = np.random.uniform(50, 200) # Average difference in height between the centre of the cap and the edges 
+n_terms = 5
+coef_sds = 5
 
-# Fourier coefficients
-coefs = np.random.normal(loc=0.0, scale=clay_cap.coef_sds,
-                         size=(clay_cap.n_terms, clay_cap.n_terms, 4))
+clay_cap = ClayCap(cell_centres, centre_bounds, dip_bounds, width_h, width_v, n_terms, coef_sds)
 
-cap = clay_cap.get_containing_cells(cell_centres, cap_centre, 
-                                    width_h, width_v, dip, coefs)
+params = np.random.normal(size=clay_cap.n_params)
+cap = clay_cap.get_cap_cells(params)
 
 plot(mesh, geo, cap)
 # geo.slice_plot("y", value=cap, colourmap="coolwarm")
