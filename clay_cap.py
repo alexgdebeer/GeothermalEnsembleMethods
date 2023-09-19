@@ -44,7 +44,6 @@ class ClayCap():
 
         ds = cell_centres - cap_centre
 
-        # Give cap a curved appearance
         # TODO: should this be width_h, or mean(width_h)?
         ds[:, -1] += (dip / width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
 
@@ -69,7 +68,7 @@ def plot(mesh, geo, cap):
     p.add_mesh(mesh.threshold([-0.5, 0.5]),  opacity=0.5, cmap="coolwarm")
     p.show()
 
-clay_cap = ClayCap()
+clay_cap = ClayCap(n_terms=5, coef_sds=5)
 
 geo = lm.mesh(f"{MESH_NAME}.h5")
 mesh = pv.UnstructuredGrid(f"{MESH_NAME}.vtu")
