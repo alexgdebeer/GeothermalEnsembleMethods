@@ -27,6 +27,7 @@ class PermeabilityField():
         self.bounds = bounds
 
         self.grf = grfs.MaternField3D(self.mesh)
+        self.n_ps = 3 + self.mesh.m.num_cells
 
     def get_perms(self, ps):
         """Returns the set of permeabilities that correspond to a given set of 
@@ -37,7 +38,7 @@ class PermeabilityField():
                    for p, bnds in zip(hyperps, self.bounds)]
         
         X = self.grf.generate_field(W, *hyperps)
-        return self.mu + X
+        return self.mu + self.grf.H @ X
 
 class UpflowField():
 
@@ -48,6 +49,7 @@ class UpflowField():
         self.bounds = bounds 
 
         self.grf = grfs.MaternField2D(self.mesh)
+        self.n_ps = 3 + self.mesh.m.num_columns
 
     def get_upflows(self, ps):
         """Returns the set of upflows that correspond to a given set of 
@@ -58,7 +60,7 @@ class UpflowField():
                    for p, bnds in zip(hyperps, self.bounds)]
         
         X = self.grf.generate_field(W, *hyperps)
-        return self.mu + X
+        return self.mu + self.grf.H @ X
 
 class Channel():
     
@@ -126,7 +128,7 @@ class ClayCap():
 
         return geom, coefs
 
-    def get_cap_cells(self, params):
+    def get_cells_in_cap(self, params):
         """Returns an array of booleans that indicate whether each cell is 
         contained within the clay cap."""
 
@@ -147,27 +149,50 @@ class ClayCap():
 class ChannelPrior():
 
     def __init__(self, mesh, cap, channel, 
-                 grf_cap, grf_ext, grf_upflow, level_width):
+                 grf_ext, grf_cap, grf_upflow, level_width):
 
         self.mesh = mesh 
 
         self.cap = cap
         self.channel = channel
-
-        self.grf_cap = grf_cap 
-        self.grf_ext = grf_ext
+        self.grf_ext = grf_ext 
+        self.grf_cap = grf_cap
         self.grf_upflow = grf_upflow
-
         self.level_width = level_width
 
-        # Will probably need an index for numbers of parameters...
+        self.param_counts = [cap.n_ps, channel.n_ps, 
+                             grf_ext.n_ps, grf_cap.n_ps, 
+                             grf_upflow.n_ps]
+        self.num_params = sum(self.param_counts)
+        self.param_inds = np.cumsum(self.param_counts)
 
-    def transform_perms():
-        # Transform lengthscales, standard deviations, etc
-        # Transform permeabilities using Matern objects
-        # Apply level set
-        # Determine which cells are in the clay cap
-        pass 
+        self.inds = {
+            "cap"        : np.arange(*self.param_inds[0:2]),
+            "channel"    : np.arange(*self.param_inds[1:3]),
+            "grf_ext"    : np.arange(*self.param_inds[2:4]),
+            "grf_cap"    : np.arange(*self.param_inds[3:5]),
+            "grf_upflow" : np.arange(*self.param_inds[4:6])
+        }
+
+    def transform(self, ps):
+
+        cap_cells = self.cap.get_cells_in_cap(ps[self.inds["cap"]])
+        upflow_cells = self.channel.get_cells_in_channel(ps[self.inds["channel"]])
+
+        perms_ext = self.grf_ext.get_perms(ps[self.inds["grf_ext"]])
+        perms_cap = self.grf_cap.get_perms(ps[self.inds["grf_cap"]])
+
+        # TODO: apply level set
+
+        upflows = self.grf_upflow.get_upflows(ps[self.inds["grf_upflow"]])
+
+        # Filter the upflows so we just have the ones corresponding to the 
+        # channel
+
+        perms = np.copy(perms_ext)
+        perms[cap_cells] = perms_cap[cap_cells]
+
+        return perms, upflow_cells, upflows
 
     def sample(self, n=1):
         pass
@@ -228,15 +253,8 @@ Prior
 
 level_width = 0.25 # Log(m^2), I think this is the same as previously
 
-# TODO: parameters that aren't in here currently: mean of each random field 
-# (might want to make the mean of the upflows decrease the further we are from 
-# the centre of the model?), bounds of lengthscales and standard deviations 
-# of each random field, 
-# Could make a wrapper around the MaternXD classes that contains this 
-# information?
-
-prior = ChannelPrior(mesh, clay_cap, channel, 
-                     perm_field_ext, perm_field_cap, upflow_field, level_width)
+prior = ChannelPrior(mesh, clay_cap, channel, perm_field_ext, perm_field_cap, 
+                     upflow_field, level_width)
 
 """
 Model functions
