@@ -7,8 +7,8 @@ mesh = models.IrregularMesh(MESH_NAME)
 matern_field = grfs.MaternField2D(mesh)
 
 sigma = 1.0
-lx = 300
-ly = 300
+lx = 100
+ly = 100
 lam = 1.42 * np.sqrt(lx * ly)
 
 W = np.random.normal(loc=0.0, scale=1.0, size=matern_field.n_points)

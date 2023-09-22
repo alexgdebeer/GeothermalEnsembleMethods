@@ -63,8 +63,14 @@ class IrregularMesh():
         self.name = name
         self.m = lm.mesh(f"{self.name}.h5")
         
+        self.col_centres = np.array([col.centre for col in self.m.column])
+        self.cell_centres = np.array([cell.centre for cell in self.m.cell])
+        self.bottom_cell_inds = [cell.index for cell 
+                                 in self.m.layer[-1].cell]
+        
         try: 
-            self.fem_mesh = pv.UnstructuredGrid(f"{self.name}.vtu").triangulate()
+            self.fem_mesh = pv.UnstructuredGrid(f"{self.name}.vtu")
+            self.fem_mesh = self.fem_mesh.triangulate()
         except FileNotFoundError:
             utils.warn(".vtu mesh file was not found.")
             self.fem_mesh = None

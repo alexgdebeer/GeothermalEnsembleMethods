@@ -33,10 +33,10 @@ class MaternField2D():
         self.build_fem_matrices()
 
     def get_mesh_data(self):
-        """Extracts information on the points, elements and boundary facets 
-        of the mesh."""
+        """Extracts information on the points, elements and boundary 
+        facets of the mesh."""
 
-        self.fem_mesh["inds"] = np.arange(self.fem_mesh.n_points, dtype=np.int64)
+        self.fem_mesh["inds"] = np.arange(self.fem_mesh.n_points)
 
         self.points = self.fem_mesh.points[:, :2]
         self.elements = self.fem_mesh.regular_faces
@@ -48,15 +48,16 @@ class MaternField2D():
 
         boundary_points = boundary.cast_to_pointset()["inds"]
         boundary_facets = boundary.lines.reshape(-1, 3)[:, 1:]
-        self.boundary_facets = [boundary_points[f] for f in boundary_facets]
+        self.boundary_facets = [boundary_points[f] 
+                                for f in boundary_facets]
         
         self.n_points = self.fem_mesh.n_points
         self.n_elements = self.fem_mesh.n_cells
         self.n_boundary_facets = len(self.boundary_facets)
 
     def build_fem_matrices(self):
-        """Builds the FEM matrices required for generating Matern fields in two
-        dimensions."""
+        """Builds the FEM matrices required for generating Matern 
+        fields in two dimensions."""
 
         M_i = np.zeros((9 * self.n_elements, ))
         M_j = np.zeros((9 * self.n_elements, ))
@@ -167,10 +168,10 @@ class MaternField3D():
         self.build_point_to_cell_mapping()
         
     def get_mesh_data(self):
-        """Extracts information on the points, elements and facets of the 
-        mesh."""
+        """Extracts information on the points, elements and facets of 
+        the mesh."""
 
-        self.fem_mesh["inds"] = np.arange(self.fem_mesh.n_points, dtype=np.int64)
+        self.fem_mesh["inds"] = np.arange(self.fem_mesh.n_points)
 
         self.points = self.fem_mesh.points 
         self.elements = self.fem_mesh.cells_dict[10]
@@ -186,8 +187,8 @@ class MaternField3D():
 
     @utils.timer
     def build_fem_matrices(self):
-        """Builds the FEM matrices required to generate Matern fields in three 
-        dimensions."""
+        """Builds the FEM matrices required to generate Matern fields 
+        in three dimensions."""
 
         utils.info(f"Constructing FEM matrices (points: {self.n_points})...")
 
@@ -258,8 +259,8 @@ class MaternField3D():
         utils.info("FEM matrices constructed.")
 
     def build_geo_to_mesh_mapping(self):
-        """Generates an operator that maps the result from the FEM mesh back to 
-        the cells in the model geometry."""
+        """Generates an operator that maps the result from the FEM mesh 
+        back to the cells in the model geometry."""
 
         cell_centres = [c.centre for c in self.m.cell]
         elements = self.fem_mesh.find_containing_cell(cell_centres)
@@ -286,8 +287,8 @@ class MaternField3D():
         self.G = sparse.coo_matrix((G_v, (G_i, G_j)), shape=shape)
 
     def build_point_to_cell_mapping(self):
-        """Generates an operator that maps the value at the points on the mesh 
-        to the corresponding values at the cell centres."""
+        """Generates an operator that maps the value at the points on 
+        the mesh to the corresponding values at the cell centres."""
 
         P_i = np.array([[n] * 4 for n in range(self.n_elements)]).flatten()
         P_j = np.array(self.elements).flatten()
@@ -335,7 +336,8 @@ class MaternField3D():
         self.m.slice_plot(value=self.G @ values, **kwargs)
 
 class Gaussian1D():
-    """1D Gaussian distribution with squared-exponential covariance function."""
+    """1D Gaussian distribution with squared-exponential covariance 
+    function."""
 
     def __init__(self, mu, std, l, xs):
         
@@ -355,7 +357,8 @@ class Gaussian1D():
         self.cov = self.std ** 2 * self.cor + 1e-8 * np.eye(self.nx) 
         
 class Gaussian2D():
-    """2D Gaussian distribution with squared-exponential covariance function."""
+    """2D Gaussian distribution with squared-exponential covariance 
+    function."""
 
     def __init__(self, mu, std, lx, lz, cells):
         

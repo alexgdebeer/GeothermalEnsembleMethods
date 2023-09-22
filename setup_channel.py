@@ -20,188 +20,203 @@ def gauss_to_unif(x, lb, ub):
 
 class PermeabilityField():
 
-    def __init__(self, mesh, mu, bounds):
+    def __init__(self, mesh, grf, mu, bounds):
         
         self.mesh = mesh
+        self.grf = grf
         self.mu = mu
         self.bounds = bounds
 
-        self.grf = grfs.MaternField3D(self.mesh)
-        self.n_ps = 3 + self.mesh.m.num_cells
+        self.n_pars = len(self.bounds) + self.grf.n_points
 
-    def get_perms(self, ps):
-        """Returns the set of permeabilities that correspond to a given set of 
-        (whitened) parameters."""
+    def get_perms(self, pars):
+        """Returns the set of permeabilities that correspond to a given
+        set of (whitened) parameters."""
 
-        hyperps, W = ps[:4], ps[4:]
-        hyperps = [gauss_to_unif(p, bnds)
-                   for p, bnds in zip(hyperps, self.bounds)]
+        hyperpars, W = pars[:4], pars[4:]
+        hyperpars = [gauss_to_unif(par, *bnds)
+                     for par, bnds in zip(hyperpars, self.bounds)]
         
-        X = self.grf.generate_field(W, *hyperps)
-        return self.mu + self.grf.H @ X
+        X = self.grf.generate_field(W, *hyperpars)
+        return self.mu + self.grf.G @ X
 
 class UpflowField():
 
-    def __init__(self, mesh, mu, bounds):
+    def __init__(self, mesh, grf, mu, bounds):
 
         self.mesh = mesh 
+        self.grf = grf
+
         self.mu = mu 
         self.bounds = bounds 
+        self.n_pars = len(self.bounds) + self.grf.n_points
 
-        self.grf = grfs.MaternField2D(self.mesh)
-        self.n_ps = 3 + self.mesh.m.num_columns
-
-    def get_upflows(self, ps):
+    def get_upflows(self, pars):
         """Returns the set of upflows that correspond to a given set of 
         (whitened) parameters."""
 
-        hyperps, W = ps[:3], ps[3:]
-        hyperps = [gauss_to_unif(p, *bnds) 
-                   for p, bnds in zip(hyperps, self.bounds)]
+        hyperpars, W = pars[:3], pars[3:]
+        hyperpars = [gauss_to_unif(par, *bnds) 
+                     for par, bnds in zip(hyperpars, self.bounds)]
         
-        X = self.grf.generate_field(W, *hyperps)
-        return self.mu + self.grf.H @ X
+        X = self.grf.generate_field(W, *hyperpars)
+        upflows = np.zeros((self.mesh.m.num_cells, ))
+        upflows[self.mesh.bottom_cell_inds] = self.mu + X
+        return np.maximum(upflows, 0.0)
 
 class Channel():
     
-    def __init__(self, cols, bounds):
+    def __init__(self, mesh, bounds):
         
-        self.cols = cols 
+        self.mesh = mesh
         self.bounds = bounds
+        self.n_pars = len(self.bounds)
 
-    def get_cols_in_channel(self, ps):
-        """Returns the indices of the columns that are contained within the 
-        channel specified by a given set of parameters."""
+    def get_cells_in_channel(self, pars):
+        """Returns the indices of the columns that are contained within 
+        the channel specified by a given set of parameters."""
         
         def in_channel(x, y, a1, a2, a3, a4, a5):
             ub = a1 * np.sin(2*np.pi*x/a2) + np.tan(a3)*x + a4 
             return ub-a5 <= y <= ub+a5 
 
-        ps = [gauss_to_unif(p, *self.bounds[i]) for i, p in enumerate(ps)]
-        cols_in_channel = [c for c in self.cols if in_channel(*c.centre, *ps)]
-        return cols_in_channel
+        pars = [gauss_to_unif(p, *self.bounds[i]) 
+                for i, p in enumerate(pars)]
+        
+        cells_in_channel = [cell.index for cell in self.mesh.m.cell 
+                            if in_channel(*cell.centre[:2], *pars)]
+        return cells_in_channel
 
 class ClayCap():
 
-    def __init__(self, cells, bounds, n_terms, coef_sds):
+    def __init__(self, mesh, bounds, n_terms, coef_sds):
         
-        self.cell_centres = [c.centre for c in cells]
-
+        self.cell_centres = mesh.cell_centres
         self.bounds = bounds 
         self.n_terms = n_terms 
         self.coef_sds = coef_sds
-        self.n_params = 6 + 4 * self.n_terms ** 2
+        self.n_pars = len(self.bounds) + 4 * self.n_terms ** 2
 
-    def cartesian_to_spherical(self, ds):
-        rs = np.linalg.norm(ds, axis=1)
-        phis = np.arccos(ds[:, 2] / rs)
-        thetas = np.arctan2(ds[:, 1], ds[:, 0])
-        return rs, phis, thetas
+    def cart_to_sphere(self, coords):
+
+        radii = np.linalg.norm(coords, axis=1)
+        phis = np.arccos(coords[:, 2] / radii)
+        thetas = np.arctan2(coords[:, 1], coords[:, 0])
+        return radii, phis, thetas
     
     def compute_cap_radii(self, phis, thetas, width_h, width_v, coefs):
-        """Computes the radius of the clay cap in the direction of each cell, 
-        by taking the radius of the (deformed) ellipse that forms the base
-        of the cap, then adding the randomised Fourier series to it."""
+        """Computes the radius of the clay cap in the direction of each 
+        cell, by taking the radius of the (deformed) ellipse that forms 
+        the base of the cap, then adding the randomised Fourier series 
+        to it."""
 
-        rs = np.sqrt(((np.sin(phis) * np.cos(thetas) / width_h)**2 + \
-                      (np.sin(phis) * np.sin(thetas) / width_h)**2 + \
-                      (np.cos(phis) / width_v)**2) ** -1)
+        radii = np.sqrt(((np.sin(phis) * np.cos(thetas) / width_h)**2 + \
+                         (np.sin(phis) * np.sin(thetas) / width_h)**2 + \
+                            (np.cos(phis) / width_v)**2) ** -1)
         
         for n, m in product(range(self.n_terms), range(self.n_terms)):
         
-            rs += coefs[n, m, 0] * np.cos(n * thetas) * np.cos(m * phis) + \
-                  coefs[n, m, 1] * np.cos(n * thetas) * np.sin(m * phis) + \
-                  coefs[n, m, 2] * np.sin(n * thetas) * np.cos(m * phis) + \
-                  coefs[n, m, 3] * np.sin(n * thetas) * np.sin(m * phis)
+            radii += coefs[n, m, 0] * np.cos(n * thetas) * np.cos(m * phis) + \
+                     coefs[n, m, 1] * np.cos(n * thetas) * np.sin(m * phis) + \
+                     coefs[n, m, 2] * np.sin(n * thetas) * np.cos(m * phis) + \
+                     coefs[n, m, 3] * np.sin(n * thetas) * np.sin(m * phis)
         
-        return rs
+        return radii
     
-    def get_cap_params(self, ps):
-        """Given a set of unit normal variables, generates the corresponding 
-        set of clay cap parameters."""
+    def get_cap_params(self, pars):
+        """Given a set of unit normal variables, generates the 
+        corresponding set of clay cap parameters."""
 
         geom = [gauss_to_unif(p, *self.bounds[i]) 
-                   for i, p in enumerate(ps[:6])]
+                for i, p in enumerate(pars[:6])]
 
-        coefs = np.reshape(self.coef_sds * ps[6:], 
+        coefs = np.reshape(self.coef_sds * pars[6:], 
                            (self.n_terms, self.n_terms, 4))
 
         return geom, coefs
 
-    def get_cells_in_cap(self, params):
-        """Returns an array of booleans that indicate whether each cell is 
-        contained within the clay cap."""
+    def get_cells_in_cap(self, pars):
+        """Returns an array of booleans that indicate whether each cell 
+        is contained within the clay cap."""
 
-        # Unpack parameters
-        geom, coefs = self.get_cap_params(params)
+        geom, coefs = self.get_cap_params(pars)
         *centre, width_h, width_v, dip = geom
 
-        ds = self.cell_centres - centre
+        # Add some curvature to the cap
+        ds = self.cell_centres - np.array(centre)
         ds[:, -1] += (dip / width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
 
-        cell_radii, cell_phis, cell_thetas = self.cartesian_to_spherical(ds)
-
+        cell_radii, cell_phis, cell_thetas = self.cart_to_sphere(ds)
         cap_radii = self.compute_cap_radii(cell_phis, cell_thetas,
                                            width_h, width_v, coefs)
-        
-        return cell_radii < cap_radii
+        return (cell_radii < cap_radii).nonzero()
 
 class ChannelPrior():
 
     def __init__(self, mesh, cap, channel, 
-                 grf_ext, grf_cap, grf_upflow, level_width):
+                 grf_res, grf_cap, grf_flt, grf_upflow, level_width):
 
         self.mesh = mesh 
 
         self.cap = cap
         self.channel = channel
-        self.grf_ext = grf_ext 
+        self.grf_res = grf_res 
         self.grf_cap = grf_cap
+        self.grf_flt = grf_flt
         self.grf_upflow = grf_upflow
         self.level_width = level_width
 
-        self.param_counts = [cap.n_ps, channel.n_ps, 
-                             grf_ext.n_ps, grf_cap.n_ps, 
-                             grf_upflow.n_ps]
+        self.param_counts = [cap.n_pars, channel.n_pars, 
+                             grf_res.n_pars, grf_cap.n_pars, 
+                             grf_flt.n_pars,
+                             grf_upflow.n_pars]
         self.num_params = sum(self.param_counts)
         self.param_inds = np.cumsum(self.param_counts)
 
         self.inds = {
-            "cap"        : np.arange(*self.param_inds[0:2]),
-            "channel"    : np.arange(*self.param_inds[1:3]),
-            "grf_ext"    : np.arange(*self.param_inds[2:4]),
-            "grf_cap"    : np.arange(*self.param_inds[3:5]),
-            "grf_upflow" : np.arange(*self.param_inds[4:6])
+            "cap"       : np.arange(0, self.param_inds[0]),
+            "channel"   : np.arange(*self.param_inds[0:2]),
+            "grf_res"   : np.arange(*self.param_inds[1:3]),
+            "grf_cap"   : np.arange(*self.param_inds[2:4]),
+            "grf_flt"   : np.arange(*self.param_inds[3:5]),
+            "grf_upflow": np.arange(*self.param_inds[4:6])
         }
 
-    def transform(self, ps):
+    def transform(self, pars):
 
-        cap_cells = self.cap.get_cells_in_cap(ps[self.inds["cap"]])
-        upflow_cells = self.channel.get_cells_in_channel(ps[self.inds["channel"]])
+        cap_cells = self.cap.get_cells_in_cap(pars[self.inds["cap"]])
+        channel_cells = self.channel.get_cells_in_channel(pars[self.inds["channel"]])
 
-        perms_ext = self.grf_ext.get_perms(ps[self.inds["grf_ext"]])
-        perms_cap = self.grf_cap.get_perms(ps[self.inds["grf_cap"]])
+        perms_ext = self.grf_res.get_perms(pars[self.inds["grf_res"]])
+        perms_cap = self.grf_cap.get_perms(pars[self.inds["grf_cap"]])
+        perms_flt = self.grf_flt.get_perms(pars[self.inds["grf_flt"]])
 
         # TODO: apply level set
 
-        upflows = self.grf_upflow.get_upflows(ps[self.inds["grf_upflow"]])
+        upflows = self.grf_upflow.get_upflows(pars[self.inds["grf_upflow"]])
 
         # Filter the upflows so we just have the ones corresponding to the 
         # channel
 
         perms = np.copy(perms_ext)
+        perms[channel_cells] = perms_flt[channel_cells]
         perms[cap_cells] = perms_cap[cap_cells]
 
-        return perms, upflow_cells, upflows
+        return perms, channel_cells, upflows
 
     def sample(self, n=1):
-        pass
+        ps = np.random.normal(size=(n, self.num_params))
+        for p in ps:
+            p = self.transform(p)
+        return ps
 
 """
 Model parameters
 """
 
 mesh = models.IrregularMesh(MESH_NAME)
+grf_2d = grfs.MaternField2D(mesh)
+grf_3d = grfs.MaternField3D(mesh)
 
 feedzone_locs = [(0.0, 0.0, 0.0)]
 feedzone_qs = [0.0]
@@ -222,15 +237,18 @@ coef_sds = 5
 # Mean of the (log-)permeabilities in the exterior / clay cap regions
 mu_perm_ext = -14
 mu_perm_cap = -16
+mu_perm_flt = -13
 
 # Bounds for marginal standard deviations and x, y, z lengthscales
-bounds_perm_ext = [(0.25, 0.50), (1000, 1500), (1000, 1500), (200, 400)]
+bounds_perm_res = [(0.25, 0.50), (1000, 1500), (1000, 1500), (200, 400)]
 bounds_perm_cap = [(0.20, 0.30), (1000, 1500), (1000, 1500), (200, 400)]
+bounds_perm_flt = [(0.20, 0.30), (1000, 1500), (1000, 1500), (200, 400)]
 
 # Generate the clay cap and exterior / clay cap permeability fields
-clay_cap = ClayCap(mesh.m.cell, bounds_geom_cap, n_terms, coef_sds)
-perm_field_ext = PermeabilityField(mesh, mu_perm_ext, bounds_perm_ext)
-perm_field_cap = PermeabilityField(mesh, mu_perm_cap, bounds_perm_cap)
+clay_cap = ClayCap(mesh, bounds_geom_cap, n_terms, coef_sds)
+perm_field_res = PermeabilityField(mesh, grf_3d, mu_perm_ext, bounds_perm_res)
+perm_field_cap = PermeabilityField(mesh, grf_3d, mu_perm_cap, bounds_perm_cap)
+perm_field_flt = PermeabilityField(mesh, grf_3d, mu_perm_flt, bounds_perm_flt)
 
 """
 Channel
@@ -244,8 +262,8 @@ mu_upflow = -1 # TODO: figure out what this should be
 # Bounds for marginal standard deviations and x, y lengthscales
 bounds_upflow = [(-1, -1), (200, 400), (200, 400)] # TODO: figure out what sigma should be (depends on mesh too of course)
 
-channel = Channel(mesh.m.column, bounds_channel)
-upflow_field = UpflowField(mesh, mu_upflow, bounds_upflow)
+channel = Channel(mesh, bounds_channel)
+upflow_field = UpflowField(mesh, grf_2d, mu_upflow, bounds_upflow)
 
 """
 Prior
@@ -253,8 +271,11 @@ Prior
 
 level_width = 0.25 # Log(m^2), I think this is the same as previously
 
-prior = ChannelPrior(mesh, clay_cap, channel, perm_field_ext, perm_field_cap, 
-                     upflow_field, level_width)
+prior = ChannelPrior(mesh, clay_cap, channel, perm_field_res, 
+                     perm_field_cap, perm_field_flt, upflow_field, 
+                     level_width)
+
+prior.sample(1)
 
 """
 Model functions
