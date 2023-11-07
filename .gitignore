@@ -1,5 +1,8 @@
 __pycache__
 .DS_Store
+.git
+
+plots/
 
 .cid
 .idcheck
