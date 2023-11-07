@@ -30,8 +30,8 @@ n_blocks = nx * nz
 n_wells = 5
 n_temps_per_well = 6
 
-mesh_name = f"models/gSL{n_blocks}"
-model_name = f"models/SL{n_blocks}"
+mesh_name = f"models/slice/gSL{n_blocks}"
+model_name = f"models/slice/SL{n_blocks}"
 
 mesh = gm.RegularMesh(mesh_name, xmax, ymax, zmax, nx, ny, nz)
 
