@@ -41,7 +41,7 @@ def fit_surface(geo, mu, sd, l, plot=False):
     if plot:
         geo.slice_plot(title="Slice view")
         geo.layer_plot(title="Top view", 
-                       value=[czs[c.column.index] for c in geo.cell])
+                       value=czs[[c.column.index for c in geo.cell]])
 
 def save(geo: lm.mesh):
     """Writes the model geometry to an h5 file (for use with Layermesh), a

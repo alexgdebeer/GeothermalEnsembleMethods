@@ -1,24 +1,20 @@
-from layermesh import mesh as lm
 import numpy as np
-import pyvista as pv
-
-from matern_fields import BC, MaternField3D
+from GeothermalEnsembleMethods import grfs, models
 
 MESH_NAME = "models/channel/gCH"
 
-geo = lm.mesh(f"{MESH_NAME}.h5")
-mesh = pv.UnstructuredGrid(f"{MESH_NAME}.vtu").triangulate()
-
-matern_field = MaternField3D(geo, mesh)
+mesh = models.IrregularMesh(MESH_NAME)
+mesh.load_fem_mesh()
+matern_field = grfs.MaternField3D(mesh)
 
 sigma = 1.0
-lx = 1000
-ly = 1000
+lx = 1200
+ly = 1200
 lz = 300
 lam = 1000 * np.cbrt(lx * ly * lz) # TODO: tune Robin parameter
 
 W = np.random.normal(loc=0.0, scale=1.0, size=matern_field.n_points)
-X = matern_field.generate_field(W, sigma, lx, ly, lz, bcs=BC.ROBIN, lam=lam)
+X = matern_field.generate_field(W, sigma, lx, ly, lz, bcs=grfs.BC.ROBIN, lam=lam)
 
 matern_field.plot_points(values=X, show_edges=True, cmap="turbo")
 matern_field.plot_cells(values=X, show_edges=True, cmap="turbo")
