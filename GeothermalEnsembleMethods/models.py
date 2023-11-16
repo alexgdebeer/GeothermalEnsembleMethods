@@ -11,11 +11,9 @@ import yaml
 from GeothermalEnsembleMethods.consts import *
 from GeothermalEnsembleMethods import utils
 
-
 class ExitFlag(Enum):
     SUCCESS = 1
     FAILURE = 2
-
 
 class RegularMesh():
 
@@ -55,7 +53,6 @@ class RegularMesh():
         self.m.write(f"{self.name}.h5")
         self.m.export(f"{self.name}.msh", fmt="gmsh22")
 
-
 class IrregularMesh():
 
     def __init__(self, name):
@@ -82,12 +79,10 @@ class MassUpflow():
         self.loc = loc
         self.rate = rate
 
-
 class Feedzone():
     def __init__(self, loc, rate):
         self.loc = loc
         self.rate = rate
-
 
 class Model():
     """Base class for models, with a set of default methods."""
@@ -333,7 +328,6 @@ class Model():
         return np.concatenate((np.array(ts).flatten(), 
                                np.array(ps).flatten(), 
                                np.array(es).flatten()))
-
 
 class ChannelModel(Model):
     """3D model with a channel at the base."""
