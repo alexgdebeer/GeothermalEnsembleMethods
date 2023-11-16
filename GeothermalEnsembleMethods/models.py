@@ -347,5 +347,5 @@ class ChannelModel(Model):
             "mesh": {
                 "filename": f"{self.mesh.name}.msh"
             },
-            "title": "Slice model"
+            "title": "Channel model"
         }

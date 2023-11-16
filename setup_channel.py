@@ -325,5 +325,5 @@ Model functions
 def run_model(params):
 
     perms, upflows, upflow_cells = prior.transform(params)
-    m = models.ChannelModel(path, mesh, perms, feedzones, upflows, dt, tmax)
+    m = models.ChannelModel(MODEL_NAME, mesh, perms, feedzones, upflows, dt, tmax)
     return m.run()
