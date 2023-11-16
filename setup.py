@@ -100,7 +100,7 @@ def g(fs):
     
     ts, ps, es = unpack_data_raw(fs)
 
-    ts_interp = interpolate.RegularGridInterpolator((mesh.xs, -mesh.zs), ts)
+    ts_interp = interpolate.RegularGridInterpolator((mesh.xs, -mesh.zs), ts.T)
     ts = ts_interp(np.vstack((ns_obs_xs, -ns_obs_zs)).T).flatten()
 
     ps = ps[obs_time_inds, :].flatten()
