@@ -315,10 +315,10 @@ class MaternField3D():
         elif bcs == BC.NEUMANN:
             A = self.M + K
         
-        # TEMP: calculate empirical standard deviations
-        inv_A = np.linalg.inv(A.toarray())
-        cov = alpha * lx * ly * lz * inv_A @ self.M.toarray() @ inv_A.T
-        return np.sqrt(np.diag(cov))
+        # # TEMP: calculate empirical standard deviations
+        # inv_A = np.linalg.inv(A.toarray())
+        # cov = alpha * lx * ly * lz * inv_A @ self.M.toarray() @ inv_A.T
+        # return np.sqrt(np.diag(cov))
 
         b = np.sqrt(alpha * lx * ly * lz) * self.L.T @ W
         return linalg.spsolve(A, b)
