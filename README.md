@@ -8,10 +8,13 @@ This repository contains code for running ensemble Kalman methods for approximat
 ### Channel
  - Add feedzone locations.
  - Figure out what the mean upflow should be, and the marginal standard deviations.
- - Finish writing setup code and test model.
+ - Figure out what the level width should be.
  - Set up mechanism to save true parameters, states and data to file.
+ - Develop method for visualising the permeability structure and upflow locations of model.
+ - Think about inverse crimes (i.e. consider making a smaller model)
 ### Ensemble Methods
  - Tidy up EKI-DMC and EnRML code (less object-oriented?)
 ### Misc
  - Update NZGW code and slides.
  - Finish writing README (add some notes on the various algorithms, other implementations, etc).
+ - Make a Python environment for this repository?
