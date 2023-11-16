@@ -21,3 +21,5 @@ MSG_END_TIME = ["info", "timestep", "end_time_reached"]
 MSG_MAX_STEP = ["info", "timestep", "stop_size_maximum_reached"]
 MSG_MAX_ITS = ["info", "timestep", "max_timesteps_reached"]
 MSG_ABORTED = ["warn", "timestep", "aborted"]
+
+SECS_PER_WEEK = 60.0 ** 2 * 24.0 * 7.0

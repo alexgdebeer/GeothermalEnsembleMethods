@@ -130,12 +130,10 @@ class SlicePrior():
 Model parameters
 """
 
-SECS_PER_WEEK = 60.0 * 60.0 * 24.0 * 7.0
-
 xmax, nx = 1500.0, 25
 ymax, ny = 60.0, 1
 zmax, nz = 1500.0, 25
-tmax, nt = 104.0 * SECS_PER_WEEK, 24
+tmax, nt = 104.0 * consts.SECS_PER_WEEK, 24
 
 dt = tmax / nt 
 obs_time_inds = [0, 3, 6, 9, 12]

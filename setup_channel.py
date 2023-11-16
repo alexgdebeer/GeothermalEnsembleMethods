@@ -3,11 +3,10 @@
 from itertools import product
 import numpy as np
 from scipy import stats
-from GeothermalEnsembleMethods import grfs, likelihood, models
+from GeothermalEnsembleMethods import consts, grfs, likelihood, models
 
 np.random.seed(1)
 
-SECS_PER_WEEK = 60.0 ** 2 * 24.0 * 7.0
 MESH_NAME = "models/channel/gCH"
 MODEL_NAME = "models/channel/CH"
 
@@ -311,6 +310,13 @@ level_width = 0.25
 prior = ChannelPrior(mesh, clay_cap, channel, perm_field_ext, 
                      perm_field_flt, perm_field_cap, 
                      upflow_field, level_width)
+
+"""
+Timestepping 
+"""
+
+dt = consts.SECS_PER_WEEK
+tmax = 52 * consts.SECS_PER_WEEK
 
 """
 Model functions

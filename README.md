@@ -4,6 +4,7 @@ This repository contains code for running ensemble Kalman methods for approximat
 
 ## TODO:
 ### Channel
+ - Add feedzone locations
  - Finish writing setup code and test model.
 ### Ensemble Methods
  - Tidy up EKI-DMC and EnRML code (less object-oriented?)
