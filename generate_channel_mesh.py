@@ -19,7 +19,7 @@ def refine_geometry(geo, poly_to_refine):
     geo.optimize(columns=triangles)
 
 def fit_surface(geo, mu, sd, l, plot=False):
-    """Generates the top surface of the model geometry using a 
+    """Generates the top surface of the model geometry using a GRF with
     squared-exponential kernel."""
 
     col_centres = [c.centre for c in geo.column]
