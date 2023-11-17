@@ -253,7 +253,6 @@ Model parameters
 """
 
 mesh = models.IrregularMesh(MESH_NAME)
-mesh.load_fem_mesh()
 
 # TODO: add feedzone locations
 feedzone_locs = [(500.0, 500.0, -500.0)]
@@ -304,7 +303,7 @@ mu_upflow = 0 # TODO: figure out what this should be
 
 # Bounds for marginal standard deviations and x, y lengthscales
 # TODO: figure out what sigma should be (depends on mesh too of course)
-bounds_upflow = [(1e-8, 1e-8), (200, 400), (200, 400)]
+bounds_upflow = [(1e-8, 1e-6), (200, 400), (200, 400)]
 
 channel = Channel(mesh, bounds_channel)
 upflow_field = UpflowField(mesh, grf_2d, mu_upflow, bounds_upflow)
@@ -350,10 +349,10 @@ def run_model(white_noise):
 
     perms, upflows = prior.transform(white_noise)
 
-    plot_perms(mesh, perms)
+    # plot_perms(mesh, perms)
 
-    mesh.m.slice_plot(value=perms, colourmap="viridis")
-    mesh.m.layer_plot(value=perms, colourmap="viridis")
+    # mesh.m.slice_plot(value=perms, colourmap="viridis")
+    # mesh.m.layer_plot(value=perms, colourmap="viridis")
 
     # import pyvista as pv
     # mesh.fem_mesh["perms"] = perms
