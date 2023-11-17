@@ -15,7 +15,10 @@ class ExitFlag(Enum):
     SUCCESS = 1
     FAILURE = 2
 
-class RegularMesh():
+class Mesh():
+    pass
+
+class RegularMesh(Mesh):
 
     def __init__(self, name, xmax, ymax, zmax, nx, ny, nz):
 
@@ -53,7 +56,7 @@ class RegularMesh():
         self.m.write(f"{self.name}.h5")
         self.m.export(f"{self.name}.msh", fmt="gmsh22")
 
-class IrregularMesh():
+class IrregularMesh(Mesh):
 
     def __init__(self, name):
 
@@ -74,14 +77,16 @@ class MassUpflow():
         self.rate = rate
 
 class Feedzone():
-    def __init__(self, cell, rate):
+    def __init__(self, cell: lm.cell, rate: float):
         self.cell = cell
         self.rate = rate
 
 class Model():
     """Base class for models, with a set of default methods."""
 
-    def __init__(self, path, mesh, perms, feedzones, upflows, dt, tmax):
+    def __init__(self, path: str, mesh: Mesh, perms: np.ndarray, 
+                 feedzones: list[Feedzone], upflows: list[MassUpflow], 
+                 dt: float, tmax: float):
 
         self.ns_path = f"{path}_NS"
         self.pr_path = f"{path}_PR"
@@ -111,8 +116,8 @@ class Model():
         }
 
     def add_boundaries(self):
-        """Adds an atmospheric boundary condition to the top of the model, 
-        and leaves the sides with no-flow conditions."""
+        """Adds an atmospheric boundary condition to the top of the 
+        model (leaves the sides with no-flow conditions)."""
 
         self.ns_model["boundaries"] = [{
             "primary": [P_ATM, T_ATM], 
@@ -124,8 +129,9 @@ class Model():
         }]
 
     def add_upflows(self):
-        """Adds the mass upflows to the base of the model. Where there are no
-        mass upflows, a heat flux of constant magnitude is imposed."""
+        """Adds the mass upflows to the base of the model. Where there 
+        are no mass upflows, a background heat flux of constant 
+        magnitude is imposed."""
 
         upflow_cell_inds = [
             upflow.cell.index 
@@ -148,12 +154,13 @@ class Model():
             "cell": u.cell.index
         } for u in self.upflows])
 
-        print(sum([u.rate * u.cell.volume for u in self.upflows]))
+        total_mass = sum([u.rate * u.cell.volume for u in self.upflows])
+        utils.info(f"Total mass input: {round(total_mass, 2)} kg/s")
 
     def add_rocktypes(self):
         """Adds rocks with given permeabilities (and constant porosity, 
-        conductivity, density and specific heat) to the model. Permeabilities 
-        may be anisotropic or isotropic."""
+        conductivity, density and specific heat) to the model. 
+        Permeabilities may be isotropic or anisotropic."""
         
         if len(self.perms) != self.mesh.m.num_cells:
             raise Exception("Incorrect number of permeabilities.")
@@ -161,7 +168,7 @@ class Model():
         self.ns_model["rock"] = {"types": [{
             "name": f"{c.index}",
             "porosity": POROSITY, 
-            "permeability": 10 ** self.perms[c.index],
+            "permeability": 10.0 ** self.perms[c.index],
             "cells": [c.index],
             "wet_conductivity": CONDUCTIVITY,
             "dry_conductivity": CONDUCTIVITY,
@@ -180,9 +187,9 @@ class Model():
         } for f in self.feedzones])
 
     def add_ns_incon(self):
-        """Adds path to initial condition file to the model, if the file exists.
-        Otherwise, sets the entire model to a constant temperature and 
-        pressure."""
+        """Adds path to initial condition file to the model, if the 
+        file exists. Otherwise, sets the entire model to a constant 
+        temperature and pressure."""
 
         if os.path.isfile(f"{self.incon_path}.h5"):
             self.ns_model["initial"] = {"filename": f"{self.incon_path}.h5"}
@@ -191,8 +198,8 @@ class Model():
             self.ns_model["initial"] = {"primary": [P0, T0], "region": 1}
 
     def add_pr_incon(self):
-        """Sets the production history initial condition to be the output file
-        from the natural state run."""
+        """Sets the production history initial condition to be the 
+        output file from the natural state run."""
         self.pr_model["initial"] = {"filename": f"{self.ns_path}.h5"}
     
     def add_ns_timestepping(self):
@@ -221,8 +228,8 @@ class Model():
         }
 
     def add_ns_output(self):
-        """Sets the natural state simulation such that it only outputs the 
-        final model state."""
+        """Sets up the natural state simulation such that it only saves 
+        the final model state."""
 
         self.ns_model["output"] = {
             "frequency": 0, 
@@ -270,8 +277,8 @@ class Model():
 
     @utils.timer
     def run(self):
-        """Simulates the model and returns a flag that indicates whether the 
-        simulation was successful or not."""
+        """Simulates the model and returns a flag that indicates 
+        whether the simulation was successful."""
 
         env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
         env.run_waiwera(f"{self.ns_path}.json", noupdate=True)
@@ -305,8 +312,8 @@ class Model():
         raise Exception(f"Unknown exit condition. Check {log_path}.yaml.")
 
     def get_pr_data(self):
-        """Returns the temperatures, pressures and enthalpies from a production
-        history simulation."""
+        """Returns the temperatures, pressures and enthalpies from a 
+        production history simulation."""
 
         with h5py.File(f"{self.pr_path}.h5", "r") as f:
         
