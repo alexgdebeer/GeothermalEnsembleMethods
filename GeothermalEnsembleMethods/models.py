@@ -65,15 +65,8 @@ class IrregularMesh():
         self.col_cells = {col.index: [c.index for c in col.cell] 
                           for col in self.m.column}
         
-        self.load_fem_mesh()
-        
-    def load_fem_mesh(self):
-
-        try: 
-            self.fem_mesh = pv.UnstructuredGrid(f"{self.name}.vtu")
-            self.fem_mesh = self.fem_mesh.triangulate()
-        except FileNotFoundError:
-            raise Exception(".vtu mesh file was not found.")
+        self.fem_mesh = pv.UnstructuredGrid(f"{self.name}.vtu")
+        self.fem_mesh = self.fem_mesh.triangulate()
 
 class MassUpflow():
     def __init__(self, cell, rate):
