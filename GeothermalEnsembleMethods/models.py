@@ -73,8 +73,7 @@ class IrregularMesh():
             self.fem_mesh = pv.UnstructuredGrid(f"{self.name}.vtu")
             self.fem_mesh = self.fem_mesh.triangulate()
         except FileNotFoundError:
-            utils.warn(".vtu mesh file was not found.")
-            self.fem_mesh = None
+            raise Exception(".vtu mesh file was not found.")
 
 class MassUpflow():
     def __init__(self, cell, rate):
@@ -167,7 +166,7 @@ class Model():
         self.ns_model["rock"] = {"types": [{
             "name": f"{c.index}",
             "porosity": POROSITY, 
-            "permeability": self.perms[c.index],
+            "permeability": 10 ** self.perms[c.index],
             "cells": [c.index],
             "wet_conductivity": CONDUCTIVITY,
             "dry_conductivity": CONDUCTIVITY,
@@ -339,7 +338,7 @@ class ChannelModel(Model):
         self.ns_model = {
             "eos": {"name": "we"},
             "gravity": GRAVITY,
-            "logfile": {"echo": False},
+            "logfile": {"echo": True},
             "mesh": {
                 "filename": f"{self.mesh.name}.msh"
             },
