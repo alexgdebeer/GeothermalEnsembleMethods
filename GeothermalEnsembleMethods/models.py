@@ -69,7 +69,7 @@ class IrregularMesh():
         self.fem_mesh = self.fem_mesh.triangulate()
 
 class MassUpflow():
-    def __init__(self, cell, rate):
+    def __init__(self, cell: lm.cell, rate: float):
         self.cell = cell
         self.rate = rate
 
@@ -144,9 +144,11 @@ class Model():
         self.ns_model["source"].extend([{
             "component": "water",
             "enthalpy": MASS_ENTHALPY, 
-            "rate": u.rate,
+            "rate": u.rate * u.cell.volume,
             "cell": u.cell.index
         } for u in self.upflows])
+
+        print(sum([u.rate * u.cell.volume for u in self.upflows]))
 
     def add_rocktypes(self):
         """Adds rocks with given permeabilities (and constant porosity, 

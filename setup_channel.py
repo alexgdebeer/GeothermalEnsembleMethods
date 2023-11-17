@@ -171,12 +171,12 @@ class ClayCap():
 
         cx, cy, *_ = self.get_cap_params(params)[0]
 
-        s = 300 # TODO: make this into an input
+        s = 800 # TODO: make this into an input
 
         col_centres = [col.centre for col in mesh.m.column]
         col_weightings = np.array([np.exp(-(((c[0]-cx)/s)**2 + ((c[1]-cy)/s)**2)) / 2
-                                   for c in col_centres]) 
-        
+                                   for c in col_centres])
+
         return col_weightings
 
 class ChannelPrior():
@@ -240,7 +240,7 @@ class ChannelPrior():
         upflow_rates = upflow_rates[fault_col_inds]
         upflow_cells = [col.cell[-1] for col in fault_cols]
 
-        upflows = [models.MassUpflow(c, r) 
+        upflows = [models.MassUpflow(c, max(r, 0.0)) 
                    for c, r in zip(upflow_cells, upflow_rates)]
 
         return perms, upflows
@@ -254,12 +254,12 @@ Model parameters
 
 mesh = models.IrregularMesh(MESH_NAME)
 
-# TODO: add feedzone locations
+# TODO: add feedzone locations and specify production rates
 feedzone_locs = [(500.0, 500.0, -500.0)]
 feedzone_cells = [mesh.m.find(loc) for loc in feedzone_locs]
-feedzone_qs = [0.0]
-feedzones = [models.Feedzone(c, q) 
-             for (c, q) in zip(feedzone_cells, feedzone_qs)]
+feedzone_rates = [0.0]
+feedzones = [models.Feedzone(cell, rate) 
+             for (cell, rate) in zip(feedzone_cells, feedzone_rates)]
 
 """
 Clay cap
@@ -296,14 +296,13 @@ Channel
 """
 
 # Bounds for amplitude, period, angle, intercept, width
-bounds_channel = [(100, 200), (500, 1200), (-np.pi/8, np.pi/8), 
-                  (500, 1000), (75, 150)]
+bounds_channel = [(-200, 200), (500, 1500), (-np.pi/8, np.pi/8), 
+                  (650, 850), (75, 150)]
 
-mu_upflow = 0 # TODO: figure out what this should be
+mu_upflow = 1.5e-6
 
 # Bounds for marginal standard deviations and x, y lengthscales
-# TODO: figure out what sigma should be (depends on mesh too of course)
-bounds_upflow = [(1e-8, 1e-6), (200, 400), (200, 400)]
+bounds_upflow = [(0.25e-6, 0.75e-6), (200, 400), (200, 400)]
 
 channel = Channel(mesh, bounds_channel)
 upflow_field = UpflowField(mesh, grf_2d, mu_upflow, bounds_upflow)
@@ -331,8 +330,6 @@ Model functions
 
 def plot_perms(mesh, perms):
 
-    import pyvista as pv
-
     cell_centres = mesh.fem_mesh.cell_centers().points
     cell_perms = [perms[mesh.m.find(c, indices=True)] for c in cell_centres]
     
@@ -341,24 +338,24 @@ def plot_perms(mesh, perms):
     slices = mesh.fem_mesh.slice_along_axis(n=7, axis="y")
     slices.plot(scalars="cell_perms", cmap="turbo")
 
-    # p = pv.Plotter()
-    # p.add_mesh(mesh.fem_mesh, scalars=cell_perms, cmap="turbo")
-    # p.show()
+def plot_upflows(mesh, upflows):
+
+    values = np.zeros((mesh.m.num_cells, ))
+    for upflow in upflows:
+        values[upflow.cell.index] = upflow.rate
+
+    mesh.m.layer_plot(value=values, colourmap="coolwarm")
 
 def run_model(white_noise):
 
     perms, upflows = prior.transform(white_noise)
 
-    # plot_perms(mesh, perms)
+    print(sum([u.cell.volume for u in upflows]))
 
-    # mesh.m.slice_plot(value=perms, colourmap="viridis")
-    # mesh.m.layer_plot(value=perms, colourmap="viridis")
-
-    # import pyvista as pv
-    # mesh.fem_mesh["perms"] = perms
-    # mesh.fem_mesh.set_active_scalars("perms")
-    # slices = mesh.fem_mesh.slice_along_axis(n=7, axis="y")
-    # slices.plot(cmap="turbo")
+    plot_perms(mesh, perms)
+    mesh.m.slice_plot(value=perms, colourmap="viridis")
+    mesh.m.layer_plot(value=perms, colourmap="viridis")
+    plot_upflows(mesh, upflows)
 
     m = models.ChannelModel(MODEL_NAME, mesh, perms, feedzones, upflows, dt, tmax)
     return m.run()
