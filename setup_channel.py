@@ -299,10 +299,10 @@ Channel
 bounds_channel = [(-200, 200), (500, 1500), (-np.pi/8, np.pi/8), 
                   (650, 850), (75, 150)]
 
-mu_upflow = 1.5e-6
+mu_upflow = 2.0e-6
 
 # Bounds for marginal standard deviations and x, y lengthscales
-bounds_upflow = [(0.25e-6, 0.75e-6), (200, 400), (200, 400)]
+bounds_upflow = [(0.5e-6, 1.0e-6), (200, 1000), (200, 1000)]
 
 channel = Channel(mesh, bounds_channel)
 upflow_field = UpflowField(mesh, grf_2d, mu_upflow, bounds_upflow)
@@ -328,15 +328,14 @@ tmax = 52 * consts.SECS_PER_WEEK
 Model functions
 """
 
-def plot_perms(mesh, perms):
+def plot_vals_on_mesh(mesh, vals):
 
     cell_centres = mesh.fem_mesh.cell_centers().points
-    cell_perms = [perms[mesh.m.find(c, indices=True)] for c in cell_centres]
+    cell_vals = [vals[mesh.m.find(c, indices=True)] for c in cell_centres]
     
-    mesh.fem_mesh["cell_perms"] = cell_perms
-    mesh.fem_mesh.set_active_scalars("cell_perms")
-    slices = mesh.fem_mesh.slice_along_axis(n=7, axis="y")
-    slices.plot(scalars="cell_perms", cmap="turbo")
+    mesh.fem_mesh["values"] = cell_vals
+    slices = mesh.fem_mesh.slice_along_axis(n=5, axis="x")
+    slices.plot(scalars="values", cmap="turbo")
 
 def plot_upflows(mesh, upflows):
 
@@ -350,9 +349,7 @@ def run_model(white_noise):
 
     perms, upflows = prior.transform(white_noise)
 
-    print(sum([u.cell.volume for u in upflows]))
-
-    plot_perms(mesh, perms)
+    plot_vals_on_mesh(mesh, perms)
     mesh.m.slice_plot(value=perms, colourmap="viridis")
     mesh.m.layer_plot(value=perms, colourmap="viridis")
     plot_upflows(mesh, upflows)
@@ -368,3 +365,16 @@ white_noise = prior.sample()
 flag = run_model(white_noise)
 
 print(flag)
+
+import h5py
+
+with h5py.File(f"{MODEL_NAME}_PR.h5", "r") as f:
+
+    cell_inds = f["cell_index"][:, 0]
+    src_inds = f["source_index"][:, 0]
+    
+    temps = f["cell_fields"]["fluid_temperature"][0][cell_inds]
+
+plot_vals_on_mesh(mesh, temps)
+
+# mesh.m.slice_plot(value=ts, colourmap="coolwarm")
