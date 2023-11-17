@@ -5,7 +5,7 @@ import numpy as np
 from scipy import stats
 from GeothermalEnsembleMethods import consts, grfs, likelihood, models
 
-np.random.seed(1)
+# np.random.seed(2)
 
 MESH_NAME = "models/channel/gCH"
 MODEL_NAME = "models/channel/CH"
@@ -14,6 +14,7 @@ MODEL_NAME = "models/channel/CH"
 Classes
 """
 
+# TODO: move somewhere else
 def gauss_to_unif(x, lb, ub):
     return lb + stats.norm.cdf(x) * (ub - lb)
 
@@ -27,18 +28,18 @@ class PermeabilityField():
         self.mu = mu
         self.bounds = bounds
 
-        self.n_params = self.mesh.m.num_cells + 3
+        self.n_params = self.mesh.fem_mesh.n_points + len(self.bounds)
 
     def get_perms(self, ps):
         """Returns the set of permeabilities that correspond to a given 
         set of (whitened) parameters."""
 
         hyperps, W = ps[:4], ps[4:]
-        hyperps = [gauss_to_unif(p, bnds)
+        hyperps = [gauss_to_unif(p, *bnds)
                    for p, bnds in zip(hyperps, self.bounds)]
         
         X = self.grf.generate_field(W, *hyperps)
-        return self.mu + self.grf.H @ X
+        return self.mu + self.grf.G @ X
 
     def apply_level_set(self, perms, level_width):
 
@@ -58,18 +59,19 @@ class UpflowField():
         self.mu = mu 
         self.bounds = bounds 
 
-        self.n_params = 2 + self.mesh.m.num_columns
+        self.n_hyperps = len(bounds)
+        self.n_params = self.n_hyperps + self.mesh.m.num_columns
 
     def get_upflows(self, params):
         """Returns the set of upflows that correspond to a given set of 
         (whitened) parameters."""
 
-        hyperparams, W = params[:3], params[3:]
+        hyperparams, W = params[:self.n_hyperps], params[self.n_hyperps:]
         hyperparams = [gauss_to_unif(p, *bnds) 
                        for p, bnds in zip(hyperparams, self.bounds)]
         
         X = self.grf.generate_field(W, *hyperparams)
-        return self.mu + self.grf.H @ X
+        return self.mu + X
 
 class Channel():
     
@@ -90,20 +92,16 @@ class Channel():
 
         pars = [gauss_to_unif(p, *self.bounds[i]) for i, p in enumerate(pars)]
 
-        cols_in_channel = [col for col in self.mesh.column 
-                           if in_channel(*col.centre, *pars)]
-        
-        cells = [cell.index for col in cols_in_channel for cell in col.cell]
-        cols = [col.index for col in cols_in_channel]
-
+        cols = [col for col in self.mesh.m.column if in_channel(*col.centre, *pars)]
+        cells = [cell for col in cols for cell in col.cell]
         return cells, cols
 
 class ClayCap():
 
     def __init__(self, mesh, bounds, n_terms, coef_sds):
         
-        self.cell_centres = [cell.centre for cell in mesh.m.cell]
-        self.col_centres = [col.centre for col in mesh.m.column]
+        self.cell_centres = np.array([c.centre for c in mesh.m.cell])
+        self.col_centres = np.array([c.centre for c in mesh.m.column])
 
         self.bounds = bounds 
         self.n_terms = n_terms 
@@ -167,15 +165,15 @@ class ClayCap():
         
         return (cell_radii < cap_radii).nonzero()
     
-    def get_upflow_weightings(self, params):
+    def get_upflow_weightings(self, params, mesh):
         """Returns a list of values by which the upflow in each column 
         should be multiplied."""
 
-        cx, cy, *_ = self.cap.get_cap_params(params[self.inds["cap"]])[0]
+        cx, cy, *_ = self.get_cap_params(params)[0]
 
         s = 300 # TODO: make this into an input
 
-        col_centres = [col.centre for col in self.mesh.m.column]
+        col_centres = [col.centre for col in mesh.m.column]
         col_weightings = np.array([np.exp(-(((c[0]-cx)/s)**2 + ((c[1]-cy)/s)**2)) / 2
                                    for c in col_centres]) 
         
@@ -197,7 +195,7 @@ class ChannelPrior():
         self.grf_upflow = grf_upflow
         self.level_width = level_width
 
-        self.param_counts = [cap.n_params, channel.n_params, 
+        self.param_counts = [0, cap.n_params, channel.n_params, 
                              grf_ext.n_params, grf_flt.n_params, 
                              grf_cap.n_params, grf_upflow.n_params]
         
@@ -215,8 +213,9 @@ class ChannelPrior():
 
     def transform(self, params):
 
-        cap_cells = self.cap.get_cells_in_cap(params[self.inds["cap"]])
-        flt_cells, flt_cols = self.channel.get_cells_in_channel(params[self.inds["channel"]])
+        params = np.squeeze(params)
+
+        cap_cell_inds = self.cap.get_cells_in_cap(params[self.inds["cap"]])
 
         perms_ext = self.grf_ext.get_perms(params[self.inds["grf_ext"]])
         perms_flt = self.grf_flt.get_perms(params[self.inds["grf_flt"]])
@@ -226,20 +225,28 @@ class ChannelPrior():
         perms_flt = self.grf_flt.apply_level_set(perms_flt, self.level_width)
         perms_cap = self.grf_cap.apply_level_set(perms_cap, self.level_width)
 
+        fault_cells, fault_cols = self.channel.get_cells_in_channel(params[self.inds["channel"]])
+        fault_cell_inds = [c.index for c in fault_cells]
+        fault_col_inds = [c.index for c in fault_cols]
+
         perms = np.copy(perms_ext)
-        perms[flt_cells] = perms_flt[flt_cells]
-        perms[cap_cells] = perms_cap[cap_cells]
+        perms[fault_cell_inds] = perms_flt[fault_cell_inds]
+        perms[cap_cell_inds] = perms_cap[cap_cell_inds]
 
-        upflow_weightings = self.cap.get_upflow_weightings(params[self.inds["cap"]])
+        upflow_weightings = self.cap.get_upflow_weightings(params[self.inds["cap"]], self.mesh)
 
-        upflows = self.grf_upflow.get_upflows(params[self.inds["grf_upflow"]])
-        upflows *= upflow_weightings
-        upflows = upflows[flt_cols]
+        upflow_rates = self.grf_upflow.get_upflows(params[self.inds["grf_upflow"]])
+        upflow_rates *= upflow_weightings
+        upflow_rates = upflow_rates[fault_col_inds]
+        upflow_cells = [col.cell[-1] for col in fault_cols]
 
-        return perms, upflows, flt_cols
+        upflows = [models.MassUpflow(c, r) 
+                   for c, r in zip(upflow_cells, upflow_rates)]
+
+        return perms, upflows
 
     def sample(self, n=1):
-        return np.random.normal(n, self.num_params)
+        return np.random.normal(size=(n, self.num_params))
 
 """
 Model parameters
@@ -249,10 +256,11 @@ mesh = models.IrregularMesh(MESH_NAME)
 mesh.load_fem_mesh()
 
 # TODO: add feedzone locations
-feedzone_locs = [(0.0, 0.0, 0.0)]
+feedzone_locs = [(500.0, 500.0, -500.0)]
+feedzone_cells = [mesh.m.find(loc) for loc in feedzone_locs]
 feedzone_qs = [0.0]
-feedzones = [models.Feedzone(loc, q) 
-             for (loc, q) in zip(feedzone_locs, feedzone_qs)]
+feedzones = [models.Feedzone(c, q) 
+             for (c, q) in zip(feedzone_cells, feedzone_qs)]
 
 """
 Clay cap
@@ -271,9 +279,9 @@ mu_perm_flt = -13
 mu_perm_cap = -16
 
 # Bounds for marginal standard deviations and x, y, z lengthscales
-bounds_perm_ext = [(0.25, 0.50), (1000, 1500), (1000, 1500), (200, 400)]
-bounds_perm_flt = [(0.20, 0.30), (1000, 1500), (1000, 1500), (200, 400)]
-bounds_perm_cap = [(0.20, 0.30), (1000, 1500), (1000, 1500), (200, 400)]
+bounds_perm_ext = [(0.4, 0.8), (1500, 2000), (1500, 2000), (200, 800)]
+bounds_perm_flt = [(0.20, 0.30), (1500, 2000), (1500, 2000), (200, 800)]
+bounds_perm_cap = [(0.20, 0.30), (1500, 2000), (1500, 2000), (200, 800)]
 
 grf_2d = grfs.MaternField2D(mesh)
 grf_3d = grfs.MaternField3D(mesh)
@@ -322,8 +330,45 @@ tmax = 52 * consts.SECS_PER_WEEK
 Model functions
 """
 
-def run_model(params):
+def plot_perms(mesh, perms):
 
-    perms, upflows, upflow_cells = prior.transform(params)
+    import pyvista as pv
+
+    cell_centres = mesh.fem_mesh.cell_centers().points
+    cell_perms = [perms[mesh.m.find(c, indices=True)] for c in cell_centres]
+    
+    mesh.fem_mesh["cell_perms"] = cell_perms
+    mesh.fem_mesh.set_active_scalars("cell_perms")
+    slices = mesh.fem_mesh.slice_along_axis(n=7, axis="y")
+    slices.plot(scalars="cell_perms", cmap="turbo")
+
+    # p = pv.Plotter()
+    # p.add_mesh(mesh.fem_mesh, scalars=cell_perms, cmap="turbo")
+    # p.show()
+
+def run_model(white_noise):
+
+    perms, upflows = prior.transform(white_noise)
+
+    plot_perms(mesh, perms)
+
+    mesh.m.slice_plot(value=perms, colourmap="viridis")
+    mesh.m.layer_plot(value=perms, colourmap="viridis")
+
+    # import pyvista as pv
+    # mesh.fem_mesh["perms"] = perms
+    # mesh.fem_mesh.set_active_scalars("perms")
+    # slices = mesh.fem_mesh.slice_along_axis(n=7, axis="y")
+    # slices.plot(cmap="turbo")
+
     m = models.ChannelModel(MODEL_NAME, mesh, perms, feedzones, upflows, dt, tmax)
     return m.run()
+
+"""
+Truth generation
+"""
+
+white_noise = prior.sample()
+flag = run_model(white_noise)
+
+print(flag)

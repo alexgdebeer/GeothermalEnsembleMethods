@@ -296,7 +296,6 @@ class MaternField3D():
         self.P = sparse.coo_matrix((P_v, (P_i, P_j)), 
                                    shape=(self.n_elements, self.n_points))
 
-
     def generate_field(self, W, sigma, lx, ly, lz, bcs=BC.ROBIN, lam=None):
         """Generates a Matern field."""
 

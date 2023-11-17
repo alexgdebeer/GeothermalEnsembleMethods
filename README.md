@@ -11,7 +11,9 @@ This repository contains code for running ensemble Kalman methods for approximat
  - Figure out what the level width should be.
  - Set up mechanism to save true parameters, states and data to file.
  - Develop method for visualising the permeability structure and upflow locations of model.
+ - Develop method for visualising the convective plume of the model.
  - Think about inverse crimes (i.e. consider making a smaller model)
+ - Check everything carefully!
 ### Ensemble Methods
  - Tidy up EKI-DMC and EnRML code (less object-oriented?)
 ### Misc

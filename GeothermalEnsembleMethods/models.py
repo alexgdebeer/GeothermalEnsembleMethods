@@ -65,6 +65,8 @@ class IrregularMesh():
         self.col_cells = {col.index: [c.index for c in col.cell] 
                           for col in self.m.column}
         
+        self.load_fem_mesh()
+        
     def load_fem_mesh(self):
 
         try: 
@@ -75,13 +77,13 @@ class IrregularMesh():
             self.fem_mesh = None
 
 class MassUpflow():
-    def __init__(self, loc, rate):
-        self.loc = loc
+    def __init__(self, cell, rate):
+        self.cell = cell
         self.rate = rate
 
 class Feedzone():
-    def __init__(self, loc, rate):
-        self.loc = loc
+    def __init__(self, cell, rate):
+        self.cell = cell
         self.rate = rate
 
 class Model():
@@ -133,25 +135,25 @@ class Model():
         """Adds the mass upflows to the base of the model. Where there are no
         mass upflows, a heat flux of constant magnitude is imposed."""
 
-        upflow_cells = [
-            self.mesh.m.find(upflow.loc, indices=True) 
+        upflow_cell_inds = [
+            upflow.cell.index 
             for upflow in self.upflows]
 
-        heat_cells = [
+        heat_cell_inds = [
             c.cell[-1].index for c in self.mesh.m.column 
-            if c.cell[-1].index not in upflow_cells]
+            if c.cell[-1].index not in upflow_cell_inds]
 
         self.ns_model["source"] = [{
             "component": "energy",
             "rate": HEAT_RATE * self.mesh.m.cell[c].column.area,
             "cell": c
-        } for c in heat_cells]
+        } for c in heat_cell_inds]
 
         self.ns_model["source"].extend([{
             "component": "water",
             "enthalpy": MASS_ENTHALPY, 
             "rate": u.rate,
-            "cell": self.mesh.m.find(u.loc, indices=True)
+            "cell": u.cell.index
         } for u in self.upflows])
 
     def add_rocktypes(self):
@@ -180,7 +182,7 @@ class Model():
         self.pr_model["source"].extend([{
             "component": "water",
             "rate": f.rate,
-            "cell": self.mesh.m.find(f.loc, indices=True)
+            "cell": f.cell.index
         } for f in self.feedzones])
 
     def add_ns_incon(self):
