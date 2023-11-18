@@ -255,14 +255,18 @@ Model parameters
 """
 
 mesh = models.IrregularMesh(MESH_NAME)
-print(mesh.m.centre)
+# print(mesh.m.centre)
 
-# TODO: add feedzone locations and specify production rates
-feedzone_locs = [(500.0, 500.0, -500.0)]
-feedzone_cells = [mesh.m.find(loc) for loc in feedzone_locs]
-feedzone_rates = [0.0]
-feedzones = [models.Feedzone(cell, rate) 
-             for (cell, rate) in zip(feedzone_cells, feedzone_rates)]
+n_wells = 2
+well_xs = [500, 500]
+well_ys = [750, 500]
+well_depths = [-750, -750]
+feedzone_depths = [-400] * n_wells
+feedzone_rates = [-2.0] * n_wells
+
+wells = [models.Well(x, y, depth, mesh, fz_depth, fz_rate)
+         for (x, y, depth, fz_depth, fz_rate) 
+         in zip(well_xs, well_ys, well_depths, feedzone_depths, feedzone_rates)]
 
 """
 Clay cap
@@ -357,7 +361,7 @@ def run_model(white_noise):
     mesh.m.layer_plot(value=perms, colourmap="viridis")
     plot_upflows(mesh, upflows)
 
-    m = models.ChannelModel(MODEL_NAME, mesh, perms, feedzones, upflows, dt, tmax)
+    m = models.ChannelModel(MODEL_NAME, mesh, perms, wells, upflows, dt, tmax)
     return m.run()
 
 """

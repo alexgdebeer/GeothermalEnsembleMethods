@@ -76,16 +76,24 @@ class MassUpflow():
         self.cell = cell
         self.rate = rate
 
-class Feedzone():
-    def __init__(self, cell: lm.cell, rate: float):
-        self.cell = cell
-        self.rate = rate
+class Well():
+    
+    def __init__(self, x: float, y: float, depth: float, mesh: Mesh, 
+                 feedzone_depth: float, feedzone_rate: float):
+        
+        self.max_elev = mesh.m.find((x, y, depth)).column.surface
+        self.min_elev = depth
+        self.coords = np.array([[x, y, self.max_elev], 
+                                [x, y, self.min_elev]])
+
+        self.feedzone_cell = mesh.m.find((x, y, feedzone_depth))
+        self.feedzone_rate = feedzone_rate
 
 class Model():
     """Base class for models, with a set of default methods."""
 
     def __init__(self, path: str, mesh: Mesh, perms: np.ndarray, 
-                 feedzones: list[Feedzone], upflows: list[MassUpflow], 
+                 wells: list[Well], upflows: list[MassUpflow], 
                  dt: float, tmax: float):
 
         self.ns_path = f"{path}_NS"
@@ -94,7 +102,7 @@ class Model():
 
         self.mesh = mesh 
         self.perms = perms 
-        self.feedzones = feedzones 
+        self.wells = wells
         self.upflows = upflows
 
         self.dt = dt
@@ -155,7 +163,7 @@ class Model():
         } for u in self.upflows])
 
         total_mass = sum([u.rate * u.cell.volume for u in self.upflows])
-        utils.info(f"Total mass input: {round(total_mass, 2)} kg/s")
+        utils.info(f"Total mass input: {total_mass:.2f} kg/s")
 
     def add_rocktypes(self):
         """Adds rocks with given permeabilities (and constant porosity, 
@@ -182,9 +190,9 @@ class Model():
 
         self.pr_model["source"].extend([{
             "component": "water",
-            "rate": f.rate,
-            "cell": f.cell.index
-        } for f in self.feedzones])
+            "rate": w.feedzone_rate,
+            "cell": w.feedzone_cell.index
+        } for w in self.wells])
 
     def add_ns_incon(self):
         """Adds path to initial condition file to the model, if the 
