@@ -257,12 +257,12 @@ Model parameters
 mesh = models.IrregularMesh(MESH_NAME)
 # print(mesh.m.centre)
 
-n_wells = 2
-well_xs = [500, 500]
-well_ys = [750, 500]
-well_depths = [-750, -750]
-feedzone_depths = [-400] * n_wells
-feedzone_rates = [-2.0] * n_wells
+well_xs = [500, 550, 1250, 750]
+well_ys = [750, 500, 1250, 750]
+n_wells = len(well_xs)
+well_depths = [-750] * n_wells
+feedzone_depths = [-600] * n_wells
+feedzone_rates = [-0.2] * n_wells
 
 wells = [models.Well(x, y, depth, mesh, fz_depth, fz_rate)
          for (x, y, depth, fz_depth, fz_rate) 
@@ -352,16 +352,50 @@ def plot_upflows(mesh, upflows):
 
     mesh.m.layer_plot(value=values, colourmap="coolwarm")
 
+def plot_wells(mesh, perms, wells: list[models.Well]):
+
+    def get_well_tubes(wells: list[models.Well]):
+        
+        lines = pv.MultiBlock()
+        for well in wells:
+            line = pv.Line(*well.coords)
+            lines.append(line)
+        bodies = lines.combine().extract_geometry().clean().split_bodies()
+
+        tubes = pv.MultiBlock()
+        for body in bodies:
+            tubes.append(body.extract_geometry().tube(radius=10))
+        return tubes
+
+    cell_centres = mesh.fem_mesh.cell_centers().points
+    cell_vals = [perms[mesh.m.find(c, indices=True)] for c in cell_centres]
+    mesh.fem_mesh["perms"] = cell_vals
+    mesh.fem_mesh.set_active_scalars("perms")
+
+    import pyvista as pv
+
+    tubes = get_well_tubes(wells)
+
+    p = pv.Plotter()
+    p.add_mesh(mesh.fem_mesh.threshold([-20.0, -15.5]), cmap="coolwarm")
+    p.add_mesh(mesh.fem_mesh.threshold([-15.5, -10.0]),  opacity=0.5, cmap="coolwarm")
+    p.add_mesh(tubes, color="k")
+    # for well in wells:
+    #     p.add_lines(well.coords, color="black", width=5)
+    p.show()
+
+
 def run_model(white_noise):
 
     perms, upflows = prior.transform(white_noise)
 
+    plot_wells(mesh, perms, wells)
     plot_vals_on_mesh(mesh, perms)
     mesh.m.slice_plot(value=perms, colourmap="viridis")
     mesh.m.layer_plot(value=perms, colourmap="viridis")
     plot_upflows(mesh, upflows)
 
-    m = models.ChannelModel(MODEL_NAME, mesh, perms, wells, upflows, dt, tmax)
+    m = models.Model3D(MODEL_NAME, mesh, perms, wells, upflows, dt, tmax)
     return m.run()
 
 """
