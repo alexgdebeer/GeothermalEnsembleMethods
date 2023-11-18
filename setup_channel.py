@@ -3,7 +3,9 @@
 from itertools import product
 import numpy as np
 from scipy import stats
-from GeothermalEnsembleMethods import consts, grfs, likelihood, models
+
+from GeothermalEnsembleMethods.consts import *
+from GeothermalEnsembleMethods import grfs, likelihood, models
 
 # np.random.seed(2)
 
@@ -253,6 +255,7 @@ Model parameters
 """
 
 mesh = models.IrregularMesh(MESH_NAME)
+print(mesh.m.centre)
 
 # TODO: add feedzone locations and specify production rates
 feedzone_locs = [(500.0, 500.0, -500.0)]
@@ -299,10 +302,10 @@ Channel
 bounds_channel = [(-200, 200), (500, 1500), (-np.pi/8, np.pi/8), 
                   (650, 850), (75, 150)]
 
-mu_upflow = 2.0e-6
+mu_upflow = 1.5e-6
 
 # Bounds for marginal standard deviations and x, y lengthscales
-bounds_upflow = [(0.5e-6, 1.0e-6), (200, 1000), (200, 1000)]
+bounds_upflow = [(0.1e-6, 0.5e-6), (200, 1000), (200, 1000)]
 
 channel = Channel(mesh, bounds_channel)
 upflow_field = UpflowField(mesh, grf_2d, mu_upflow, bounds_upflow)
@@ -321,8 +324,8 @@ prior = ChannelPrior(mesh, clay_cap, channel, perm_field_ext,
 Timestepping 
 """
 
-dt = consts.SECS_PER_WEEK
-tmax = 52 * consts.SECS_PER_WEEK
+dt = SECS_PER_WEEK
+tmax = 52 * SECS_PER_WEEK
 
 """
 Model functions
