@@ -340,8 +340,23 @@ class Model():
                                np.array(ps).flatten(), 
                                np.array(es).flatten()))
 
-class ChannelModel(Model):
-    """3D model with a channel at the base."""
+class Model2D(Model):
+    """2D Model (note: can currently only be used with a RegularMesh)."""
+
+    def initialise_ns_model(self):
+        
+        self.ns_model = {
+            "eos": {"name": "we"},
+            "gravity": GRAVITY,
+            "logfile": {"echo": False},
+            "mesh": {
+                "filename": f"{self.mesh.name}.msh", 
+                "thickness": self.mesh.dy
+            },
+            "title": "2D Model"
+        }
+
+class Model3D(Model):
 
     def initialise_ns_model(self):
         
@@ -352,5 +367,5 @@ class ChannelModel(Model):
             "mesh": {
                 "filename": f"{self.mesh.name}.msh"
             },
-            "title": "Channel model"
+            "title": "3D Model"
         }

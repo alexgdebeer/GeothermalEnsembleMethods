@@ -15,22 +15,6 @@ OUTPUTS_PATH = "data/outputs_true.txt"
 Classes
 """
 
-class SliceModel(models.Model):
-    """Defines methods specific to slice model."""
-
-    def initialise_ns_model(self):
-        
-        self.ns_model = {
-            "eos": {"name": "we"},
-            "gravity": consts.GRAVITY,
-            "logfile": {"echo": False},
-            "mesh": {
-                "filename": f"{self.mesh.name}.msh", 
-                "thickness": self.mesh.dy
-            },
-            "title": "Slice model"
-        }
-
 class SlicePrior():
 
     def __init__(self, mesh, d_depth_clay, 
@@ -200,7 +184,7 @@ def f(thetas):
     ks, q = prior.transform(thetas)
     upflows = [models.MassUpflow(upflow_loc, q)]
     
-    model = SliceModel(model_name, mesh, ks, feedzones, upflows, dt, tmax)
+    model = models.Model2D(model_name, mesh, ks, feedzones, upflows, dt, tmax)
 
     if (flag := model.run()) == models.ExitFlag.FAILURE: 
         return flag
@@ -213,7 +197,7 @@ def g(fs):
     
     ts, ps, es = unpack_data_raw(fs)
 
-    ts_interp = interpolate.RegularGridInterpolator((mesh.xs, -mesh.zs), ts)
+    ts_interp = interpolate.RegularGridInterpolator((mesh.xs, -mesh.zs), ts.T)
     ts = ts_interp(np.vstack((ns_obs_xs, -ns_obs_zs)).T).flatten()
 
     ps = ps[obs_time_inds, :].flatten()
