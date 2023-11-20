@@ -10,6 +10,8 @@ This repository contains code for running ensemble Kalman methods for approximat
  - Update level set function to Gaussian copula-ish ideas?
  - Think about inverse crimes (i.e. make a finder model.)
  - Think about how the noise is generated.
+ - Plot the data, truth, convective plume, vapour saturations?
+ - Save data, truth, true states to file
 ### Channel
  - Add feedzone locations.
  - Tune Robin parameter on Matern fields.
