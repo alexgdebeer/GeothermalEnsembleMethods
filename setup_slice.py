@@ -7,18 +7,24 @@ from scipy.interpolate import RegularGridInterpolator
 from src.consts import SECS_PER_WEEK
 from src.grfs import Gaussian1D, Gaussian2D
 from src.models import RegularMesh, Well, MassUpflow, Model2D, ExitFlag
+from src import utils
 
 np.random.seed(1)
 
-TRUTH_FROM_FILE = True
-PARAMS_PATH = "data/params_true.txt"
-OUTPUTS_PATH = "data/outputs_true.txt"
+DATA_FOLDER = "data/slice"
+MODEL_FOLDER = "models/slice"
 
+WHITE_PARAMS_PATH = f"{DATA_FOLDER}/white_params_true.txt"
+PARAMS_PATH = f"{DATA_FOLDER}/params_true.txt"
+OUTPUTS_PATH = f"{DATA_FOLDER}/full_outputs_true.txt"
+REDUCED_OUTPUTS_PATH = f"{DATA_FOLDER}/reduced_outputs_true.txt"
+OBSERVATIONS_PATH = f"{DATA_FOLDER}/observations.txt"
 
 """
 Classes
 """
 
+# TODO: add a num_params attribute to this if it doesn't have one already.
 class SlicePrior():
 
     def __init__(self, mesh, d_depth_clay, 
@@ -51,6 +57,8 @@ class SlicePrior():
         self.is_perm_deep = np.array(range(self.is_perm_clay[-1] + 1,
                                            self.is_perm_clay[-1] + 1 + \
                                             self.d_perm_deep.n_cells))
+        
+        self.num_params = -1 # TODO: add this properly
 
     def generate_mu(self):
         self.mu = np.hstack((self.d_depth_clay.mu, 
@@ -106,13 +114,16 @@ class SlicePrior():
         ws = np.random.normal(size=(len(self.mu), n))
         return self.mu[:, np.newaxis] + self.chol_inv @ ws
 
-    def transform(self, thetas):
-        *perms, mass_rate = np.squeeze(thetas)
+    def transform(self, ws):
+
+        *perms, mass_rate = np.squeeze(ws)
+        
         perms = self.transform_perms(perms)
+        perms = 10 ** self.apply_level_sets(perms)
         mass_rate = self.transform_mass_rate(mass_rate)
-        perms = self.apply_level_sets(perms)
-        perms =  10 ** perms
-        return perms, mass_rate
+        
+        ps = np.append(perms, mass_rate)
+        return ps
 
 """
 Model parameters
@@ -131,8 +142,8 @@ n_blocks = nx * nz
 n_wells = 5
 n_temps_per_well = 6
 
-mesh_name = f"models/gSL{n_blocks}"
-model_name = f"models/SL{n_blocks}"
+mesh_name = f"{MODEL_FOLDER}/gSL{n_blocks}"
+model_name = f"{MODEL_FOLDER}/SL{n_blocks}"
 
 mesh = RegularMesh(mesh_name, xmax, ymax, zmax, nx, ny, nz)
 
@@ -146,6 +157,7 @@ wells = [Well(x, 0.5*ymax, depth, mesh, fz_depth, fz_rate)
          in zip(well_xs, well_depths, feedzone_depths, feedzone_rates)]
 
 upflow_loc = (0.5*xmax, 0.5*ymax, -zmax + 0.5*mesh.dz)
+upflow_cell = mesh.m.find(upflow_loc)
 
 """
 Constants and functions for extracting data
@@ -186,24 +198,29 @@ def unpack_data_obs(gs):
 Model functions
 """
 
-def f(thetas):
+def F(p_i):
+    """Given a set of transformed parameters, forms and runs the 
+    corresponding model, then returns the full model output."""
 
-    ks, q = prior.transform(thetas)
-    upflows = [MassUpflow(upflow_loc, q)]
+    *logks, upflow_rate = p_i
+    upflows = [MassUpflow(upflow_cell, upflow_rate)]
     
-    model = Model2D(model_name, mesh, ks, wells, upflows, dt, tmax)
+    model = Model2D(model_name, mesh, logks, wells, upflows, dt, tmax)
 
     if (flag := model.run()) == ExitFlag.FAILURE: 
         return flag
     return model.get_pr_data()
 
-def g(fs):
+def G(F_i):
+    """Given a set of complete model outputs, returns the values 
+    corresponding to the observations."""
 
-    if type(fs) == ExitFlag: 
-        return fs
+    if type(F_i) == ExitFlag: 
+        return F_i
     
-    ts, ps, es = unpack_data_raw(fs)
+    ts, ps, es = unpack_data_raw(F_i)
 
+    # TODO: check this
     ts_interp = RegularGridInterpolator((mesh.xs, -mesh.zs), ts.T)
     ts = ts_interp(np.vstack((ns_obs_xs, -ns_obs_zs)).T).flatten()
 
@@ -216,8 +233,8 @@ def g(fs):
 Prior
 """
 
-mass_rate_bounds = (1.0e-1, 2.0e-1)
-level_width = 0.25
+mass_rate_bounds = (1.0e-1 / upflow_cell.volume, 2.0e-1 / upflow_cell.volume)
+level_width = 0.25 # TODO: think about this
 
 depth_shal = -60.0
 cells_shal = [c for c in mesh.m.cell if c.centre[-1] > depth_shal]
@@ -236,29 +253,40 @@ prior = SlicePrior(mesh, d_depth_clay,
 Truth
 """
 
-if TRUTH_FROM_FILE:
-    thetas_t = np.genfromtxt(PARAMS_PATH)
-else:
-    thetas_t = prior.sample()
+try:
+    w_t = np.genfromtxt(WHITE_PARAMS_PATH)
+    p_t = np.genfromtxt(PARAMS_PATH)
 
-ks_t, q_t = prior.transform(thetas_t)
+except FileNotFoundError:
+    utils.info("True parameters not found. Sampling a new set...")
 
-logks_t = np.reshape(np.log10(ks_t), (nx, nz))
+    w_t = prior.sample()
+    p_t = prior.transform(w_t)
+    np.savetxt(WHITE_PARAMS_PATH, w_t)
+    np.savetxt(PARAMS_PATH, p_t)
 
-if TRUTH_FROM_FILE:
-    f_t = np.genfromtxt(OUTPUTS_PATH)
-else:
-    f_t = f(thetas_t)
+p_t = prior.transform(w_t)
+*ks_t, upflow_rate_t = p_t
+logks_t = np.reshape(np.log10(ks_t), (mesh.nx, mesh.nz))
 
-g_t = g(f_t)
+try:
+    F_t = np.genfromtxt(OUTPUTS_PATH)
+    G_t = np.genfromtxt(REDUCED_OUTPUTS_PATH)
 
-Nf = len(f_t)
-Ng = len(g_t)
+except FileNotFoundError:
+    utils.info("True model outputs not found. Running model...")
 
-ts_t, ps_t, es_t = unpack_data_obs(g_t)
+    F_t = F(p_t)
+    G_t = G(F_t)
+    np.savetxt(OUTPUTS_PATH, F_t)
+
+NF = len(F_t)
+NG = len(G_t)
+
+ts_t, ps_t, es_t = unpack_data_obs(G_t)
 
 """
-Observations / likelihood
+Errors and observations
 """
 
 max_t = ts_t.max()
@@ -275,4 +303,11 @@ cov_es = (0.02 * max_e) ** 2 * np.eye(n_es_obs)
 
 C_e = sparse.block_diag((cov_ts, cov_ps, cov_es)).toarray()
 
-ys = np.random.multivariate_normal(g_t, C_e)
+try:
+    y = np.genfromtxt(OBSERVATIONS_PATH)
+except FileNotFoundError:
+    utils.info("Observations not found. Generating...")
+    y = np.random.multivariate_normal(G_t, C_e)
+
+# TODO: add some functions for plotting the truth (true convective 
+# plume, permeabilities, data, maybe vapour saturations...?)
