@@ -6,8 +6,11 @@ This repository contains code for running ensemble Kalman methods for approximat
 ### Slice
  - Check whether things are still working for this model after the repository refactor.
  - Use Matern fields, hyperparameters? Maybe just vary the lengthscale, not the standard deviations.
+ - Whiten everything properly.
  - Update level set function to Gaussian copula-ish ideas?
  - Think about inverse crimes (i.e. make a finder model.)
+ - Think about how the noise is generated.
+ - Change the units on the upflow to be divided by the volume of the block at the base of the model.
 ### Channel
  - Add feedzone locations.
  - Tune Robin parameter on Matern fields.
@@ -16,6 +19,8 @@ This repository contains code for running ensemble Kalman methods for approximat
  - Develop method for visualising the convective plume of the model.
  - Think about inverse crimes (i.e. consider making a finer model)
  - Check everything carefully!
+### Both Models
+ - Think about the initial conditions more carefully (thermal gradient?)
 ### Ensemble Methods
  - Tidy up EKI-DMC and EnRML code (less object-oriented?)
 ### Misc
