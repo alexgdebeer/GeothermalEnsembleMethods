@@ -15,7 +15,7 @@ class EnsembleRunner():
     """Runs an ensemble and returns the results, including a list of 
     indices of any failed simulations."""
 
-    def __init__(self, prior, F: function, G: function, 
+    def __init__(self, prior, F, G, 
                  Np, NF, NG, Ne):
         
         self.prior = prior 
@@ -108,7 +108,7 @@ def compute_a_dmc(t, Gs, y, NG, C_e_invsqrt):
 
     return a_inv ** -1
 
-def run_eki_dmc(F: function, G: function, prior, y, C_e, NF, Ne,
+def run_eki_dmc(F, G, prior, y, C_e, NF, Ne,
                 localiser=None, failure_imputation="gaussian", 
                 verbose=True):
     """Runs EKI-DMC, as described in Iglesias and Yang (2021)."""
