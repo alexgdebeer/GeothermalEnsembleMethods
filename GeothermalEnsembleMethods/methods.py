@@ -2,7 +2,166 @@ import h5py
 import itertools as it
 import numpy as np
 
+from scipy.linalg import inv, sqrtm
+
 from GeothermalEnsembleMethods import models, utils
+
+TOL = 1e-8
+
+# Could define a localiser object
+# It could take in the current ensemble and ensemble predictions (I think this would work with a wide range of procedures).
+
+class EnsembleRunner():
+    """Runs an ensemble and returns the results, including a list of 
+    indices of any failed simulations."""
+
+    def __init__(self, prior, F: function, G: function, 
+                 Np, NF, NG, Ne):
+        
+        self.prior = prior 
+        self.F = F 
+        self.G = G
+        
+        self.Np = Np 
+        self.NF = NF 
+        self.NG = NG 
+        self.Ne = Ne
+
+    def run(self, ws_i):
+
+        ps_i = np.empty((self.Np, self.Ne))
+        Fs_i = np.empty((self.NF, self.Ne))
+        Gs_i = np.empty((self.NG, self.Ne))
+
+        inds_succ = []
+        inds_fail = []
+
+        for i, w_i in enumerate(ws_i.T):
+            p_i = self.prior.transform(w_i)
+            F_i = self.F(p_i)
+            if type(F_i) == models.ExitFlag:
+                inds_fail.append(i)
+            else: 
+                inds_succ.append(i)
+                ps_i[:, i] = p_i
+                Fs_i[:, i] = F_i 
+                Gs_i[:, i] = self.G(F_i)
+
+        return ps_i, Fs_i, Gs_i, inds_succ, inds_fail
+
+# TODO: read the paper on this to see how they do the covariance computation
+def impute_gaussian(ws, inds_succ, inds_fail):
+    """Replaces any failed ensemble members by sampling from a Gaussian
+    with moments constructed using the successful ensemble members."""
+    
+    n_succ = len(inds_succ)
+    n_fail = len(inds_fail)
+
+    mu = np.mean(ws[:, inds_succ], axis=0)
+    cov = np.cov(ws[:, inds_succ]) + 1e-4 * np.eye(n_succ)
+    
+    ws[inds_fail] = np.random.multivariate_normal(mu, cov, size=n_fail)
+    return ws
+
+# TODO: perturb the ensemble members in some way?
+def impute_resample(ws, inds_succ, inds_fail):
+    """Replaces any failed ensemble members by sampling (with 
+    replacement) from the successful ensemble members."""
+    
+    inds_rep = np.random.choice(inds_succ, size=len(inds_fail))
+    ws[:, inds_fail] = ws[:, inds_rep]
+    return ws
+
+IMPUTERS = {
+    "gaussian": impute_gaussian,
+    "resample": impute_resample
+}
+
+def eki_update(ws_i, Gs_i, inds_succ, inds_fail, a_i, y, C_e,
+               localiser=None, failure_imputation="gaussian"):
+    """Runs an single EKI update."""
+
+    ys_i = np.random.multivariate_normal(y, a_i * C_e)
+
+    C_WG = np.cov(ws_i[:, inds_succ])
+    C_GG = np.cov(Gs_i[:, inds_succ])
+
+    # TODO: localisation
+
+    ws_n = ws_i + C_WG @ inv(C_GG + a_i * C_e) @ (ys_i - Gs_i)
+
+    if inds_fail:
+        ws_n = IMPUTERS[failure_imputation](ws_n, inds_succ, inds_fail)
+    
+    return ws_n
+
+def compute_a_dmc(t, Gs, y, NG, C_e_invsqrt):
+    """Computes the EKI inflation factor following Iglesias and Yang 
+    (2021)."""
+
+    diffs = y[:, np.newaxis] - Gs
+    Ss = 0.5 * np.sum((C_e_invsqrt @ diffs) ** 2, axis=0) # TODO: check that this gives a matrix of the correct dimensions
+    mu_S, var_S = np.mean(Ss), np.var(Ss)
+
+    a_inv = max(NG / (2 * mu_S), np.sqrt(NG / (2 * var_S)))
+    a_inv = min(a_inv, 1.0 - t)
+
+    return a_inv ** -1
+
+def run_eki_dmc(F: function, G: function, prior, y, C_e, NF, Ne,
+                localiser=None, failure_imputation="gaussian", 
+                verbose=True):
+    """Runs EKI-DMC, as described in Iglesias and Yang (2021)."""
+
+    C_e_invsqrt = sqrtm(inv(C_e))
+
+    if verbose: 
+        print("It. | t ")
+
+    Np = prior.num_params
+    NG = len(y)
+
+    ws_i = prior.sample(n=Ne)
+
+    ensemble = EnsembleRunner(prior, F, G, Np, NF, NG, Ne)
+    ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i)
+    
+    ws = [ws_i]
+    ps = [ps_i]
+    Fs = [Fs_i]
+    Gs = [Gs_i]
+
+    alphas = []
+
+    i = 0
+    t = 0
+    converged = False
+
+    while not converged:
+
+        a_i = compute_a_dmc(t, Gs[:, inds_succ], y, NG, C_e_invsqrt)
+        alphas.append(a_i)
+
+        t += a_i
+        if np.abs(t - 1.0) < TOL:
+            converged = True
+
+        ws_i = eki_update(ws_i, Gs_i, inds_succ, inds_fail, a_i, y, C_e, 
+                          localiser, failure_imputation)
+        
+        ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i)
+        
+        ws.append(ws_i)
+        ps.append(ps_i)
+        Fs.append(Fs_i)
+        Gs.append(Gs_i)
+
+        i += 1
+        if verbose: 
+            print(f"{i:.2i} | {t:.4f}")
+
+    return ws, ps, Fs, Gs, alphas, inds_succ
+
 
 class EnsembleProblem():
 
@@ -71,189 +230,189 @@ class EnsembleProblem():
                 f.create_dataset(k, data=v)
 
 
-class ESMDAProblem(EnsembleProblem):
+# class ESMDAProblem(EnsembleProblem):
 
 
-    def __init__(self, *args, loc_type=None, loc_mat=None):
+#     def __init__(self, *args, loc_type=None, loc_mat=None):
         
-        super().__init__(*args)
+#         super().__init__(*args)
 
-        self.loc_type = loc_type
-        self.loc_mat = loc_mat
-        self.alphas = []
-        self.t = 0.0
+#         self.loc_type = loc_type
+#         self.loc_mat = loc_mat
+#         self.alphas = []
+#         self.t = 0.0
 
-        self.results = {
-            "ts": self.ts, 
-            "fs": self.fs, 
-            "gs": self.gs, 
-            "alphas": self.alphas, 
-            "inds": self.en_inds
-        }
-
-
-    """Runs the ensemble. Failed simulations are removed from the 
-    list of ensemble indices."""
-    def run_ensemble(self):
-
-        fs_i = np.zeros((self.Nf, self.Ne))
-        gs_i = np.zeros((self.Ng, self.Ne))
-
-        for (i, t) in enumerate(self.ts[-1].T):
-            if i in self.en_inds:
-                if type(f_t := self.f(t)) == models.ExitFlag:
-                    self.en_inds.remove(i)
-                else:
-                    fs_i[:, i] = f_t
-                    gs_i[:, i] = self.g(f_t)
-
-        self.fs.append(fs_i)
-        self.gs.append(gs_i)
+#         self.results = {
+#             "ts": self.ts, 
+#             "fs": self.fs, 
+#             "gs": self.gs, 
+#             "alphas": self.alphas, 
+#             "inds": self.en_inds
+#         }
 
 
-    """Calculates ensemble (cross-)covariance matrices."""
-    def compute_covs(self, dts, dgs):
+#     """Runs the ensemble. Failed simulations are removed from the 
+#     list of ensemble indices."""
+#     def run_ensemble(self):
 
-        if self.loc_type == "linearised":
-            cov_tt = self.loc_mat * (dts @ dts.T)
-            jac = self.compute_jac(dts, dgs)
-            cov_tg = cov_tt @ jac.T
-            cov_gg = jac @ cov_tt @ jac.T
-            return cov_tg, cov_gg
+#         fs_i = np.zeros((self.Nf, self.Ne))
+#         gs_i = np.zeros((self.Ng, self.Ne))
+
+#         for (i, t) in enumerate(self.ts[-1].T):
+#             if i in self.en_inds:
+#                 if type(f_t := self.f(t)) == models.ExitFlag:
+#                     self.en_inds.remove(i)
+#                 else:
+#                     fs_i[:, i] = f_t
+#                     gs_i[:, i] = self.g(f_t)
+
+#         self.fs.append(fs_i)
+#         self.gs.append(gs_i)
+
+
+#     """Calculates ensemble (cross-)covariance matrices."""
+#     def compute_covs(self, dts, dgs):
+
+#         if self.loc_type == "linearised":
+#             cov_tt = self.loc_mat * (dts @ dts.T)
+#             jac = self.compute_jac(dts, dgs)
+#             cov_tg = cov_tt @ jac.T
+#             cov_gg = jac @ cov_tt @ jac.T
+#             return cov_tg, cov_gg
         
-        cov_tg = dts @ dgs.T
-        cov_gg = dgs @ dgs.T
-        return cov_tg, cov_gg
+#         cov_tg = dts @ dgs.T
+#         cov_gg = dgs @ dgs.T
+#         return cov_tg, cov_gg
     
 
-    def compute_gain(self, dts, dgs):
+#     def compute_gain(self, dts, dgs):
 
-        cov_tg, cov_gg = self.compute_covs(dts, dgs)
-        K = cov_tg @ np.linalg.inv(cov_gg + self.alphas[-1] * self.lik.cov) # TODO: TSVD
+#         cov_tg, cov_gg = self.compute_covs(dts, dgs)
+#         K = cov_tg @ np.linalg.inv(cov_gg + self.alphas[-1] * self.lik.cov) # TODO: TSVD
 
-        return K
+#         return K
     
 
-    """Carries out the bootstrapping-based localisation procedure described 
-    by Zhang and Oliver (2010)."""
-    def localise_bootstrap(self, K, Nb=100, sigalpha_sq=0.6**2):
+#     """Carries out the bootstrapping-based localisation procedure described 
+#     by Zhang and Oliver (2010)."""
+#     def localise_bootstrap(self, K, Nb=100, sigalpha_sq=0.6**2):
 
-        Ks = np.zeros((self.Nt, self.Ng, Nb))
-        loc_mat = np.zeros((self.Nt, self.Ng))
+#         Ks = np.zeros((self.Nt, self.Ng, Nb))
+#         loc_mat = np.zeros((self.Nt, self.Ng))
 
-        for k in range(Nb):
+#         for k in range(Nb):
 
-            inds_r = np.random.choice(self.en_inds, size=len(self.en_inds))
-            dts = self.compute_dts(self.ts[-1][:,inds_r])
-            dgs = self.compute_dgs(self.gs[-1][:,inds_r])
+#             inds_r = np.random.choice(self.en_inds, size=len(self.en_inds))
+#             dts = self.compute_dts(self.ts[-1][:,inds_r])
+#             dgs = self.compute_dgs(self.gs[-1][:,inds_r])
 
-            Ks[:,:,k] = self._compute_gain(dts, dgs)
+#             Ks[:,:,k] = self._compute_gain(dts, dgs)
             
-        for (i, j) in it.product(range(self.Nt), range(self.Ng)):
-            r_sq = np.mean((Ks[i, j, :] - K[i, j]) ** 2) / K[i, j] ** 2
-            loc_mat[i, j] = 1.0 / (1.0 + r_sq * (1 + 1 / sigalpha_sq))
+#         for (i, j) in it.product(range(self.Nt), range(self.Ng)):
+#             r_sq = np.mean((Ks[i, j, :] - K[i, j]) ** 2) / K[i, j] ** 2
+#             loc_mat[i, j] = 1.0 / (1.0 + r_sq * (1 + 1 / sigalpha_sq))
 
-        return K * loc_mat
+#         return K * loc_mat
     
 
-    """Generates the localisation matrix for a version of the adaptive
-    procedure described by Luo and Bhakta (2020) (also used in PEST)."""
-    def localise_cycle(self):
+#     """Generates the localisation matrix for a version of the adaptive
+#     procedure described by Luo and Bhakta (2020) (also used in PEST)."""
+#     def localise_cycle(self):
 
-        def compute_cor(dts, dgs):
+#         def compute_cor(dts, dgs):
             
-            t_sds_inv = np.diag(np.diag(dts @ dts.T) ** -0.5)
-            g_sds_inv = np.diag(np.diag(dgs @ dgs.T) ** -0.5)
+#             t_sds_inv = np.diag(np.diag(dts @ dts.T) ** -0.5)
+#             g_sds_inv = np.diag(np.diag(dgs @ dgs.T) ** -0.5)
 
-            cov = dts @ dgs.T
-            cor = t_sds_inv @ cov @ g_sds_inv
-            return cor
+#             cov = dts @ dgs.T
+#             cor = t_sds_inv @ cov @ g_sds_inv
+#             return cor
         
-        def gaspari_cohn(z):
-            if 0 <= z <= 1:
-                return -(1/4)*z**5 + (1/2)*z**4 + (5/8)*z**3 - (5/3)*z**2 + 1
-            elif 1 < z <= 2:
-                return (1/12)*z**5 - (1/2)*z**4 + (5/8)*z**3 + \
-                       (5/3)*z**2 - 5*z + 4 - (2/3)*z**-1
-            return 0.0
+#         def gaspari_cohn(z):
+#             if 0 <= z <= 1:
+#                 return -(1/4)*z**5 + (1/2)*z**4 + (5/8)*z**3 - (5/3)*z**2 + 1
+#             elif 1 < z <= 2:
+#                 return (1/12)*z**5 - (1/2)*z**4 + (5/8)*z**3 + \
+#                        (5/3)*z**2 - 5*z + 4 - (2/3)*z**-1
+#             return 0.0
 
-        loc_mat = np.zeros((self.Nt, self.Ny))
-        cor_mats = np.zeros((self.Nt, self.Ny, len(self.en_inds)-1))
+#         loc_mat = np.zeros((self.Nt, self.Ny))
+#         cor_mats = np.zeros((self.Nt, self.Ny, len(self.en_inds)-1))
 
-        dts = self.compute_dts(self.ts[0][:,self.en_inds])
-        dgs = self.compute_dgs(self.gs[0][:,self.en_inds])
-        cor = compute_cor(dts, dgs) 
+#         dts = self.compute_dts(self.ts[0][:,self.en_inds])
+#         dgs = self.compute_dgs(self.gs[0][:,self.en_inds])
+#         cor = compute_cor(dts, dgs) 
 
-        for i in range(len(self.en_inds)-1):
-            dgs_s = np.roll(dgs, shift=i+1, axis=1)
-            cor_mats[:,:,i] = compute_cor(dts, dgs_s)
+#         for i in range(len(self.en_inds)-1):
+#             dgs_s = np.roll(dgs, shift=i+1, axis=1)
+#             cor_mats[:,:,i] = compute_cor(dts, dgs_s)
 
-        error_sd = np.median(np.abs(cor_mats), axis=2) / 0.6745
+#         error_sd = np.median(np.abs(cor_mats), axis=2) / 0.6745
 
-        for (i, j) in it.product(range(self.Nt), range(self.Ny)):
-            loc_mat[i, j] = gaspari_cohn((1-np.abs(cor[i, j])) / (1-error_sd[i, j]))
+#         for (i, j) in it.product(range(self.Nt), range(self.Ny)):
+#             loc_mat[i, j] = gaspari_cohn((1-np.abs(cor[i, j])) / (1-error_sd[i, j]))
 
-        print(loc_mat)
+#         print(loc_mat)
 
-        return loc_mat
+#         return loc_mat
     
 
-    def update_ensemble(self):
+#     def update_ensemble(self):
 
-        # TODO: clean up
-        ys_p = np.random.multivariate_normal(
-            self.y, 
-            self.alphas[-1] * self.lik.cov, 
-            size=(self.Ne, )
-        ).T
+#         # TODO: clean up
+#         ys_p = np.random.multivariate_normal(
+#             self.y, 
+#             self.alphas[-1] * self.lik.cov, 
+#             size=(self.Ne, )
+#         ).T
         
-        dts = self.compute_dts(self.ts[-1][:,self.en_inds])
-        dgs = self.compute_dgs(self.gs[-1][:,self.en_inds])
-        K = self.compute_gain(dts, dgs)
+#         dts = self.compute_dts(self.ts[-1][:,self.en_inds])
+#         dgs = self.compute_dgs(self.gs[-1][:,self.en_inds])
+#         K = self.compute_gain(dts, dgs)
 
-        if self.loc_type == "cycle":
-            if self.loc_mat is None: # First iteration
-                self.loc_mat = self.localise_cycle()
-            K *= self.loc_mat 
+#         if self.loc_type == "cycle":
+#             if self.loc_mat is None: # First iteration
+#                 self.loc_mat = self.localise_cycle()
+#             K *= self.loc_mat 
 
-        elif self.loc_type == "bootstrap":
-            K = self.localise_bootstrap(K)
+#         elif self.loc_type == "bootstrap":
+#             K = self.localise_bootstrap(K)
 
-        self.ts.append(self.ts[-1] + K @ (ys_p - self.gs[-1]))
+#         self.ts.append(self.ts[-1] + K @ (ys_p - self.gs[-1]))
 
 
-    def compute_alpha(self):
+#     def compute_alpha(self):
 
-        mu_S, var_S = self.compute_S()
+#         mu_S, var_S = self.compute_S()
         
-        q1 = self.Ny / (2 * mu_S)
-        q2 = np.sqrt(self.Ny / (2 * var_S))
-        alpha_inv = min(max(q1, q2), 1.0 - self.t)
+#         q1 = self.Ny / (2 * mu_S)
+#         q2 = np.sqrt(self.Ny / (2 * var_S))
+#         alpha_inv = min(max(q1, q2), 1.0 - self.t)
 
-        self.t += alpha_inv
-        self.alphas.append(alpha_inv ** -1.0)
+#         self.t += alpha_inv
+#         self.alphas.append(alpha_inv ** -1.0)
 
-        utils.info(f"alpha: {self.alphas[-1]:.4f} | t: {self.t:.4f}")
+#         utils.info(f"alpha: {self.alphas[-1]:.4f} | t: {self.t:.4f}")
 
 
-    def is_converged(self):
-        return np.abs(self.t-1.0) < 1e-8
+#     def is_converged(self):
+#         return np.abs(self.t-1.0) < 1e-8
     
 
-    def run(self):
+#     def run(self):
 
-        self.generate_initial_ensemble()
-        self.run_ensemble()
+#         self.generate_initial_ensemble()
+#         self.run_ensemble()
 
-        while True:
+#         while True:
 
-            utils.info(f"Beginning iteration {len(self.ts)}...")
-            self.compute_alpha()
-            self.update_ensemble()
-            self.run_ensemble()
+#             utils.info(f"Beginning iteration {len(self.ts)}...")
+#             self.compute_alpha()
+#             self.update_ensemble()
+#             self.run_ensemble()
 
-            if self.is_converged():
-                return
+#             if self.is_converged():
+#                 return
 
 
 class EnRMLProblem(EnsembleProblem):
