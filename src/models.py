@@ -8,8 +8,8 @@ import pyvista as pv
 import pywaiwera
 import yaml
 
-from GeothermalEnsembleMethods.consts import *
-from GeothermalEnsembleMethods import utils
+from src.consts import *
+from src import utils
 
 class ExitFlag(Enum):
     SUCCESS = 1

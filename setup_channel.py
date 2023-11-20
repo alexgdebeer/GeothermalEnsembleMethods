@@ -4,8 +4,8 @@ from itertools import product
 import numpy as np
 from scipy import stats
 
-from GeothermalEnsembleMethods.consts import *
-from GeothermalEnsembleMethods import grfs, likelihood, models
+from src.consts import *
+from src import grfs, models
 
 # np.random.seed(2)
 

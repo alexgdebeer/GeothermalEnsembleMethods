@@ -1,8 +1,12 @@
-"""Setup script for the 2D vertical slice model."""
+"""Setup script for 2D vertical slice model."""
 
 import numpy as np
-from scipy import interpolate, sparse, stats
-from GeothermalEnsembleMethods import consts, grfs, likelihood, models
+from scipy import sparse, stats
+from scipy.interpolate import RegularGridInterpolator
+
+from src.consts import SECS_PER_WEEK
+from src.grfs import Gaussian1D, Gaussian2D
+from src.models import RegularMesh, Well, MassUpflow, Model2D, ExitFlag
 
 np.random.seed(1)
 
@@ -117,7 +121,7 @@ Model parameters
 xmax, nx = 1500.0, 25
 ymax, ny = 60.0, 1
 zmax, nz = 1500.0, 25
-tmax, nt = 104.0 * consts.SECS_PER_WEEK, 24
+tmax, nt = 104.0 * SECS_PER_WEEK, 24
 
 dt = tmax / nt 
 obs_time_inds = [0, 3, 6, 9, 12]
@@ -130,13 +134,16 @@ n_temps_per_well = 6
 mesh_name = f"models/gSL{n_blocks}"
 model_name = f"models/SL{n_blocks}"
 
-mesh = models.RegularMesh(mesh_name, xmax, ymax, zmax, nx, ny, nz)
+mesh = RegularMesh(mesh_name, xmax, ymax, zmax, nx, ny, nz)
 
-feedzone_xs = [200, 475, 750, 1025, 1300]
-feedzone_zs = [-500] * n_wells
-feedzone_qs = [-2.0] * n_wells
-feedzones = [models.Feedzone((x, 0.5*ymax, z), q) 
-             for (x, z, q) in zip(feedzone_xs, feedzone_zs, feedzone_qs)]
+well_xs = [200, 475, 750, 1025, 1300]
+well_depths = [-1300] * n_wells
+feedzone_depths = [-500] * n_wells
+feedzone_rates = [-2.0] * n_wells
+
+wells = [Well(x, 0.5*ymax, depth, mesh, fz_depth, fz_rate)
+         for (x, depth, fz_depth, fz_rate) 
+         in zip(well_xs, well_depths, feedzone_depths, feedzone_rates)]
 
 upflow_loc = (0.5*xmax, 0.5*ymax, -zmax + 0.5*mesh.dz)
 
@@ -152,7 +159,7 @@ n_temp_obs =  n_wells * n_temps_per_well
 n_pressure_obs = len(obs_time_inds) * n_wells
 n_enthalpy_obs = len(obs_time_inds) * n_wells
 
-ns_obs_xs = np.array([x for x in feedzone_xs for _ in range(n_temps_per_well)])
+ns_obs_xs = np.array([x for x in well_xs for _ in range(n_temps_per_well)])
 ns_obs_zs = np.array([-300, -500, -700, -900, -1100, -1300] * n_wells)
 
 ts_val_is = list(range(n_temp_vals))
@@ -182,22 +189,22 @@ Model functions
 def f(thetas):
 
     ks, q = prior.transform(thetas)
-    upflows = [models.MassUpflow(upflow_loc, q)]
+    upflows = [MassUpflow(upflow_loc, q)]
     
-    model = models.Model2D(model_name, mesh, ks, feedzones, upflows, dt, tmax)
+    model = Model2D(model_name, mesh, ks, wells, upflows, dt, tmax)
 
-    if (flag := model.run()) == models.ExitFlag.FAILURE: 
+    if (flag := model.run()) == ExitFlag.FAILURE: 
         return flag
     return model.get_pr_data()
 
 def g(fs):
 
-    if type(fs) == models.ExitFlag: 
+    if type(fs) == ExitFlag: 
         return fs
     
     ts, ps, es = unpack_data_raw(fs)
 
-    ts_interp = interpolate.RegularGridInterpolator((mesh.xs, -mesh.zs), ts.T)
+    ts_interp = RegularGridInterpolator((mesh.xs, -mesh.zs), ts.T)
     ts = ts_interp(np.vstack((ns_obs_xs, -ns_obs_zs)).T).flatten()
 
     ps = ps[obs_time_inds, :].flatten()
@@ -216,10 +223,10 @@ depth_shal = -60.0
 cells_shal = [c for c in mesh.m.cell if c.centre[-1] > depth_shal]
 cells_deep = [c for c in mesh.m.cell if c.centre[-1] <= depth_shal]
 
-d_depth_clay = grfs.Gaussian1D(-350, 80, 500, mesh.xs)
-d_perm_shal = grfs.Gaussian2D(-14, 0.25, 1500, 200, cells_shal)
-d_perm_clay = grfs.Gaussian2D(-16, 0.25, 1500, 200, cells_deep)
-d_perm_deep = grfs.Gaussian2D(-14, 0.50, 1500, 200, cells_deep)
+d_depth_clay = Gaussian1D(-350, 80, 500, mesh.xs)
+d_perm_shal = Gaussian2D(-14, 0.25, 1500, 200, cells_shal)
+d_perm_clay = Gaussian2D(-16, 0.25, 1500, 200, cells_deep)
+d_perm_deep = Gaussian2D(-14, 0.50, 1500, 200, cells_deep)
 
 prior = SlicePrior(mesh, d_depth_clay, 
                    d_perm_shal, d_perm_clay, d_perm_deep,
@@ -266,8 +273,6 @@ cov_ts = (0.02 * max_t) ** 2 * np.eye(n_ts_obs)
 cov_ps = (0.02 * max_p) ** 2 * np.eye(n_ps_obs)
 cov_es = (0.02 * max_e) ** 2 * np.eye(n_es_obs)
 
-cov_eta = sparse.block_diag((cov_ts, cov_ps, cov_es)).toarray()
+C_e = sparse.block_diag((cov_ts, cov_ps, cov_es)).toarray()
 
-ys = np.random.multivariate_normal(g_t, cov_eta)
-
-likelihood = likelihood.Likelihood(ys, cov_eta)
+ys = np.random.multivariate_normal(g_t, C_e)

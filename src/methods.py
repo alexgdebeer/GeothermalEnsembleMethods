@@ -4,7 +4,7 @@ import numpy as np
 
 from scipy.linalg import inv, sqrtm
 
-from GeothermalEnsembleMethods import models, utils
+from src import models, utils
 
 TOL = 1e-8
 
