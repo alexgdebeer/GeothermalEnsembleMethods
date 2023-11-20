@@ -10,7 +10,6 @@ This repository contains code for running ensemble Kalman methods for approximat
  - Update level set function to Gaussian copula-ish ideas?
  - Think about inverse crimes (i.e. make a finder model.)
  - Think about how the noise is generated.
- - Change the units on the upflow to be divided by the volume of the block at the base of the model.
 ### Channel
  - Add feedzone locations.
  - Tune Robin parameter on Matern fields.
