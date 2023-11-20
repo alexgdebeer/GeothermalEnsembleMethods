@@ -5,6 +5,8 @@ This repository contains code for running ensemble Kalman methods for approximat
 ## TODO:
 ### Slice
  - Check whether things are still working for this model after the repository refactor.
+ - Use Matern fields, hyperparameters? Maybe just vary the lengthscale, not the standard deviations.
+ - Update level set function to Gaussian copula-ish ideas?
 ### Channel
  - Add feedzone locations.
  - Tune Robin parameter on Matern fields.
