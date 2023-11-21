@@ -1,27 +1,26 @@
 """Setup script for 2D vertical slice model."""
 
 import numpy as np
-from scipy import sparse, stats
-from scipy.interpolate import RegularGridInterpolator
+from scipy import stats
 
 from src.consts import SECS_PER_WEEK
 from src.grfs import *
 from src.models import *
-from src import utils
 
-np.random.seed(38)
+np.random.seed(11) # 16, 38 not bad
 
 DATA_FOLDER = "data/slice"
 MODEL_FOLDER = "models/slice"
 
-WHITE_PARAMS_PATH = f"{DATA_FOLDER}/white_params_true.txt"
-PARAMS_PATH = f"{DATA_FOLDER}/params_true.txt"
-OUTPUTS_PATH = f"{DATA_FOLDER}/full_outputs_true.txt"
-REDUCED_OUTPUTS_PATH = f"{DATA_FOLDER}/reduced_outputs_true.txt"
-OBSERVATIONS_PATH = f"{DATA_FOLDER}/observations.txt"
+WS_TRUE_PATH = f"{DATA_FOLDER}/ws_true.txt"
+PS_TRUE_PATH = f"{DATA_FOLDER}/ps_true.txt"
+FS_TRUE_PATH = f"{DATA_FOLDER}/Fs_true.txt"
+GS_TRUE_PATH = f"{DATA_FOLDER}/Gs_true.txt"
+OBS_PATH = f"{DATA_FOLDER}/obs.txt"
+COV_PATH = f"{DATA_FOLDER}/C_e.txt" # .npy?
 
 """
-Classes
+Prior
 """
 
 class SlicePrior():
@@ -58,7 +57,7 @@ class SlicePrior():
     def combine_perms(self, boundary, perms_shal, perms_clay, perms_deep):
 
         perms = np.zeros((perms_shal.shape))
-        for i, cell in enumerate(mesh.m.cell):
+        for i, cell in enumerate(self.mesh.m.cell):
 
             cx, _, cz = cell.centre
             x_ind = np.abs(self.gp_boundary.xs - cx).argmin()
@@ -101,214 +100,238 @@ class SlicePrior():
         return np.random.normal(size=(self.n_params, n))
 
 """
-Model parameters
+Meshes
 """
 
-xmax, nx = 1500.0, 25
-ymax, ny = 60.0, 1
-zmax, nz = 1500.0, 25
+xmax = 1500.0
+ymax = 60.0
+zmax = 1500.0
+
+nx_fine, nz_fine = 35, 35
+nx_crse, nz_crse = 25, 25
+ny = 1 # can probably get rid of this
+
 tmax, nt = 104.0 * SECS_PER_WEEK, 24
+dt = tmax / nt
 
-dt = tmax / nt 
-obs_time_inds = [0, 3, 6, 9, 12]
-n_tobs = len(obs_time_inds)
+n_blocks_fine = nx_fine * ny * nz_fine
+n_blocks_crse = nx_crse * ny * nz_crse
 
-n_blocks = nx * nz
-n_wells = 5
-n_temps_per_well = 6
+mesh_name_fine = f"{MODEL_FOLDER}/gSL{n_blocks_fine}"
+mesh_name_crse = f"{MODEL_FOLDER}/gSL{n_blocks_crse}"
+model_name_fine = f"{MODEL_FOLDER}/SL{n_blocks_fine}"
+model_name_crse = f"{MODEL_FOLDER}/SL{n_blocks_crse}"
 
-mesh_name = f"{MODEL_FOLDER}/gSL{n_blocks}"
-model_name = f"{MODEL_FOLDER}/SL{n_blocks}"
+mesh_fine = RegularMesh(mesh_name_fine, xmax, ymax, zmax, nx_fine, ny, nz_fine)
+mesh_crse = RegularMesh(mesh_name_crse, xmax, ymax, zmax, nx_crse, ny, nz_crse)
 
-mesh = RegularMesh(mesh_name, xmax, ymax, zmax, nx, ny, nz)
+"""
+Wells and feedzones
+"""
 
+# TODO: make simpler
 well_xs = [200, 475, 750, 1025, 1300]
+n_wells = len(well_xs)
 well_depths = [-1300] * n_wells
 feedzone_depths = [-500] * n_wells
 feedzone_rates = [-2.0] * n_wells
 
-wells = [Well(x, 0.5*ymax, depth, mesh, fz_depth, fz_rate)
-         for (x, depth, fz_depth, fz_rate) 
-         in zip(well_xs, well_depths, feedzone_depths, feedzone_rates)]
+wells_fine = [Well(x, 0.5*ymax, depth, mesh_fine, fz_depth, fz_rate)
+              for (x, depth, fz_depth, fz_rate) 
+              in zip(well_xs, well_depths, feedzone_depths, feedzone_rates)]
 
-upflow_loc = (0.5*xmax, 0.5*ymax, -zmax + 0.5*mesh.dz)
-upflow_cell = mesh.m.find(upflow_loc)
+wells_crse = [Well(x, 0.5*ymax, depth, mesh_crse, fz_depth, fz_rate)
+              for (x, depth, fz_depth, fz_rate) 
+              in zip(well_xs, well_depths, feedzone_depths, feedzone_rates)]
+
+upflow_loc_fine = (xmax/2, ymax/2, -zmax + mesh_fine.dz/2)
+upflow_loc_crse = (xmax/2, ymax/2, -zmax + mesh_crse.dz/2)
+
+upflow_cell_fine = mesh_fine.m.find(upflow_loc_fine)
+upflow_cell_crse = mesh_crse.m.find(upflow_loc_crse)
+
+"""
+Observation times and locations
+"""
+
+# Natural state temperature observation locations
+well_temp_depths = [-300, -500, -700, -900, -1100, -1300]
+ns_temp_coords = np.array([[x, z] for x in well_xs for z in well_temp_depths])
+
+# Pressure and enthalpy observation times
+pr_obs_times = np.array([0, 13, 26, 39, 52]) * SECS_PER_WEEK
+
+n_well_temp_depths = len(well_temp_depths)
+n_pr_obs_times = len(pr_obs_times)
+
+n_temp_obs = n_well_temp_depths * n_wells
+n_pres_obs = n_pr_obs_times * n_wells
+n_enth_obs = n_pr_obs_times * n_wells
 
 """
 Constants and functions for extracting data
 """
 
-n_temp_vals = n_blocks 
-n_pressure_vals = n_wells * (nt + 1)
-n_enthalpy_vals = n_wells * (nt + 1)
+# # Indices for extracting each state variable from the complete data
+# temp_raw_inds_fine = np.arange(n_blocks_fine)
+# pres_raw_inds_fine = np.arange(n_wells * (nt+1)) + temp_raw_inds_fine[-1] + 1
+# enth_raw_inds_fine = np.arange(n_wells * (nt+1)) + pres_raw_inds_fine[-1] + 1
 
-n_temp_obs =  n_wells * n_temps_per_well 
-n_pressure_obs = len(obs_time_inds) * n_wells
-n_enthalpy_obs = len(obs_time_inds) * n_wells
+# temp_raw_inds_crse = np.arange(n_blocks_crse)
+# pres_raw_inds_crse = np.arange(n_wells * (nt+1)) + temp_raw_inds_crse[-1] + 1
+# enth_raw_inds_crse = np.arange(n_wells * (nt+1)) + pres_raw_inds_crse[-1] + 1
 
-ns_obs_xs = np.array([x for x in well_xs for _ in range(n_temps_per_well)])
-ns_obs_zs = np.array([-300, -500, -700, -900, -1100, -1300] * n_wells)
+# # Indices for extracting each observations of each variable from the data
 
-ts_val_is = list(range(n_temp_vals))
-ps_val_is = list(range(ts_val_is[-1]+1, ts_val_is[-1]+1+n_pressure_vals))
-es_val_is = list(range(ps_val_is[-1]+1, ps_val_is[-1]+1+n_enthalpy_vals))
+# def unpack_data_raw(Fs, mesh=mesh_crse, 
+#                     temp_inds=temp_raw_inds_crse,
+#                     pres_inds=pres_raw_inds_crse,
+#                     enth_inds=enth_raw_inds_crse):
+#     """Extracts the temperatures, pressures and enthalpies from a 
+#     model run."""
 
-ts_obs_is = list(range(n_temp_obs))
-ps_obs_is = list(range(ts_obs_is[-1]+1, ts_obs_is[-1]+1+n_pressure_obs))
-es_obs_is = list(range(ps_obs_is[-1]+1, ps_obs_is[-1]+1+n_enthalpy_obs))
+#     temp = np.reshape(Fs[temp_inds], (mesh.nx, mesh.nz))
+#     pres = np.reshape(Fs[pres_inds], (nt+1, n_wells))
+#     enth = np.reshape(Fs[enth_inds], (nt+1, n_wells))
+#     return temp, pres, enth
 
-def unpack_data_raw(fs):
-    ts = np.reshape(fs[ts_val_is], (mesh.nx, mesh.nz))
-    ps = np.reshape(fs[ps_val_is], (nt+1, n_wells))
-    es = np.reshape(fs[es_val_is], (nt+1, n_wells))
-    return ts, ps, es
+temp_obs_inds = np.arange(n_temp_obs)
+pres_obs_inds = np.arange(n_pres_obs) + temp_obs_inds[-1] + 1
+enth_obs_inds = np.arange(n_enth_obs) + pres_obs_inds[-1] + 1
 
-def unpack_data_obs(gs):
-    ts = np.reshape(gs[ts_obs_is], (n_temps_per_well, n_wells))
-    ps = np.reshape(gs[ps_obs_is], (n_tobs, n_wells))
-    es = np.reshape(gs[es_obs_is], (n_tobs, n_wells))
-    return ts, ps, es
+def unpack_data_obs(Gs):
+    """Extracts the temperatures, pressures and enthalpies from a 
+    set of predictions."""
+
+    temp = np.reshape(Gs[temp_obs_inds], (n_well_temp_depths, n_wells))
+    pres = np.reshape(Gs[pres_obs_inds], (n_pr_obs_times, n_wells))
+    enth = np.reshape(Gs[enth_obs_inds], (n_pr_obs_times, n_wells))
+    return temp, pres, enth
 
 """
 Model functions
 """
 
-def F(p_i):
+def G(p_i, mesh=mesh_crse, model_name=model_name_crse, 
+      wells=wells_crse, upflow_cell=upflow_cell_crse):
     """Given a set of transformed parameters, forms and runs the 
-    corresponding model, then returns the full model output."""
+    corresponding model, then returns the full model output and model
+    predictions."""
 
     *logks, upflow_rate = p_i
     upflows = [MassUpflow(upflow_cell, upflow_rate)]
     
-    model = Model2D(model_name, mesh, logks, wells, upflows, dt, tmax)
+    model = Model2D(model_name, mesh, logks, wells, upflows, 
+                    dt, tmax, ns_temp_coords, pr_obs_times)
 
     if (flag := model.run()) == ExitFlag.FAILURE: 
         return flag
-    return model.get_pr_data()
-
-def G(F_i):
-    """Given a set of complete model outputs, returns the values 
-    corresponding to the observations."""
-
-    if type(F_i) == ExitFlag: 
-        return F_i
     
-    ts, ps, es = unpack_data_raw(F_i)
-
-    # TODO: check this
-    ts_interp = RegularGridInterpolator((mesh.xs, -mesh.zs), ts.T)
-    ts = ts_interp(np.vstack((ns_obs_xs, -ns_obs_zs)).T).flatten()
-
-    ps = ps[obs_time_inds, :].flatten()
-    es = es[obs_time_inds, :].flatten()
-
-    return np.concatenate((ts, ps, es))
+    F_i, G_i = model.get_pr_data()
+    return F_i, G_i
 
 """
 Prior
 """
 
-matern_field = MaternField2D(mesh, model_type=ModelType.MODEL2D)
-
-mass_rate_bounds = (1.0e-1 / upflow_cell.volume, 2.0e-1 / upflow_cell.volume)
-
 depth_shal = -60.0
-cells_shal = [c for c in mesh.m.cell if c.centre[-1] > depth_shal]
-cells_deep = [c for c in mesh.m.cell if c.centre[-1] <= depth_shal]
 
 mu_boundary = -350
 std_boundary = 80
 l_boundary = 500
-gp_boundary = Gaussian1D(mu_boundary, std_boundary, l_boundary, mesh.xs)
 
-bounds_shal = [(0.5, 1.5), (1000, 2000), (300, 500)]
-bounds_clay = [(1.0, 1.2), (1000, 2000), (300, 500)]
-bounds_deep = [(1.0, 1.2), (1000, 2000), (300, 500)]
+bounds_shal = [(0.5, 1.0), (1000, 2000), (200, 500)]
+bounds_clay = [(0.5, 1.0), (1000, 2000), (200, 500)]
+bounds_deep = [(0.75, 1.25), (1000, 2000), (200, 500)]
 
 def levels_clay(p):
-    if   p < -0.5: return -16.5
-    elif p <  0.5: return -16.0
-    else: return -15.5
+    """Level set mapping for clay cap."""
+    if   p < -0.5: return -17.0
+    elif p <  0.5: return -16.5
+    else: return -16.0
 
 def levels_exterior(p):
+    """Level set mapping for shallow and deep (high-permeability) 
+    regions."""
     if   p < -1.5: return -15.0
     elif p < -0.5: return -14.5
     elif p <  0.5: return -14.0
     elif p <  1.5: return -13.5
     else: return -13.0
 
-grf_shal = PermeabilityField(mesh, matern_field, bounds_shal, 
-                             levels_exterior, model_type=ModelType.MODEL2D)
-grf_clay = PermeabilityField(mesh, matern_field, bounds_clay, 
-                             levels_clay, model_type=ModelType.MODEL2D)
-grf_deep = PermeabilityField(mesh, matern_field, bounds_deep, 
-                             levels_exterior, model_type=ModelType.MODEL2D)
+def generate_prior(mesh, upflow_cell):
 
-prior = SlicePrior(mesh, depth_shal, gp_boundary, 
-                   grf_shal, grf_clay, grf_deep, mass_rate_bounds)
+    grf = MaternField2D(mesh, model_type=ModelType.MODEL2D)
+
+    mass_rate_bounds = (1.0e-1 / upflow_cell.column.area, 2.0e-1 / upflow_cell.column.area)
+
+    gp_boundary = Gaussian1D(mu_boundary, std_boundary, l_boundary, mesh.xs)
+
+    grf_shal = PermField(mesh, grf, bounds_shal, levels_exterior, model_type=ModelType.MODEL2D)
+    grf_clay = PermField(mesh, grf, bounds_clay, levels_clay, model_type=ModelType.MODEL2D)
+    grf_deep = PermField(mesh, grf, bounds_deep, levels_exterior, model_type=ModelType.MODEL2D)
+
+    prior = SlicePrior(mesh, depth_shal, gp_boundary, grf_shal, grf_clay, grf_deep, mass_rate_bounds)
+    
+    return prior
 
 """
 Truth
 """
 
-try:
-    w_t = np.genfromtxt(WHITE_PARAMS_PATH)
-    p_t = np.genfromtxt(PARAMS_PATH)
+NOISE_LEVEL = 0.05 # Noise level as a percentage of the maximum of the raw data
 
-except FileNotFoundError:
-    utils.info("True parameters not found. Sampling a new set...")
+def generate_data(G_t):
 
-    w_t = prior.sample()
+    temp_true, pres_true, enth_true = unpack_data_obs(G_t)
 
-    p_t = prior.transform(w_t)
-    np.savetxt(WHITE_PARAMS_PATH, w_t)
-    np.savetxt(PARAMS_PATH, p_t)
+    cov_temp = (NOISE_LEVEL * np.max(temp_true)) ** 2 * np.eye(temp_true.size)
+    cov_pres = (NOISE_LEVEL * np.max(pres_true)) ** 2 * np.eye(pres_true.size)
+    cov_enth = (NOISE_LEVEL * np.max(enth_true)) ** 2 * np.eye(enth_true.size)
 
-*ks_t, upflow_rate_t = p_t
-
-mesh.m.slice_plot(value=ks_t, colourmap="viridis")
-
-try:
-    F_t = np.genfromtxt(OUTPUTS_PATH)
-    G_t = np.genfromtxt(REDUCED_OUTPUTS_PATH)
-
-except FileNotFoundError:
-    utils.info("True model outputs not found. Running model...")
-
-    F_t = F(p_t)
-    G_t = G(F_t)
-    np.savetxt(OUTPUTS_PATH, F_t)
-    np.savetxt(REDUCED_OUTPUTS_PATH, G_t)
-
-NF = len(F_t)
-NG = len(G_t)
-
-ts_t, ps_t, es_t = unpack_data_obs(G_t)
-
-ns_temps = unpack_data_raw(F_t)[0]
-mesh.m.slice_plot(value=ns_temps.flatten(), colourmap="coolwarm")
-
-"""
-Errors and observations
-"""
-
-max_t = ts_t.max()
-max_p = ps_t.max()
-max_e = es_t.max()
-
-n_ts_obs = ts_t.size
-n_ps_obs = ps_t.size
-n_es_obs = es_t.size
-
-cov_ts = (0.02 * max_t) ** 2 * np.eye(n_ts_obs)
-cov_ps = (0.02 * max_p) ** 2 * np.eye(n_ps_obs)
-cov_es = (0.02 * max_e) ** 2 * np.eye(n_es_obs)
-
-C_e = sparse.block_diag((cov_ts, cov_ps, cov_es)).toarray()
-
-try:
-    y = np.genfromtxt(OBSERVATIONS_PATH)
-except FileNotFoundError:
-    utils.info("Observations not found. Generating...")
+    C_e = sparse.block_diag((cov_temp, cov_pres, cov_enth)).toarray()
     y = np.random.multivariate_normal(G_t, C_e)
-    np.savetxt(OBSERVATIONS_PATH, y)
+    return y, C_e
+
+def generate_truth(mesh, model_name, wells, upflow_cell):
+    """Generates the truth and observations using the fine model."""
+    
+    truth_dist = generate_prior(mesh, upflow_cell)
+
+    ws_t = truth_dist.sample()
+    ps_t = truth_dist.transform(ws_t)
+
+    # TEMP: sanity check
+    *ks_t, _ = ps_t
+    mesh.m.slice_plot(value=ks_t, colourmap="viridis")
+
+    Fs_t, Gs_t = G(ps_t, mesh, model_name, wells, upflow_cell)
+
+    temp_true = Fs_t[:(mesh.nx * mesh.nz)]
+    mesh.m.slice_plot(value=temp_true, colourmap="coolwarm")
+
+    y, C_e = generate_data(Gs_t)
+
+    np.savetxt(WS_TRUE_PATH, ws_t)
+    np.savetxt(PS_TRUE_PATH, ps_t)
+    np.savetxt(FS_TRUE_PATH, Fs_t)
+    np.savetxt(GS_TRUE_PATH, Gs_t)
+    np.savetxt(OBS_PATH, y)
+    np.savetxt(COV_PATH, C_e)
+
+    return ws_t, ps_t, Fs_t, Gs_t, y, C_e
+
+def read_truth():
+
+    ws_t = np.genfromtxt(WS_TRUE_PATH)
+    ps_t = np.genfromtxt(PS_TRUE_PATH)
+    Fs_t = np.genfromtxt(FS_TRUE_PATH)
+    Gs_t = np.genfromtxt(GS_TRUE_PATH)
+    y = np.genfromtxt(OBS_PATH)
+    C_e = np.genfromtxt(COV_PATH)
+    
+    return ws_t, ps_t, Fs_t, Gs_t, y, C_e
+
+ws_t, ps_t, Fs_t, Gs_t, y, C_e = generate_truth(
+    mesh_fine, model_name_fine, wells_fine, upflow_cell_fine
+)

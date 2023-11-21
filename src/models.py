@@ -1,8 +1,8 @@
 from copy import deepcopy
 from enum import Enum
 from itertools import product
-from matplotlib import pyplot as plt
 from scipy import stats
+from scipy.interpolate import RegularGridInterpolator
 
 import h5py
 import layermesh.mesh as lm
@@ -105,7 +105,7 @@ class Well():
         self.feedzone_cell = mesh.m.find((x, y, feedzone_depth))
         self.feedzone_rate = feedzone_rate
 
-class PermeabilityField():
+class PermField():
 
     def __init__(self, mesh, grf, bounds, level_func, 
                  model_type=ModelType.MODEL3D):
@@ -273,7 +273,8 @@ class Model():
 
     def __init__(self, path: str, mesh: Mesh, perms: np.ndarray, 
                  wells: list[Well], upflows: list[MassUpflow], 
-                 dt: float, tmax: float):
+                 dt: float, tmax: float, 
+                 ns_temp_coords, pr_obs_times):
 
         self.ns_path = f"{path}_NS"
         self.pr_path = f"{path}_PR"
@@ -286,12 +287,18 @@ class Model():
 
         self.dt = dt
         self.tmax = tmax
+        self.ts = np.arange(0, tmax, dt)
+        print(self.ts)
 
         self.feedzone_cell_inds = [w.feedzone_cell.index for w in wells]
         self.n_feedzones = len(self.feedzone_cell_inds)
 
         self.ns_model = None
         self.pr_model = None
+
+        self.ns_temp_coords = ns_temp_coords 
+        self.pr_obs_inds = np.searchsorted(self.ts, pr_obs_times-EPS)
+        print(self.pr_obs_inds)
         
         self.generate_ns()
         self.generate_pr()
@@ -340,11 +347,11 @@ class Model():
         self.ns_model["source"].extend([{
             "component": "water",
             "enthalpy": MASS_ENTHALPY, 
-            "rate": u.rate * u.cell.volume,
+            "rate": u.rate * u.cell.column.area,
             "cell": u.cell.index
         } for u in self.upflows])
 
-        total_mass = sum([u.rate * u.cell.volume for u in self.upflows])
+        total_mass = sum([u.rate * u.cell.column.area for u in self.upflows])
         utils.info(f"Total mass input: {total_mass:.2f} kg/s")
 
     def add_rocktypes(self):
@@ -501,27 +508,6 @@ class Model():
 
         raise Exception(f"Unknown exit condition. Check {log_path}.yaml.")
 
-    def get_pr_data(self):
-        """Returns the temperatures, pressures and enthalpies from a 
-        production history simulation."""
-
-        with h5py.File(f"{self.pr_path}.h5", "r") as f:
-        
-            cell_inds = f["cell_index"][:, 0]
-            src_inds = f["source_index"][:, 0]
-            
-            ts = f["cell_fields"]["fluid_temperature"][0][cell_inds]
-            
-            ps = [p[cell_inds][self.feedzone_cell_inds]
-                  for p in f["cell_fields"]["fluid_pressure"]]   
-            
-            es = [e[src_inds][-self.n_feedzones:] 
-                  for e in f["source_fields"]["source_enthalpy"]]
-
-        return np.concatenate((np.array(ts).flatten(), 
-                               np.array(ps).flatten(), 
-                               np.array(es).flatten()))
-
 class Model2D(Model):
     """2D Model (note: can currently only be used with a RegularMesh)."""
 
@@ -537,6 +523,44 @@ class Model2D(Model):
             },
             "title": "2D Model"
         }
+
+    def get_pr_data(self):
+        """Returns the temperatures, pressures and enthalpies from a 
+        production history simulation."""
+
+        with h5py.File(f"{self.pr_path}.h5", "r") as f:
+        
+            cell_inds = f["cell_index"][:, 0]
+            src_inds = f["source_index"][:, 0]
+            
+            temp = f["cell_fields"]["fluid_temperature"]
+            pres = f["cell_fields"]["fluid_pressure"]
+            enth = f["source_fields"]["source_enthalpy"]
+
+            ns_temp = np.array(temp[0][cell_inds])
+            pr_pres = np.array([p[cell_inds][self.feedzone_cell_inds]
+                                for p in pres])
+            pr_enth = np.array([e[src_inds][-self.n_feedzones:]
+                                for e in enth])
+            
+        # TODO: check this...
+        # TODO: consider moving into separate function
+        ns_temp = np.reshape(ns_temp, (self.mesh.nz, self.mesh.nx))
+        ns_temp_interp = RegularGridInterpolator((self.mesh.xs, self.mesh.zs), ns_temp.T)
+        ns_temp_obs = ns_temp_interp(self.ns_temp_coords)
+
+        pr_pres_obs = pr_pres[self.pr_obs_inds, :]
+        pr_enth_obs = pr_enth[self.pr_obs_inds, :]
+
+        F_i = np.concatenate((ns_temp.flatten(),
+                              pr_pres.flatten(),
+                              pr_enth.flatten()))
+        
+        G_i = np.concatenate((ns_temp_obs.flatten(),
+                              pr_pres_obs.flatten(),
+                              pr_enth_obs.flatten()))
+
+        return F_i, G_i
 
 class Model3D(Model):
 

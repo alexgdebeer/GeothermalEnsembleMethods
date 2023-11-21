@@ -7,6 +7,7 @@ This repository contains code for running ensemble Kalman methods for approximat
  - Think about inverse crimes (i.e. make a finder model)
  - Think about how the noise is generated (increase to 5-10%)
  - Plot the data, truth, convective plume, vapour saturations?
+ - Probably simpler to compute the temperature stuff in the model and then just return both the raw data and observations.
 ### Channel
  - Add feedzone locations.
  - Tune Robin parameter on Matern fields.
@@ -19,6 +20,7 @@ This repository contains code for running ensemble Kalman methods for approximat
  - Read paper on how to adjust ensemble covariance when defining Gaussian based on successful ensemble members.
  - Think about the initial conditions more carefully (thermal gradient?)
  - Check everything carefully!
+ - Rescale the pressures and enthalpies appropriately
 ### Ensemble Methods
  - Tidy up EKI-DMC and EnRML code (less object-oriented?)
 ### Misc
