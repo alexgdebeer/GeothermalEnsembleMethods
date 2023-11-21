@@ -5,6 +5,7 @@ from scipy import sparse
 from scipy.sparse import linalg
 from scipy.special import gamma
 
+from src.models import ModelType
 from src import utils
 
 GRAD_2D = np.array([[-1.0, 1.0, 0.0], 
@@ -18,16 +19,26 @@ class BC(Enum):
     NEUMANN = 1
     ROBIN = 2
 
-class MaternField2D():
+class MaternField():
+    pass
 
-    def __init__(self, mesh):
+class MaternField2D(MaternField):
+
+    def __init__(self, mesh, model_type=ModelType.MODEL3D):
 
         self.dim = 2
         self.nu = 2 - self.dim / 2
+        self.model_type = model_type
 
-        self.m = mesh.m
-        col_centres = [[*col.centre, 0.0] for col in self.m.column]
-        self.fem_mesh = pv.PolyData(col_centres).delaunay_2d()
+        if model_type == ModelType.MODEL2D:
+            points = [cell.centre for cell in mesh.m.cell]
+            self.inds = [0, 2] # The x and z coordinates vary
+
+        elif model_type == ModelType.MODEL3D:
+            points = [[*col.centre, 0] for col in mesh.m.column]
+            self.inds = [0, 1] # The x and y coordinates vary
+
+        self.fem_mesh = pv.PolyData(points).delaunay_2d()
 
         self.get_mesh_data()
         self.build_fem_matrices()
@@ -38,7 +49,7 @@ class MaternField2D():
 
         self.fem_mesh["inds"] = np.arange(self.fem_mesh.n_points, dtype=np.int64)
 
-        self.points = self.fem_mesh.points[:, :2]
+        self.points = self.fem_mesh.points[:, self.inds]
         self.elements = self.fem_mesh.regular_faces
 
         boundary = self.fem_mesh.extract_feature_edges(boundary_edges=True, 
@@ -77,6 +88,7 @@ class MaternField2D():
                 
                 T = np.array([self.points[e[(i+1)%3]] - self.points[e[i]],
                               self.points[e[(i+2)%3]] - self.points[e[i]]]).T
+                
                 detT = np.abs(np.linalg.det(T))
                 invT = np.linalg.inv(T)
 
@@ -151,7 +163,7 @@ class MaternField2D():
         col_values = [values[c.column.index] for c in self.m.cell]
         self.m.layer_plot(value=col_values, **kwargs)
 
-class MaternField3D():
+class MaternField3D(MaternField):
 
     def __init__(self, mesh):
 
@@ -340,6 +352,7 @@ class Gaussian1D():
         
         self.xs = xs
         self.nx = len(xs)
+        self.n_params = self.nx
 
         self.std = std 
         self.l = l
@@ -352,29 +365,35 @@ class Gaussian1D():
         self.x_dists = self.xs[:, np.newaxis] - self.xs.T 
         self.cor = np.exp(-0.5 * (self.x_dists / self.l) ** 2)
         self.cov = self.std ** 2 * self.cor + 1e-8 * np.eye(self.nx) 
+        self.chol = np.linalg.cholesky(self.cov)
         
-class Gaussian2D():
-    """2D Gaussian distribution with squared-exponential covariance function."""
+    def transform(self, ws):
+        """Transforms a set of whitened variates to the correct 
+        distribution."""
+        return self.mu + self.chol @ ws
 
-    def __init__(self, mu, std, lx, lz, cells):
+# class Gaussian2D():
+#     """2D Gaussian distribution with squared-exponential covariance function."""
+
+#     def __init__(self, mu, std, lx, lz, cells):
         
-        self.cells = cells
-        self.cell_xs = np.array([c.centre[0] for c in cells])
-        self.cell_zs = np.array([c.centre[-1] for c in cells])
-        self.n_cells = len(cells)
+#         self.cells = cells
+#         self.cell_xs = np.array([c.centre[0] for c in cells])
+#         self.cell_zs = np.array([c.centre[-1] for c in cells])
+#         self.n_cells = len(cells)
 
-        self.std = std 
-        self.lx = lx
-        self.lz = lz
+#         self.std = std 
+#         self.lx = lx
+#         self.lz = lz
 
-        self.mu = np.array([mu] * self.n_cells)
-        self.generate_cov()
+#         self.mu = np.array([mu] * self.n_cells)
+#         self.generate_cov()
 
-    def generate_cov(self):
+#     def generate_cov(self):
 
-        self.x_dists = self.cell_xs[:, np.newaxis] - self.cell_xs.T
-        self.z_dists = self.cell_zs[:, np.newaxis] - self.cell_zs.T
+#         self.x_dists = self.cell_xs[:, np.newaxis] - self.cell_xs.T
+#         self.z_dists = self.cell_zs[:, np.newaxis] - self.cell_zs.T
 
-        self.cor = np.exp(-0.5 * (self.x_dists / self.lx) ** 2 + \
-                          -0.5 * (self.z_dists / self.lz) ** 2)
-        self.cov = self.std ** 2 * self.cor + 1e-8 * np.eye(self.n_cells)
+#         self.cor = np.exp(-0.5 * (self.x_dists / self.lx) ** 2 + \
+#                           -0.5 * (self.z_dists / self.lz) ** 2)
+#         self.cov = self.std ** 2 * self.cor + 1e-8 * np.eye(self.n_cells)

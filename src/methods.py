@@ -49,7 +49,6 @@ class EnsembleRunner():
 
         return ps_i, Fs_i, Gs_i, inds_succ, inds_fail
 
-# TODO: read the paper on this to see how they do the covariance computation
 def impute_gaussian(ws, inds_succ, inds_fail):
     """Replaces any failed ensemble members by sampling from a Gaussian
     with moments constructed using the successful ensemble members."""
@@ -57,13 +56,12 @@ def impute_gaussian(ws, inds_succ, inds_fail):
     n_succ = len(inds_succ)
     n_fail = len(inds_fail)
 
-    mu = np.mean(ws[:, inds_succ], axis=0)
+    mu = np.mean(ws[:, inds_succ], axis=1)
     cov = np.cov(ws[:, inds_succ]) + 1e-4 * np.eye(n_succ)
     
     ws[inds_fail] = np.random.multivariate_normal(mu, cov, size=n_fail)
     return ws
 
-# TODO: perturb the ensemble members in some way?
 def impute_resample(ws, inds_succ, inds_fail):
     """Replaces any failed ensemble members by sampling (with 
     replacement) from the successful ensemble members."""

@@ -1,11 +1,10 @@
 """Setup script for 3D channel model."""
 
-from itertools import product
 import numpy as np
-from scipy import stats
 
 from src.consts import *
-from src import grfs, models
+from src.grfs import *
+from src.models import *
 
 # np.random.seed(2)
 
@@ -15,171 +14,6 @@ MODEL_NAME = "models/channel/CH"
 """
 Classes
 """
-
-# TODO: move somewhere else
-def gauss_to_unif(x, lb, ub):
-    return lb + stats.norm.cdf(x) * (ub - lb)
-
-class PermeabilityField():
-
-    def __init__(self, mesh, grf, mu, bounds):
-        
-        self.mesh = mesh
-        self.grf = grf
-
-        self.mu = mu
-        self.bounds = bounds
-
-        self.n_params = self.mesh.fem_mesh.n_points + len(self.bounds)
-
-    def get_perms(self, ps):
-        """Returns the set of permeabilities that correspond to a given 
-        set of (whitened) parameters."""
-
-        hyperps, W = ps[:4], ps[4:]
-        hyperps = [gauss_to_unif(p, *bnds)
-                   for p, bnds in zip(hyperps, self.bounds)]
-        
-        X = self.grf.generate_field(W, *hyperps)
-        return self.mu + self.grf.G @ X
-
-    def apply_level_set(self, perms, level_width):
-
-        min_level = np.floor(np.min(perms))
-        max_level = np.ceil(np.max(perms)) + 1e-8 # HACK
-
-        levels = np.arange(min_level, max_level, level_width)
-        return np.array([levels[np.abs(levels - p).argmin()] for p in perms])
-
-class UpflowField():
-
-    def __init__(self, mesh, grf, mu, bounds):
-
-        self.mesh = mesh 
-        self.grf = grf
-
-        self.mu = mu 
-        self.bounds = bounds 
-
-        self.n_hyperps = len(bounds)
-        self.n_params = self.n_hyperps + self.mesh.m.num_columns
-
-    def get_upflows(self, params):
-        """Returns the set of upflows that correspond to a given set of 
-        (whitened) parameters."""
-
-        hyperparams, W = params[:self.n_hyperps], params[self.n_hyperps:]
-        hyperparams = [gauss_to_unif(p, *bnds) 
-                       for p, bnds in zip(hyperparams, self.bounds)]
-        
-        X = self.grf.generate_field(W, *hyperparams)
-        return self.mu + X
-
-class Channel():
-    
-    def __init__(self, mesh, bounds):
-        
-        self.mesh = mesh
-        self.bounds = bounds
-
-        self.n_params = 5
-
-    def get_cells_in_channel(self, pars):
-        """Returns the indices of the columns that are contained within 
-        the channel specified by a given set of parameters."""
-        
-        def in_channel(x, y, a1, a2, a3, a4, a5):
-            ub = a1 * np.sin(2*np.pi*x/a2) + np.tan(a3)*x + a4 
-            return ub-a5 <= y <= ub+a5 
-
-        pars = [gauss_to_unif(p, *self.bounds[i]) for i, p in enumerate(pars)]
-
-        cols = [col for col in self.mesh.m.column if in_channel(*col.centre, *pars)]
-        cells = [cell for col in cols for cell in col.cell]
-        return cells, cols
-
-class ClayCap():
-
-    def __init__(self, mesh, bounds, n_terms, coef_sds):
-        
-        self.cell_centres = np.array([c.centre for c in mesh.m.cell])
-        self.col_centres = np.array([c.centre for c in mesh.m.column])
-
-        self.bounds = bounds 
-        self.n_terms = n_terms 
-        self.coef_sds = coef_sds
-        self.n_params = 6 + 4 * self.n_terms ** 2
-
-    def cartesian_to_spherical(self, ds):
-
-        rs = np.linalg.norm(ds, axis=1)
-        phis = np.arccos(ds[:, 2] / rs)
-        thetas = np.arctan2(ds[:, 1], ds[:, 0])
-        
-        return rs, phis, thetas
-    
-    def compute_cap_radii(self, phis, thetas, width_h, width_v, coefs):
-        """Computes the radius of the clay cap in the direction of each 
-        cell, by taking the radius of the (deformed) ellipse that forms 
-        the base of the cap, then adding the randomised Fourier series 
-        to it."""
-
-        rs = np.sqrt(((np.sin(phis) * np.cos(thetas) / width_h)**2 + \
-                      (np.sin(phis) * np.sin(thetas) / width_h)**2 + \
-                      (np.cos(phis) / width_v)**2) ** -1)
-        
-        for n, m in product(range(self.n_terms), range(self.n_terms)):
-        
-            rs += coefs[n, m, 0] * np.cos(n * thetas) * np.cos(m * phis) + \
-                  coefs[n, m, 1] * np.cos(n * thetas) * np.sin(m * phis) + \
-                  coefs[n, m, 2] * np.sin(n * thetas) * np.cos(m * phis) + \
-                  coefs[n, m, 3] * np.sin(n * thetas) * np.sin(m * phis)
-        
-        return rs
-    
-    def get_cap_params(self, ps):
-        """Given a set of unit normal variables, generates the 
-        corresponding set of clay cap parameters."""
-
-        geom = [gauss_to_unif(p, *self.bounds[i]) 
-                for i, p in enumerate(ps[:6])]
-
-        coefs = np.reshape(self.coef_sds * ps[6:], 
-                           (self.n_terms, self.n_terms, 4))
-
-        return geom, coefs
-
-    def get_cells_in_cap(self, params):
-        """Returns an array of booleans that indicate whether each cell 
-        is contained within the clay cap."""
-
-        # Unpack parameters
-        geom, coefs = self.get_cap_params(params)
-        *centre, width_h, width_v, dip = geom
-
-        ds = self.cell_centres - centre
-        ds[:, -1] += (dip / width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
-
-        cell_radii, cell_phis, cell_thetas = self.cartesian_to_spherical(ds)
-
-        cap_radii = self.compute_cap_radii(cell_phis, cell_thetas,
-                                           width_h, width_v, coefs)
-        
-        return (cell_radii < cap_radii).nonzero()
-    
-    def get_upflow_weightings(self, params, mesh):
-        """Returns a list of values by which the upflow in each column 
-        should be multiplied."""
-
-        cx, cy, *_ = self.get_cap_params(params)[0]
-
-        s = 800 # TODO: make this into an input
-
-        col_centres = [col.centre for col in mesh.m.column]
-        col_weightings = np.array([np.exp(-(((c[0]-cx)/s)**2 + ((c[1]-cy)/s)**2)) / 2
-                                   for c in col_centres])
-
-        return col_weightings
 
 class ChannelPrior():
 
@@ -201,7 +35,7 @@ class ChannelPrior():
                              grf_ext.n_params, grf_flt.n_params, 
                              grf_cap.n_params, grf_upflow.n_params]
         
-        self.num_params = sum(self.param_counts)
+        self.n_params = sum(self.param_counts)
         self.param_inds = np.cumsum(self.param_counts)
 
         self.inds = {
@@ -242,19 +76,19 @@ class ChannelPrior():
         upflow_rates = upflow_rates[fault_col_inds]
         upflow_cells = [col.cell[-1] for col in fault_cols]
 
-        upflows = [models.MassUpflow(c, max(r, 0.0)) 
+        upflows = [MassUpflow(c, max(r, 0.0)) 
                    for c, r in zip(upflow_cells, upflow_rates)]
 
         return perms, upflows
 
     def sample(self, n=1):
-        return np.random.normal(size=(n, self.num_params))
+        return np.random.normal(size=(n, self.n_params))
 
 """
 Model parameters
 """
 
-mesh = models.IrregularMesh(MESH_NAME)
+mesh = IrregularMesh(MESH_NAME)
 # print(mesh.m.centre)
 
 well_xs = [500, 550, 1250, 750]
@@ -264,7 +98,7 @@ well_depths = [-750] * n_wells
 feedzone_depths = [-600] * n_wells
 feedzone_rates = [-0.2] * n_wells
 
-wells = [models.Well(x, y, depth, mesh, fz_depth, fz_rate)
+wells = [Well(x, y, depth, mesh, fz_depth, fz_rate)
          for (x, y, depth, fz_depth, fz_rate) 
          in zip(well_xs, well_ys, well_depths, feedzone_depths, feedzone_rates)]
 
@@ -289,8 +123,8 @@ bounds_perm_ext = [(0.4, 0.8), (1500, 2000), (1500, 2000), (200, 800)]
 bounds_perm_flt = [(0.20, 0.30), (1500, 2000), (1500, 2000), (200, 800)]
 bounds_perm_cap = [(0.20, 0.30), (1500, 2000), (1500, 2000), (200, 800)]
 
-grf_2d = grfs.MaternField2D(mesh)
-grf_3d = grfs.MaternField3D(mesh)
+grf_2d = MaternField2D(mesh)
+grf_3d = MaternField3D(mesh)
 
 # Generate the clay cap and permeability fields
 clay_cap = ClayCap(mesh, bounds_geom_cap, n_terms, coef_sds)
@@ -352,9 +186,9 @@ def plot_upflows(mesh, upflows):
 
     mesh.m.layer_plot(value=values, colourmap="coolwarm")
 
-def plot_wells(mesh, perms, wells: list[models.Well]):
+def plot_wells(mesh, perms, wells: list[Well]):
 
-    def get_well_tubes(wells: list[models.Well]):
+    def get_well_tubes(wells: list[Well]):
         
         lines = pv.MultiBlock()
         for well in wells:
@@ -395,7 +229,7 @@ def run_model(white_noise):
     mesh.m.layer_plot(value=perms, colourmap="viridis")
     plot_upflows(mesh, upflows)
 
-    m = models.Model3D(MODEL_NAME, mesh, perms, wells, upflows, dt, tmax)
+    m = Model3D(MODEL_NAME, mesh, perms, wells, upflows, dt, tmax)
     return m.run()
 
 """

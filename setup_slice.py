@@ -5,11 +5,11 @@ from scipy import sparse, stats
 from scipy.interpolate import RegularGridInterpolator
 
 from src.consts import SECS_PER_WEEK
-from src.grfs import Gaussian1D, Gaussian2D
-from src.models import RegularMesh, Well, MassUpflow, Model2D, ExitFlag
+from src.grfs import *
+from src.models import *
 from src import utils
 
-np.random.seed(1)
+np.random.seed(38)
 
 DATA_FOLDER = "data/slice"
 MODEL_FOLDER = "models/slice"
@@ -24,106 +24,81 @@ OBSERVATIONS_PATH = f"{DATA_FOLDER}/observations.txt"
 Classes
 """
 
-# TODO: add a num_params attribute to this if it doesn't have one already.
 class SlicePrior():
 
-    def __init__(self, mesh, d_depth_clay, 
-                 d_perm_shal, d_perm_clay, d_perm_deep,
-                 mass_rate_bounds, level_width):
+    def __init__(self, mesh, depth_shal, gp_boundary, 
+                 grf_shal, grf_clay, grf_deep,
+                 mass_rate_bounds):
 
         self.mesh = mesh
 
-        self.d_depth_clay = d_depth_clay
-        self.d_perm_shal = d_perm_shal
-        self.d_perm_clay = d_perm_clay
-        self.d_perm_deep = d_perm_deep
-
-        self.generate_mu()
-        self.generate_cov()
-
-        self.chol_inv = np.linalg.cholesky(self.cov)
-        self.chol = np.linalg.inv(self.chol_inv)
+        self.depth_shal = depth_shal
+        self.gp_boundary = gp_boundary
+        
+        self.grf_shal = grf_shal
+        self.grf_clay = grf_clay
+        self.grf_deep = grf_deep
 
         self.mass_rate_bounds = mass_rate_bounds
-        self.level_width = level_width
 
-        self.is_depth_clay = np.array(range(self.d_depth_clay.nx))
-        self.is_perm_shal = np.array(range(self.is_depth_clay[-1] + 1,
-                                           self.is_depth_clay[-1] + 1 + \
-                                            self.d_perm_shal.n_cells))
-        self.is_perm_clay = np.array(range(self.is_perm_shal[-1] + 1,
-                                           self.is_perm_shal[-1] + 1 + \
-                                            self.d_perm_clay.n_cells))
-        self.is_perm_deep = np.array(range(self.is_perm_clay[-1] + 1,
-                                           self.is_perm_clay[-1] + 1 + \
-                                            self.d_perm_deep.n_cells))
-        
-        self.num_params = -1 # TODO: add this properly
+        self.param_counts = [0, gp_boundary.n_params, 
+                             grf_shal.n_params, grf_clay.n_params, 
+                             grf_deep.n_params, 1]
 
-    def generate_mu(self):
-        self.mu = np.hstack((self.d_depth_clay.mu, 
-                             self.d_perm_shal.mu,
-                             self.d_perm_clay.mu, 
-                             self.d_perm_deep.mu, 
-                             np.array([0.0])))
+        self.n_params = sum(self.param_counts)
+        self.param_inds = np.cumsum(self.param_counts)
 
-    def generate_cov(self):
-        self.cov = sparse.block_diag((self.d_depth_clay.cov,
-                                      self.d_perm_shal.cov,
-                                      self.d_perm_clay.cov,
-                                      self.d_perm_deep.cov,
-                                      [1.0])).toarray()
+        self.inds = {
+            "boundary" : np.arange(*self.param_inds[0:2]),
+            "grf_shal" : np.arange(*self.param_inds[1:3]),
+            "grf_clay" : np.arange(*self.param_inds[2:4]),
+            "grf_deep" : np.arange(*self.param_inds[3:5])
+        }
 
-    def apply_level_sets(self, perms):
+    def combine_perms(self, boundary, perms_shal, perms_clay, perms_deep):
 
-        min_level = np.floor(np.min(perms))
-        max_level = np.ceil(np.max(perms)) + 1e-8
+        perms = np.zeros((perms_shal.shape))
+        for i, cell in enumerate(mesh.m.cell):
 
-        levels = np.arange(min_level, max_level, self.level_width)
-        return np.array([levels[np.abs(levels - p).argmin()] for p in perms])
+            cx, _, cz = cell.centre
+            x_ind = np.abs(self.gp_boundary.xs - cx).argmin()
+
+            if cz > self.depth_shal:
+                perms[i] = perms_shal[i]
+            elif cz > boundary[x_ind]:
+                perms[i] = perms_clay[i]
+            else: 
+                perms[i] = perms_deep[i]
+
+        return perms
 
     def transform_mass_rate(self, mass_rate):
         return self.mass_rate_bounds[0] + \
             np.ptp(self.mass_rate_bounds) * stats.norm.cdf(mass_rate)
 
-    def transform_perms(self, perms):
-
-        perms = np.array(perms)
-
-        clay_boundary = perms[self.is_depth_clay]
-        perm_shal = perms[self.is_perm_shal]
-        perm_clay = perms[self.is_perm_clay]
-        perm_deep = perms[self.is_perm_deep]
-
-        perms = np.copy(perm_shal)
-
-        for i in range(self.d_perm_deep.n_cells):
-            
-            cell = self.d_perm_deep.cells[i]
-            cx, cz = cell.centre[0], cell.centre[-1]
-            x_ind = np.abs(self.d_depth_clay.xs - cx).argmin()
-
-            if clay_boundary[x_ind] < cz:
-                perms = np.append(perms, perm_clay[i])
-            else: 
-                perms = np.append(perms, perm_deep[i])
-
-        return perms
-
-    def sample(self, n=1):
-        ws = np.random.normal(size=(len(self.mu), n))
-        return self.mu[:, np.newaxis] + self.chol_inv @ ws
-
     def transform(self, ws):
 
-        *perms, mass_rate = np.squeeze(ws)
-        
-        perms = self.transform_perms(perms)
-        perms = 10 ** self.apply_level_sets(perms)
+        ws = np.squeeze(ws)
+
+        perms_shal = self.grf_shal.get_perms(ws[self.inds["grf_shal"]])
+        perms_clay = self.grf_clay.get_perms(ws[self.inds["grf_clay"]])
+        perms_deep = self.grf_deep.get_perms(ws[self.inds["grf_deep"]])
+
+        perms_shal = self.grf_shal.level_set(perms_shal)
+        perms_clay = self.grf_clay.level_set(perms_clay)
+        perms_deep = self.grf_deep.level_set(perms_deep)
+
+        boundary = self.gp_boundary.transform(ws[self.inds["boundary"]])
+        perms = self.combine_perms(boundary, perms_shal, perms_clay, perms_deep)
+
+        mass_rate = ws[-1]
         mass_rate = self.transform_mass_rate(mass_rate)
         
         ps = np.append(perms, mass_rate)
         return ps
+
+    def sample(self, n=1):
+        return np.random.normal(size=(self.n_params, n))
 
 """
 Model parameters
@@ -233,21 +208,44 @@ def G(F_i):
 Prior
 """
 
+matern_field = MaternField2D(mesh, model_type=ModelType.MODEL2D)
+
 mass_rate_bounds = (1.0e-1 / upflow_cell.volume, 2.0e-1 / upflow_cell.volume)
-level_width = 0.25 # TODO: think about this
 
 depth_shal = -60.0
 cells_shal = [c for c in mesh.m.cell if c.centre[-1] > depth_shal]
 cells_deep = [c for c in mesh.m.cell if c.centre[-1] <= depth_shal]
 
-d_depth_clay = Gaussian1D(-350, 80, 500, mesh.xs)
-d_perm_shal = Gaussian2D(-14, 0.25, 1500, 200, cells_shal)
-d_perm_clay = Gaussian2D(-16, 0.25, 1500, 200, cells_deep)
-d_perm_deep = Gaussian2D(-14, 0.50, 1500, 200, cells_deep)
+mu_boundary = -350
+std_boundary = 80
+l_boundary = 500
+gp_boundary = Gaussian1D(mu_boundary, std_boundary, l_boundary, mesh.xs)
 
-prior = SlicePrior(mesh, d_depth_clay, 
-                   d_perm_shal, d_perm_clay, d_perm_deep,
-                   mass_rate_bounds, level_width)
+bounds_shal = [(0.5, 1.5), (1000, 2000), (300, 500)]
+bounds_clay = [(1.0, 1.2), (1000, 2000), (300, 500)]
+bounds_deep = [(1.0, 1.2), (1000, 2000), (300, 500)]
+
+def levels_clay(p):
+    if   p < -0.5: return -16.5
+    elif p <  0.5: return -16.0
+    else: return -15.5
+
+def levels_exterior(p):
+    if   p < -1.5: return -15.0
+    elif p < -0.5: return -14.5
+    elif p <  0.5: return -14.0
+    elif p <  1.5: return -13.5
+    else: return -13.0
+
+grf_shal = PermeabilityField(mesh, matern_field, bounds_shal, 
+                             levels_exterior, model_type=ModelType.MODEL2D)
+grf_clay = PermeabilityField(mesh, matern_field, bounds_clay, 
+                             levels_clay, model_type=ModelType.MODEL2D)
+grf_deep = PermeabilityField(mesh, matern_field, bounds_deep, 
+                             levels_exterior, model_type=ModelType.MODEL2D)
+
+prior = SlicePrior(mesh, depth_shal, gp_boundary, 
+                   grf_shal, grf_clay, grf_deep, mass_rate_bounds)
 
 """
 Truth
@@ -261,13 +259,14 @@ except FileNotFoundError:
     utils.info("True parameters not found. Sampling a new set...")
 
     w_t = prior.sample()
+
     p_t = prior.transform(w_t)
     np.savetxt(WHITE_PARAMS_PATH, w_t)
     np.savetxt(PARAMS_PATH, p_t)
 
-p_t = prior.transform(w_t)
 *ks_t, upflow_rate_t = p_t
-logks_t = np.reshape(np.log10(ks_t), (mesh.nx, mesh.nz))
+
+mesh.m.slice_plot(value=ks_t, colourmap="viridis")
 
 try:
     F_t = np.genfromtxt(OUTPUTS_PATH)
@@ -279,11 +278,15 @@ except FileNotFoundError:
     F_t = F(p_t)
     G_t = G(F_t)
     np.savetxt(OUTPUTS_PATH, F_t)
+    np.savetxt(REDUCED_OUTPUTS_PATH, G_t)
 
 NF = len(F_t)
 NG = len(G_t)
 
 ts_t, ps_t, es_t = unpack_data_obs(G_t)
+
+ns_temps = unpack_data_raw(F_t)[0]
+mesh.m.slice_plot(value=ns_temps.flatten(), colourmap="coolwarm")
 
 """
 Errors and observations
@@ -308,6 +311,4 @@ try:
 except FileNotFoundError:
     utils.info("Observations not found. Generating...")
     y = np.random.multivariate_normal(G_t, C_e)
-
-# TODO: add some functions for plotting the truth (true convective 
-# plume, permeabilities, data, maybe vapour saturations...?)
+    np.savetxt(OBSERVATIONS_PATH, y)

@@ -1,5 +1,9 @@
 from copy import deepcopy
 from enum import Enum
+from itertools import product
+from matplotlib import pyplot as plt
+from scipy import stats
+
 import h5py
 import layermesh.mesh as lm
 import numpy as np
@@ -11,9 +15,18 @@ import yaml
 from src.consts import *
 from src import utils
 
+EPS = 1e-8
+
+def gauss_to_unif(x, lb, ub):
+    return lb + stats.norm.cdf(x) * (ub - lb)
+
 class ExitFlag(Enum):
     SUCCESS = 1
     FAILURE = 2
+
+class ModelType(Enum):
+    MODEL2D = 1
+    MODEL3D = 2
 
 class Mesh():
     pass
@@ -47,6 +60,9 @@ class RegularMesh(Mesh):
 
         self.xs = np.array([c.centre[0] for c in self.m.column])
         self.zs = np.array([l.centre for l in self.m.layer])
+
+        points = [c.centre for c in self.m.cell]
+        self.fem_mesh = pv.PolyData(points).delaunay_2d()
 
         if not os.path.exists(f"{self.name}.msh"):
             utils.info("Writing mesh to file...")
@@ -89,6 +105,169 @@ class Well():
         self.feedzone_cell = mesh.m.find((x, y, feedzone_depth))
         self.feedzone_rate = feedzone_rate
 
+class PermeabilityField():
+
+    def __init__(self, mesh, grf, bounds, level_func, 
+                 model_type=ModelType.MODEL3D):
+
+        self.mesh = mesh
+        self.grf = grf
+        self.model_type = model_type
+
+        self.bounds = bounds
+        self.level_func = level_func
+
+        self.n_hyperparams = len(self.bounds)
+        self.n_params = self.n_hyperparams + self.mesh.fem_mesh.n_points
+
+    def get_perms(self, ps):
+        """Returns the set of permeabilities that correspond to a given 
+        set of (whitened) parameters."""
+
+        hyperparams, W = ps[:self.n_hyperparams], ps[self.n_hyperparams:]
+        hyperparams = [gauss_to_unif(p, *bnds)
+                       for p, bnds in zip(hyperparams, self.bounds)]
+        
+        X = self.grf.generate_field(W, *hyperparams)
+
+        if self.model_type == ModelType.MODEL3D:
+            return self.grf.G @ X
+        elif self.model_type == ModelType.MODEL2D:
+            return X
+
+    def level_set(self, perms):
+        return np.array([self.level_func(p) for p in perms])
+
+class UpflowField():
+
+    def __init__(self, mesh, grf, mu, bounds):
+
+        self.mesh = mesh 
+        self.grf = grf
+
+        self.mu = mu 
+        self.bounds = bounds 
+
+        self.n_hyperps = len(bounds)
+        self.n_params = self.n_hyperps + self.mesh.m.num_columns
+
+    def get_upflows(self, params):
+        """Returns the set of upflows that correspond to a given set of 
+        (whitened) parameters."""
+
+        hyperparams, W = params[:self.n_hyperps], params[self.n_hyperps:]
+        hyperparams = [gauss_to_unif(p, *bnds) 
+                       for p, bnds in zip(hyperparams, self.bounds)]
+        
+        X = self.grf.generate_field(W, *hyperparams)
+        return self.mu + X
+
+class Channel():
+    
+    def __init__(self, mesh, bounds):
+        
+        self.mesh = mesh
+        self.bounds = bounds
+
+        self.n_params = 5
+
+    def get_cells_in_channel(self, pars):
+        """Returns the indices of the columns that are contained within 
+        the channel specified by a given set of parameters."""
+        
+        def in_channel(x, y, a1, a2, a3, a4, a5):
+            ub = a1 * np.sin(2*np.pi*x/a2) + np.tan(a3)*x + a4 
+            return ub-a5 <= y <= ub+a5 
+
+        pars = [gauss_to_unif(p, *self.bounds[i]) for i, p in enumerate(pars)]
+
+        cols = [col for col in self.mesh.m.column if in_channel(*col.centre, *pars)]
+        cells = [cell for col in cols for cell in col.cell]
+        return cells, cols
+
+class ClayCap():
+
+    def __init__(self, mesh, bounds, n_terms, coef_sds):
+        
+        self.cell_centres = np.array([c.centre for c in mesh.m.cell])
+        self.col_centres = np.array([c.centre for c in mesh.m.column])
+
+        self.bounds = bounds 
+        self.n_terms = n_terms 
+        self.coef_sds = coef_sds
+        self.n_params = 6 + 4 * self.n_terms ** 2
+
+    def cartesian_to_spherical(self, ds):
+
+        rs = np.linalg.norm(ds, axis=1)
+        phis = np.arccos(ds[:, 2] / rs)
+        thetas = np.arctan2(ds[:, 1], ds[:, 0])
+        
+        return rs, phis, thetas
+    
+    def compute_cap_radii(self, phis, thetas, width_h, width_v, coefs):
+        """Computes the radius of the clay cap in the direction of each 
+        cell, by taking the radius of the (deformed) ellipse that forms 
+        the base of the cap, then adding the randomised Fourier series 
+        to it."""
+
+        rs = np.sqrt(((np.sin(phis) * np.cos(thetas) / width_h)**2 + \
+                      (np.sin(phis) * np.sin(thetas) / width_h)**2 + \
+                      (np.cos(phis) / width_v)**2) ** -1)
+        
+        for n, m in product(range(self.n_terms), range(self.n_terms)):
+        
+            rs += coefs[n, m, 0] * np.cos(n * thetas) * np.cos(m * phis) + \
+                  coefs[n, m, 1] * np.cos(n * thetas) * np.sin(m * phis) + \
+                  coefs[n, m, 2] * np.sin(n * thetas) * np.cos(m * phis) + \
+                  coefs[n, m, 3] * np.sin(n * thetas) * np.sin(m * phis)
+        
+        return rs
+    
+    def get_cap_params(self, ps):
+        """Given a set of unit normal variables, generates the 
+        corresponding set of clay cap parameters."""
+
+        geom = [gauss_to_unif(p, *self.bounds[i]) 
+                for i, p in enumerate(ps[:6])]
+
+        coefs = np.reshape(self.coef_sds * ps[6:], 
+                           (self.n_terms, self.n_terms, 4))
+
+        return geom, coefs
+
+    def get_cells_in_cap(self, params):
+        """Returns an array of booleans that indicate whether each cell 
+        is contained within the clay cap."""
+
+        # Unpack parameters
+        geom, coefs = self.get_cap_params(params)
+        *centre, width_h, width_v, dip = geom
+
+        ds = self.cell_centres - centre
+        ds[:, -1] += (dip / width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
+
+        cell_radii, cell_phis, cell_thetas = self.cartesian_to_spherical(ds)
+
+        cap_radii = self.compute_cap_radii(cell_phis, cell_thetas,
+                                           width_h, width_v, coefs)
+        
+        return (cell_radii < cap_radii).nonzero()
+    
+    def get_upflow_weightings(self, params, mesh):
+        """Returns a list of values by which the upflow in each column 
+        should be multiplied."""
+
+        cx, cy, *_ = self.get_cap_params(params)[0]
+
+        s = 800 # TODO: make this into an input
+
+        col_centres = [col.centre for col in mesh.m.column]
+        col_weightings = np.array([np.exp(-(((c[0]-cx)/s)**2 + ((c[1]-cy)/s)**2)) / 2
+                                   for c in col_centres])
+
+        return col_weightings
+
 class Model():
     """Base class for models, with a set of default methods."""
 
@@ -107,6 +286,9 @@ class Model():
 
         self.dt = dt
         self.tmax = tmax
+
+        self.feedzone_cell_inds = [w.feedzone_cell.index for w in wells]
+        self.n_feedzones = len(self.feedzone_cell_inds)
 
         self.ns_model = None
         self.pr_model = None
@@ -330,10 +512,10 @@ class Model():
             
             ts = f["cell_fields"]["fluid_temperature"][0][cell_inds]
             
-            ps = [p[cell_inds][self.feedzone_cells]
+            ps = [p[cell_inds][self.feedzone_cell_inds]
                   for p in f["cell_fields"]["fluid_pressure"]]   
             
-            es = [e[src_inds][-len(self.feedzones):] 
+            es = [e[src_inds][-self.n_feedzones:] 
                   for e in f["source_fields"]["source_enthalpy"]]
 
         return np.concatenate((np.array(ts).flatten(), 

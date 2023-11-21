@@ -57,7 +57,7 @@
     "echo": false
   },
   "mesh": {
-    "filename": "models/gSL625.msh",
+    "filename": "models/slice/gSL625.msh",
     "thickness": 60.0
   },
   "output": {
@@ -74,7 +74,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "0",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -86,7 +86,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "1",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -98,7 +98,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "2",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -110,7 +110,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "3",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -122,7 +122,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "4",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -134,7 +134,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "5",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -146,7 +146,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "6",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -158,7 +158,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "7",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -170,7 +170,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "8",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -182,7 +182,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "9",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -194,7 +194,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "10",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -206,7 +206,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "11",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -218,7 +218,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "12",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -230,7 +230,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "13",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -242,7 +242,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "14",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -254,7 +254,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "15",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -266,7 +266,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "16",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -278,7 +278,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "17",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -290,7 +290,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "18",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -302,7 +302,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "19",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -314,7 +314,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "20",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -326,7 +326,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "21",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -338,7 +338,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "22",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -350,7 +350,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "23",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -362,7 +362,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "24",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -374,7 +374,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "25",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -386,7 +386,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "26",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -398,7 +398,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "27",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -410,7 +410,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "28",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -422,7 +422,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "29",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -434,7 +434,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "30",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -446,7 +446,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "31",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -458,7 +458,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "32",
-        "permeability": 1e-16,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -470,7 +470,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "33",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -482,7 +482,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "34",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -494,7 +494,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "35",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -506,7 +506,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "36",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -518,7 +518,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "37",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -530,7 +530,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "38",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -542,7 +542,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "39",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -554,7 +554,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "40",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -566,7 +566,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "41",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -578,7 +578,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "42",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -590,7 +590,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "43",
-        "permeability": 1.7782794100389228e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -602,7 +602,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "44",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -614,7 +614,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "45",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -626,7 +626,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "46",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -638,7 +638,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "47",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -650,7 +650,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "48",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -662,7 +662,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "49",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -674,7 +674,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "50",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -686,7 +686,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "51",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -698,7 +698,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "52",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -710,7 +710,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "53",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -722,7 +722,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "54",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -734,7 +734,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "55",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -746,7 +746,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "56",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -758,7 +758,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "57",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -770,7 +770,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "58",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -782,7 +782,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "59",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -794,7 +794,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "60",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -806,7 +806,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "61",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -818,7 +818,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "62",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -830,7 +830,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "63",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -842,7 +842,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "64",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -854,7 +854,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "65",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -866,7 +866,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "66",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -878,7 +878,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "67",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -890,7 +890,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "68",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -902,7 +902,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "69",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -914,7 +914,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "70",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -926,7 +926,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "71",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -938,7 +938,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "72",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -950,7 +950,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "73",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -962,7 +962,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "74",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -974,7 +974,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "75",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -986,7 +986,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "76",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -998,7 +998,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "77",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1010,7 +1010,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "78",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1022,7 +1022,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "79",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1034,7 +1034,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "80",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1046,7 +1046,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "81",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1058,7 +1058,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "82",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1070,7 +1070,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "83",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1082,7 +1082,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "84",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1094,7 +1094,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "85",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1106,7 +1106,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "86",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1118,7 +1118,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "87",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1130,7 +1130,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "88",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1142,7 +1142,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "89",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1154,7 +1154,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "90",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1166,7 +1166,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "91",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1178,7 +1178,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "92",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1190,7 +1190,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "93",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1202,7 +1202,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "94",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1214,7 +1214,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "95",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1226,7 +1226,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "96",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1238,7 +1238,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "97",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1250,7 +1250,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "98",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1262,7 +1262,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "99",
-        "permeability": 1e-16,
+        "permeability": 1.7782794100389228e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1274,7 +1274,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "100",
-        "permeability": 1e-16,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1286,7 +1286,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "101",
-        "permeability": 1e-16,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1298,7 +1298,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "102",
-        "permeability": 1e-16,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1310,7 +1310,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "103",
-        "permeability": 1e-16,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1322,7 +1322,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "104",
-        "permeability": 1e-16,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1334,7 +1334,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "105",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1346,7 +1346,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "106",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1358,7 +1358,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "107",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1370,7 +1370,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "108",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1382,7 +1382,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "109",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1394,7 +1394,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "110",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1406,7 +1406,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "111",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1418,7 +1418,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "112",
-        "permeability": 3.1622776601683796e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1430,7 +1430,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "113",
-        "permeability": 3.1622776601683796e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1442,7 +1442,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "114",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1454,7 +1454,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "115",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1466,7 +1466,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "116",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1478,7 +1478,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "117",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1490,7 +1490,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "118",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1502,7 +1502,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "119",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1514,7 +1514,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "120",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1526,7 +1526,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "121",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1538,7 +1538,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "122",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1550,7 +1550,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "123",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1562,7 +1562,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "124",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1574,7 +1574,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "125",
-        "permeability": 1e-16,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1586,7 +1586,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "126",
-        "permeability": 1e-16,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1598,7 +1598,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "127",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1610,7 +1610,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "128",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1622,7 +1622,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "129",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1634,7 +1634,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "130",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1646,7 +1646,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "131",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1658,7 +1658,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "132",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1670,7 +1670,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "133",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1682,7 +1682,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "134",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1694,7 +1694,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "135",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1706,7 +1706,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "136",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1718,7 +1718,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "137",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1730,7 +1730,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "138",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1742,7 +1742,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "139",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1754,7 +1754,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "140",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1766,7 +1766,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "141",
-        "permeability": 3.1622776601683796e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1778,7 +1778,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "142",
-        "permeability": 3.1622776601683796e-14,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1790,7 +1790,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "143",
-        "permeability": 1e-16,
+        "permeability": 3.1622776601683796e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1802,7 +1802,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "144",
-        "permeability": 1e-16,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1814,7 +1814,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "145",
-        "permeability": 1e-16,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1874,7 +1874,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "150",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1886,7 +1886,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "151",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1898,7 +1898,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "152",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1910,7 +1910,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "153",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1922,7 +1922,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "154",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1934,7 +1934,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "155",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1946,7 +1946,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "156",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1958,7 +1958,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "157",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1970,7 +1970,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "158",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1982,7 +1982,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "159",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -1994,7 +1994,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "160",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2006,7 +2006,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "161",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2018,7 +2018,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "162",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2030,7 +2030,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "163",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2042,7 +2042,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "164",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2054,7 +2054,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "165",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2066,7 +2066,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "166",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2078,7 +2078,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "167",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2090,7 +2090,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "168",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2102,7 +2102,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "169",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2114,7 +2114,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "170",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2126,7 +2126,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "171",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2138,7 +2138,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "172",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2150,7 +2150,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "173",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2162,7 +2162,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "174",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2174,7 +2174,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "175",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2186,7 +2186,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "176",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2198,7 +2198,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "177",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2210,7 +2210,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "178",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2222,7 +2222,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "179",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2234,7 +2234,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "180",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2246,7 +2246,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "181",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2258,7 +2258,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "182",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2270,7 +2270,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "183",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2282,7 +2282,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "184",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2294,7 +2294,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "185",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2306,7 +2306,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "186",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2318,7 +2318,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "187",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2330,7 +2330,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "188",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2342,7 +2342,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "189",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2354,7 +2354,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "190",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2366,7 +2366,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "191",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2378,7 +2378,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "192",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2390,7 +2390,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "193",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2402,7 +2402,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "194",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2414,7 +2414,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "195",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-16,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2426,7 +2426,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "196",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-16,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2438,7 +2438,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "197",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.62341325190349e-17,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2450,7 +2450,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "198",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2462,7 +2462,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "199",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2474,7 +2474,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "200",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2486,7 +2486,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "201",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2498,7 +2498,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "202",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2510,7 +2510,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "203",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2522,7 +2522,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "204",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2534,7 +2534,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "205",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2546,7 +2546,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "206",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2558,7 +2558,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "207",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2570,7 +2570,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "208",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2582,7 +2582,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "209",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2594,7 +2594,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "210",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2606,7 +2606,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "211",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2618,7 +2618,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "212",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2630,7 +2630,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "213",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2642,7 +2642,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "214",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2654,7 +2654,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "215",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2666,7 +2666,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "216",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2678,7 +2678,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "217",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2690,7 +2690,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "218",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2702,7 +2702,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "219",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2714,7 +2714,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "220",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2726,7 +2726,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "221",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2738,7 +2738,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "222",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2750,7 +2750,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "223",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2762,7 +2762,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "224",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2774,7 +2774,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "225",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2786,7 +2786,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "226",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2798,7 +2798,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "227",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2810,7 +2810,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "228",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2822,7 +2822,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "229",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2834,7 +2834,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "230",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2846,7 +2846,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "231",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2858,7 +2858,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "232",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2870,7 +2870,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "233",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2882,7 +2882,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "234",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2894,7 +2894,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "235",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2906,7 +2906,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "236",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2918,7 +2918,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "237",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2930,7 +2930,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "238",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2942,7 +2942,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "239",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2954,7 +2954,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "240",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2966,7 +2966,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "241",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2978,7 +2978,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "242",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -2990,7 +2990,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "243",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3002,7 +3002,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "244",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3014,7 +3014,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "245",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3026,7 +3026,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "246",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3074,7 +3074,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "250",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3086,7 +3086,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "251",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3218,7 +3218,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "262",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3230,7 +3230,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "263",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3242,7 +3242,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "264",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3254,7 +3254,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "265",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3266,7 +3266,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "266",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3338,7 +3338,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "272",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3350,7 +3350,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "273",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3362,7 +3362,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "274",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3470,7 +3470,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "283",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3542,7 +3542,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "289",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3554,7 +3554,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "290",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3566,7 +3566,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "291",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3578,7 +3578,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "292",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3590,7 +3590,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "293",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3602,7 +3602,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "294",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3614,7 +3614,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "295",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3626,7 +3626,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "296",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3638,7 +3638,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "297",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3650,7 +3650,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "298",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3662,7 +3662,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "299",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3674,7 +3674,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "300",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3686,7 +3686,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "301",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3698,7 +3698,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "302",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3710,7 +3710,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "303",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3782,7 +3782,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "309",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3794,7 +3794,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "310",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3806,7 +3806,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "311",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3818,7 +3818,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "312",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3830,7 +3830,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "313",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3842,7 +3842,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "314",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3854,7 +3854,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "315",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3866,7 +3866,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "316",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3878,7 +3878,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "317",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3890,7 +3890,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "318",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3902,7 +3902,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "319",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3914,7 +3914,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "320",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3926,7 +3926,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "321",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3938,7 +3938,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "322",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3950,7 +3950,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "323",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3962,7 +3962,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "324",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3974,7 +3974,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "325",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3986,7 +3986,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "326",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -3998,7 +3998,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "327",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4070,7 +4070,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "333",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4082,7 +4082,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "334",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4094,7 +4094,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "335",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4106,7 +4106,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "336",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4118,7 +4118,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "337",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4130,7 +4130,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "338",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4142,7 +4142,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "339",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4154,7 +4154,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "340",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4178,7 +4178,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "342",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4190,7 +4190,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "343",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4202,7 +4202,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "344",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4214,7 +4214,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "345",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4226,7 +4226,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "346",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4238,7 +4238,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "347",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4250,7 +4250,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "348",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4262,7 +4262,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "349",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4274,7 +4274,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "350",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4286,7 +4286,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "351",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4298,7 +4298,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "352",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4310,7 +4310,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "353",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4322,7 +4322,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "354",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4334,7 +4334,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "355",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4346,7 +4346,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "356",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4358,7 +4358,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "357",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4370,7 +4370,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "358",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4490,7 +4490,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "368",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4502,7 +4502,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "369",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4514,7 +4514,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "370",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4526,7 +4526,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "371",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4538,7 +4538,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "372",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4550,7 +4550,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "373",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4562,7 +4562,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "374",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4574,7 +4574,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "375",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4586,7 +4586,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "376",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4598,7 +4598,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "377",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4610,7 +4610,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "378",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4622,7 +4622,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "379",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4634,7 +4634,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "380",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4646,7 +4646,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "381",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4658,7 +4658,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "382",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4670,7 +4670,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "383",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4694,7 +4694,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "385",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4706,7 +4706,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "386",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4718,7 +4718,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "387",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4802,7 +4802,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "394",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4814,7 +4814,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "395",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4826,7 +4826,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "396",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4838,7 +4838,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "397",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4850,7 +4850,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "398",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4862,7 +4862,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "399",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4874,7 +4874,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "400",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4886,7 +4886,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "401",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4898,7 +4898,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "402",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4910,7 +4910,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "403",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4922,7 +4922,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "404",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4934,7 +4934,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "405",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4946,7 +4946,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "406",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4958,7 +4958,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "407",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4970,7 +4970,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "408",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4982,7 +4982,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "409",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -4994,7 +4994,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "410",
-        "permeability": 1e-14,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5006,7 +5006,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "411",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5018,7 +5018,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "412",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683794e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5114,7 +5114,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "420",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5126,7 +5126,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "421",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5138,7 +5138,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "422",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5150,7 +5150,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "423",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5162,7 +5162,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "424",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5174,7 +5174,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "425",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5186,7 +5186,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "426",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5198,7 +5198,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "427",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5210,7 +5210,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "428",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5222,7 +5222,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "429",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5234,7 +5234,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "430",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5246,7 +5246,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "431",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5258,7 +5258,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "432",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5270,7 +5270,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "433",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5282,7 +5282,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "434",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5294,7 +5294,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "435",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5306,7 +5306,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "436",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5318,7 +5318,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "437",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5330,7 +5330,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "438",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5342,7 +5342,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "439",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5354,7 +5354,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "440",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5366,7 +5366,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "441",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5378,7 +5378,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "442",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5390,7 +5390,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "443",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5402,7 +5402,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "444",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5414,7 +5414,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "445",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5426,7 +5426,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "446",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5438,7 +5438,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "447",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5450,7 +5450,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "448",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5462,7 +5462,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "449",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5474,7 +5474,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "450",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5486,7 +5486,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "451",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5498,7 +5498,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "452",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5534,7 +5534,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "455",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5630,7 +5630,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "463",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5642,7 +5642,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "464",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5654,7 +5654,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "465",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5666,7 +5666,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "466",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5678,7 +5678,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "467",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5690,7 +5690,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "468",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5702,7 +5702,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "469",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5714,7 +5714,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "470",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5726,7 +5726,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "471",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5738,7 +5738,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "472",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5750,7 +5750,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "473",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5762,7 +5762,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "474",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5774,7 +5774,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "475",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5786,7 +5786,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "476",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5798,7 +5798,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "477",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5810,7 +5810,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "478",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5822,7 +5822,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "479",
-        "permeability": 1.7782794100389227e-14,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5966,7 +5966,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "491",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5978,7 +5978,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "492",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -5990,7 +5990,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "493",
-        "permeability": 1e-14,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6002,7 +6002,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "494",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6014,7 +6014,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "495",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6026,7 +6026,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "496",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6038,7 +6038,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "497",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6050,7 +6050,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "498",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6062,7 +6062,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "499",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6074,7 +6074,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "500",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6086,7 +6086,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "501",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6098,7 +6098,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "502",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6110,7 +6110,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "503",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6122,7 +6122,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "504",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6134,7 +6134,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "505",
-        "permeability": 1e-14,
+        "permeability": 5.6234132519034904e-15,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6266,7 +6266,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "516",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6278,7 +6278,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "517",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6290,7 +6290,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "518",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6302,7 +6302,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "519",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6314,7 +6314,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "520",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6326,7 +6326,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "521",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6338,7 +6338,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "522",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6350,7 +6350,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "523",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6362,7 +6362,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "524",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6374,7 +6374,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "525",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6386,7 +6386,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "526",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6398,7 +6398,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "527",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6410,7 +6410,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "528",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6422,7 +6422,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "529",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6434,7 +6434,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "530",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6446,7 +6446,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "531",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6458,7 +6458,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "532",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6470,7 +6470,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "533",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6482,7 +6482,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "534",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6494,7 +6494,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "535",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6506,7 +6506,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "536",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6518,7 +6518,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "537",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6554,7 +6554,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "540",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6566,7 +6566,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "541",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6578,7 +6578,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "542",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6590,7 +6590,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "543",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6602,7 +6602,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "544",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6614,7 +6614,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "545",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6626,7 +6626,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "546",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6638,7 +6638,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "547",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6650,7 +6650,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "548",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683796e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6662,7 +6662,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "549",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683796e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6674,7 +6674,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "550",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683796e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6686,7 +6686,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "551",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683796e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6698,7 +6698,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "552",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 3.1622776601683796e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6710,7 +6710,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "553",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6722,7 +6722,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "554",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6734,7 +6734,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "555",
-        "permeability": 5.6234132519034904e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6746,7 +6746,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "556",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6758,7 +6758,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "557",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6770,7 +6770,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "558",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6782,7 +6782,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "559",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6794,7 +6794,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "560",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6806,7 +6806,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "561",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6818,7 +6818,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "562",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6830,7 +6830,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "563",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6842,7 +6842,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "564",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6854,7 +6854,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "565",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6866,7 +6866,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "566",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6878,7 +6878,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "567",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6890,7 +6890,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "568",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6902,7 +6902,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "569",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6914,7 +6914,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "570",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6926,7 +6926,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "571",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6938,7 +6938,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "572",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6950,7 +6950,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "573",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 3.1622776601683796e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6962,7 +6962,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "574",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 3.1622776601683796e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6974,7 +6974,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "575",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6986,7 +6986,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "576",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -6998,7 +6998,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "577",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7010,7 +7010,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "578",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7022,7 +7022,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "579",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7034,7 +7034,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "580",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7046,7 +7046,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "581",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7058,7 +7058,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "582",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7070,7 +7070,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "583",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7082,7 +7082,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "584",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7094,7 +7094,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "585",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7106,7 +7106,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "586",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7118,7 +7118,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "587",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7130,7 +7130,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "588",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7142,7 +7142,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "589",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7154,7 +7154,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "590",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7166,7 +7166,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "591",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7178,7 +7178,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "592",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7190,7 +7190,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "593",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7202,7 +7202,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "594",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7214,7 +7214,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "595",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7226,7 +7226,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "596",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7238,7 +7238,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "597",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7250,7 +7250,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "598",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7262,7 +7262,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "599",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7274,7 +7274,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "600",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7286,7 +7286,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "601",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7298,7 +7298,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "602",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7310,7 +7310,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "603",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7322,7 +7322,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "604",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7334,7 +7334,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "605",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7346,7 +7346,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "606",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7358,7 +7358,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "607",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7370,7 +7370,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "608",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7382,7 +7382,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "609",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7394,7 +7394,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "610",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7406,7 +7406,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "611",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7418,7 +7418,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "612",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7430,7 +7430,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "613",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7442,7 +7442,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "614",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7454,7 +7454,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "615",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7466,7 +7466,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "616",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7478,7 +7478,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "617",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7490,7 +7490,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "618",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7502,7 +7502,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "619",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7514,7 +7514,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "620",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7526,7 +7526,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "621",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7538,7 +7538,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "622",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7550,7 +7550,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "623",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7562,7 +7562,7 @@
         "density": 2500.0,
         "dry_conductivity": 2.5,
         "name": "624",
-        "permeability": 3.1622776601683794e-15,
+        "permeability": 1.7782794100389227e-14,
         "porosity": 0.1,
         "specific_heat": 1000.0,
         "wet_conductivity": 2.5
@@ -7694,7 +7694,7 @@
       "cell": 612,
       "component": "water",
       "enthalpy": 1500000.0,
-      "rate": 0.13534849589167855
+      "rate": 0.05789984890160772
     }
   ],
   "time": {
@@ -7714,5 +7714,5 @@
       }
     }
   },
-  "title": "Slice model"
+  "title": "2D Model"
 }
