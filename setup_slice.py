@@ -1,23 +1,26 @@
 """Setup script for 2D vertical slice model."""
 
 import numpy as np
-from scipy import sparse, stats
+from scipy import sparse, stats 
+from scipy.interpolate import RegularGridInterpolator
 
 from src.consts import SECS_PER_WEEK
 from src.grfs import *
 from src.models import *
 
-np.random.seed(1) # 11 not bad
+np.random.seed(9) # 11 not bad
 
 DATA_FOLDER = "data/slice"
 MODEL_FOLDER = "models/slice"
 
-W_TRUE_PATH = f"{DATA_FOLDER}/w_true.npz"
-P_TRUE_PATH = f"{DATA_FOLDER}/p_true.npz"
-F_TRUE_PATH = f"{DATA_FOLDER}/F_true.npz"
-G_TRUE_PATH = f"{DATA_FOLDER}/G_true.npz"
-OBS_PATH = f"{DATA_FOLDER}/obs.npz"
-COV_PATH = f"{DATA_FOLDER}/C_e.npz" # .npy?
+W_TRUE_PATH = f"{DATA_FOLDER}/w_true.npy"
+P_TRUE_PATH = f"{DATA_FOLDER}/p_true.npy"
+F_TRUE_PATH = f"{DATA_FOLDER}/F_true.npy"
+G_TRUE_PATH = f"{DATA_FOLDER}/G_true.npy"
+OBS_PATH = f"{DATA_FOLDER}/obs.npy"
+COV_PATH = f"{DATA_FOLDER}/C_e.npy"
+
+READ_TRUTH = True
 
 """
 Classes
@@ -114,8 +117,8 @@ class DataHandler():
         # Temperature observation coordinates
         self.temp_obs_xs = temp_obs_xs
         self.temp_obs_zs = temp_obs_zs
-        self.temp_obs_cs = np.array([[x, z] for x in temp_obs_xs 
-                                     for z in temp_obs_zs])
+        self.temp_obs_cs = np.array([[x, z] for z in temp_obs_zs 
+                                     for x in temp_obs_xs])
         
         # Production observation times
         self.prod_obs_ts = prod_obs_ts
@@ -157,14 +160,12 @@ class DataHandler():
     def get_full_pressures(self, F_i):
         """Extracts the pressures from a complete set of data."""
         pres = F_i[self.inds_full_pres]
-        pres = np.reshape(pres, (self.n_wells, -1)) # TODO: check
-        return pres
+        return self.reshape_obs(pres)
 
     def get_full_enthalpies(self, F_i):
         """Extracts the enthalpies from a complete set of data."""
         enth = F_i[self.inds_full_enth]
-        enth = np.reshape(enth, (self.n_wells, -1)) # TODO: check
-        return enth
+        return self.reshape_obs(enth)
     
     def get_full_states(self, F_i):
         temp = self.get_full_temperatures(F_i)
@@ -183,14 +184,12 @@ class DataHandler():
     def get_obs_pressures(self, pres_full):
         """Extracts the pressures at each observation location from a 
         full set of pressures."""
-        pres_obs = pres_full[:, self.inds_prod_obs]
-        return self.reshape_obs(pres_obs)
+        return pres_full[self.inds_prod_obs, :]
 
     def get_obs_enthalpies(self, enth_full):
         """Extracts the enthalpies at each observation location from a
         full set of enthalpies."""
-        enth_obs = enth_full[:, self.inds_prod_obs]
-        return self.reshape_obs(enth_obs)
+        return enth_full[self.inds_prod_obs, :]
     
     def get_obs_states(self, F_i):
         """Extracts the observations from a complete vector of model 
@@ -213,7 +212,7 @@ class DataHandler():
     def reshape_obs(self, obs):
         """Reshapes observations 2D arrays such that each row contains
         the observations for a single well."""
-        return np.reshape(obs, (self.n_wells, -1))
+        return np.reshape(obs, (-1, self.n_wells))
 
     def split_obs(self, G_i):
         """Splits a set of observations into temperatures, pressures 
@@ -228,7 +227,7 @@ class DataHandler():
         TODO: cut off at well depths?"""
         mesh_coords = (self.mesh.xs, self.mesh.zs)
         interpolator = RegularGridInterpolator(mesh_coords, temps.T)
-        well_coords = np.array([[x, z] for x in self.temp_obs_xs for z in self.mesh.zs])
+        well_coords = np.array([[x, z] for z in self.mesh.zs for x in self.temp_obs_xs])
         temp_well = interpolator(well_coords)
         return self.reshape_obs(temp_well)
 
@@ -292,6 +291,8 @@ prod_obs_ts = np.array([0, 13, 26, 39, 52]) * SECS_PER_WEEK
 
 data_handler_crse = DataHandler(mesh_crse, well_xs, temp_obs_zs, prod_obs_ts, tmax, nt)
 data_handler_fine = DataHandler(mesh_fine, well_xs, temp_obs_zs, prod_obs_ts, tmax, nt)
+
+noise_level = 0.02
 
 """
 Model functions
@@ -364,8 +365,6 @@ def generate_prior(mesh, upflow_cell):
 Truth
 """
 
-NOISE_LEVEL = 0.05 # Noise level as a percentage of the maximum of the raw data
-
 def generate_truth(mesh: SliceMesh, model_name, wells, upflow_cell):
     """Generates the truth and observations using the fine model."""
     
@@ -379,9 +378,6 @@ def generate_truth(mesh: SliceMesh, model_name, wells, upflow_cell):
 
     F_t = F(p_t, mesh, model_name, wells, upflow_cell)
     G_t = G(F_t, data_handler_fine)
-
-    temp_true = F_t[:(mesh.nx * mesh.nz)]
-    mesh.m.slice_plot(value=temp_true, colourmap="coolwarm")
 
     np.save(W_TRUE_PATH, w_t)
     np.save(P_TRUE_PATH, p_t)
@@ -403,9 +399,9 @@ def generate_data(G_t):
 
     temp_t, pres_t, enth_t = data_handler_fine.split_obs(G_t)
 
-    cov_temp = (NOISE_LEVEL * np.max(temp_t)) ** 2 * np.eye(temp_t.size)
-    cov_pres = (NOISE_LEVEL * np.max(pres_t)) ** 2 * np.eye(pres_t.size)
-    cov_enth = (NOISE_LEVEL * np.max(enth_t)) ** 2 * np.eye(enth_t.size)
+    cov_temp = (noise_level * np.max(temp_t)) ** 2 * np.eye(temp_t.size)
+    cov_pres = (noise_level * np.max(pres_t)) ** 2 * np.eye(pres_t.size)
+    cov_enth = (noise_level * np.max(enth_t)) ** 2 * np.eye(enth_t.size)
 
     C_e = sparse.block_diag((cov_temp, cov_pres, cov_enth)).toarray()
     y = np.random.multivariate_normal(G_t, C_e)
@@ -420,7 +416,11 @@ def read_data():
     C_e = np.load(COV_PATH)
     return y, C_e
 
-w_t, p_t, F_t, G_t, = generate_truth(mesh_fine, model_name_fine, 
-                                     wells_fine, upflow_cell_fine)
+if READ_TRUTH:
+    w_t, p_t, F_t, G_t = read_truth()
+    y, C_e = read_data()
 
-y, C_e = generate_data(G_t)
+else:
+    w_t, p_t, F_t, G_t = generate_truth(mesh_fine, model_name_fine, 
+                                        wells_fine, upflow_cell_fine)
+    y, C_e = generate_data(G_t)
