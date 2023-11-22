@@ -31,9 +31,9 @@ class ModelType(Enum):
 class Mesh():
     pass
 
-class RegularMesh(Mesh):
+class SliceMesh(Mesh):
 
-    def __init__(self, name, xmax, ymax, zmax, nx, ny, nz):
+    def __init__(self, name, xmax, ymax, zmax, nx, nz):
 
         self.name = name
 
@@ -42,15 +42,14 @@ class RegularMesh(Mesh):
         self.zmax = zmax
 
         self.nx = nx 
-        self.ny = ny 
         self.nz = nz
 
         self.dx = xmax / nx
-        self.dy = ymax / ny
+        self.dy = ymax
         self.dz = zmax / nz
 
         dxs = [self.dx] * nx
-        dys = [self.dy] * ny
+        dys = [self.dy]
         dzs = [self.dz] * nz
 
         self.m = lm.mesh(rectangular=(dxs, dys, dzs))
@@ -273,8 +272,7 @@ class Model():
 
     def __init__(self, path: str, mesh: Mesh, perms: np.ndarray, 
                  wells: list[Well], upflows: list[MassUpflow], 
-                 dt: float, tmax: float, 
-                 ns_temp_coords, pr_obs_times):
+                 dt: float, tmax: float):
 
         self.ns_path = f"{path}_NS"
         self.pr_path = f"{path}_PR"
@@ -288,17 +286,12 @@ class Model():
         self.dt = dt
         self.tmax = tmax
         self.ts = np.arange(0, tmax, dt)
-        print(self.ts)
 
         self.feedzone_cell_inds = [w.feedzone_cell.index for w in wells]
         self.n_feedzones = len(self.feedzone_cell_inds)
 
         self.ns_model = None
         self.pr_model = None
-
-        self.ns_temp_coords = ns_temp_coords 
-        self.pr_obs_inds = np.searchsorted(self.ts, pr_obs_times-EPS)
-        print(self.pr_obs_inds)
         
         self.generate_ns()
         self.generate_pr()
@@ -542,25 +535,12 @@ class Model2D(Model):
                                 for p in pres])
             pr_enth = np.array([e[src_inds][-self.n_feedzones:]
                                 for e in enth])
-            
-        # TODO: check this...
-        # TODO: consider moving into separate function
-        ns_temp = np.reshape(ns_temp, (self.mesh.nz, self.mesh.nx))
-        ns_temp_interp = RegularGridInterpolator((self.mesh.xs, self.mesh.zs), ns_temp.T)
-        ns_temp_obs = ns_temp_interp(self.ns_temp_coords)
-
-        pr_pres_obs = pr_pres[self.pr_obs_inds, :]
-        pr_enth_obs = pr_enth[self.pr_obs_inds, :]
 
         F_i = np.concatenate((ns_temp.flatten(),
                               pr_pres.flatten(),
                               pr_enth.flatten()))
-        
-        G_i = np.concatenate((ns_temp_obs.flatten(),
-                              pr_pres_obs.flatten(),
-                              pr_enth_obs.flatten()))
 
-        return F_i, G_i
+        return F_i
 
 class Model3D(Model):
 
