@@ -2,7 +2,6 @@ from copy import deepcopy
 from enum import Enum
 from itertools import product
 from scipy import stats
-from scipy.interpolate import RegularGridInterpolator
 
 import h5py
 import layermesh.mesh as lm
