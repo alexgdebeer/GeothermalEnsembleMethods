@@ -3,7 +3,7 @@
 - [info, run, start, {"compiler": "GCC version 8.3.0"}]
 - [info, run, start, {"num_processors": 1}]
 
-- [info, simulation, init, {"wall_time": "20231122 024816.417 +0000"}]
+- [info, simulation, init, {"wall_time": "20231122 085405.472 +0000"}]
 
 - [info, input, default, {"logfile.filename": "models/slice/SL1225_NS.yaml"}]
 - [info, input, default, {"output.filename": "models/slice/SL1225_NS.h5"}]
@@ -64,7 +64,7 @@
 - [info, simulation, dof, {"total": 2450, "min": 2450, "max": 2450, "imbalance": 0.000000E+00}]
 - [info, simulation, source, {"count": 35}]
 
-- [info, timestepper, start, {"time": 0.000000E+00, "wall_time": "20231122 024817.270 +0000"}]
+- [info, timestepper, start, {"time": 0.000000E+00, "wall_time": "20231122 085405.905 +0000"}]
 
 - [info, timestep, start, {"count": 1, "size": 0.100000E+07}]
 - [info, fluid, transition, {"cell": 243, "old_region": 1, "new_region": 4, "new_primary": [0.233918E+04, 0.100000E-05]}]
@@ -869,7 +869,7 @@
 - [info, fluid, transition, {"cell": 577, "old_region": 4, "new_region": 1, "new_primary": [0.233919E+04, 0.199998E+02]}]
 - [info, nonlinear_solver, iteration, {"count": 7, "linear_solver_iterations": 22, "cell": 568, "equation": 1, "residual": 0.106964E-01}]
 - [info, fluid, transition, {"cell": 576, "old_region": 4, "new_region": 1, "new_primary": [0.233919E+04, 0.199998E+02]}]
-- [info, nonlinear_solver, iteration, {"count": 8, "linear_solver_iterations": 22, "cell": 525, "equation": 1, "residual": 0.198275E-02}]
+- [info, nonlinear_solver, iteration, {"count": 8, "linear_solver_iterations": 22, "cell": 525, "equation": 1, "residual": 0.198274E-02}]
 - [warn, nonlinear_solver, end, {"iterations": 8, "converged": F, "reason": "max_iterations"}]
 - [warn, timestep, reduction, {"new_size": 0.200000E+06}]
 - [info, fluid, transition, {"cell": 278, "old_region": 1, "new_region": 4, "new_primary": [0.233918E+04, 0.100000E-05]}]
@@ -2175,5 +2175,5 @@
 - [info, nonlinear_solver, end, {"iterations": 1, "converged": T, "reason": "update_relative"}]
 - [info, timestep, end, {"tries": 1, "size": 0.100000E+16, "time": 0.275248E+16, "status": "final"}]
 
-- [info, timestepper, end, {"elapsed_seconds": 0.121700E+02, "wall_time": "20231122 024829.442 +0000"}]
-- [info, simulation, destroy, {"elapsed_seconds": 0.130290E+02, "wall_time": "20231122 024829.446 +0000"}]
+- [info, timestepper, end, {"elapsed_seconds": 0.531400E+01, "wall_time": "20231122 085411.220 +0000"}]
+- [info, simulation, destroy, {"elapsed_seconds": 0.575000E+01, "wall_time": "20231122 085411.222 +0000"}]
