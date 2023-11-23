@@ -4,10 +4,8 @@ This repository contains code for running ensemble Kalman methods for approximat
 
 ## TODO:
 ### Slice
- - Think about inverse crimes (i.e. make a finder model)
  - Think about how the noise is generated (increase to 5-10%)
- - Plot the data, truth, convective plume, vapour saturations?
- - Probably simpler to compute the temperature stuff in the model and then just return both the raw data and observations.
+ - Plot the vapour saturations for the true system (could be interesting)
 ### Channel
  - Add feedzone locations.
  - Tune Robin parameter on Matern fields.
