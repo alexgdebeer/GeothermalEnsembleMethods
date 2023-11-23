@@ -15,8 +15,7 @@ class EnsembleRunner():
     """Runs an ensemble and returns the results, including a list of 
     indices of any failed simulations."""
 
-    def __init__(self, prior, F, G, 
-                 Np, NF, NG, Ne):
+    def __init__(self, prior, F, G, Np, NF, NG, Ne):
         
         self.prior = prior 
         self.F = F 
@@ -37,6 +36,7 @@ class EnsembleRunner():
         inds_fail = []
 
         for i, w_i in enumerate(ws_i.T):
+            utils.info(f"Simulating ensemble member {i+1}...")
             p_i = self.prior.transform(w_i)
             F_i = self.F(p_i)
             if type(F_i) == models.ExitFlag:
@@ -53,13 +53,12 @@ def impute_gaussian(ws, inds_succ, inds_fail):
     """Replaces any failed ensemble members by sampling from a Gaussian
     with moments constructed using the successful ensemble members."""
     
-    n_succ = len(inds_succ)
     n_fail = len(inds_fail)
 
     mu = np.mean(ws[:, inds_succ], axis=1)
-    cov = np.cov(ws[:, inds_succ]) + 1e-4 * np.eye(n_succ)
+    cov = np.cov(ws[:, inds_succ]) + 1e-4 * np.eye(len(mu))
     
-    ws[inds_fail] = np.random.multivariate_normal(mu, cov, size=n_fail)
+    ws[:, inds_fail] = np.random.multivariate_normal(mu, cov, size=n_fail).T
     return ws
 
 def impute_resample(ws, inds_succ, inds_fail):
@@ -75,20 +74,32 @@ IMPUTERS = {
     "resample": impute_resample
 }
 
-def eki_update(ws_i, Gs_i, inds_succ, inds_fail, a_i, y, C_e,
+def compute_covs(ws_i, Gs_i):
+
+    N = ws_i.shape[1]
+
+    d_ws = ws_i - np.mean(ws_i, axis=1)[:, np.newaxis]
+    d_Gs = Gs_i - np.mean(Gs_i, axis=1)[:, np.newaxis]
+
+    C_WG = (1 / (N-1)) * d_ws @ d_Gs.T
+    C_GG = (1 / (N-1)) * d_Gs @ d_Gs.T
+
+    return C_WG, C_GG
+
+def eki_update(ws_i, Gs_i, Ne, inds_succ, inds_fail, a_i, y, C_e,
                localiser=None, failure_imputation="gaussian"):
-    """Runs an single EKI update."""
+    """Runs a single EKI update."""
 
-    ys_i = np.random.multivariate_normal(y, a_i * C_e)
+    ys_i = np.random.multivariate_normal(y, a_i * C_e, size=Ne).T
 
-    C_WG = np.cov(ws_i[:, inds_succ])
-    C_GG = np.cov(Gs_i[:, inds_succ])
+    C_WG, C_GG = compute_covs(ws_i[:, inds_succ], Gs_i[:, inds_succ])
 
     # TODO: localisation
 
     ws_n = ws_i + C_WG @ inv(C_GG + a_i * C_e) @ (ys_i - Gs_i)
 
     if inds_fail:
+        utils.info(f"Imputing {len(inds_fail)} failed ensemble members...")
         ws_n = IMPUTERS[failure_imputation](ws_n, inds_succ, inds_fail)
     
     return ws_n
@@ -98,7 +109,7 @@ def compute_a_dmc(t, Gs, y, NG, C_e_invsqrt):
     (2021)."""
 
     diffs = y[:, np.newaxis] - Gs
-    Ss = 0.5 * np.sum((C_e_invsqrt @ diffs) ** 2, axis=0) # TODO: check that this gives a matrix of the correct dimensions
+    Ss = 0.5 * np.sum((C_e_invsqrt @ diffs) ** 2, axis=0)
     mu_S, var_S = np.mean(Ss), np.var(Ss)
 
     a_inv = max(NG / (2 * mu_S), np.sqrt(NG / (2 * var_S)))
@@ -106,17 +117,11 @@ def compute_a_dmc(t, Gs, y, NG, C_e_invsqrt):
 
     return a_inv ** -1
 
-def run_eki_dmc(F, G, prior, y, C_e, NF, Ne,
-                localiser=None, failure_imputation="gaussian", 
-                verbose=True):
+def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
+                localiser=None, failure_imputation="gaussian"):
     """Runs EKI-DMC, as described in Iglesias and Yang (2021)."""
 
     C_e_invsqrt = sqrtm(inv(C_e))
-
-    if verbose: 
-        print("It. | t ")
-
-    Np = prior.num_params
     NG = len(y)
 
     ws_i = prior.sample(n=Ne)
@@ -129,22 +134,19 @@ def run_eki_dmc(F, G, prior, y, C_e, NF, Ne,
     Fs = [Fs_i]
     Gs = [Gs_i]
 
-    alphas = []
-
     i = 0
     t = 0
     converged = False
 
     while not converged:
 
-        a_i = compute_a_dmc(t, Gs[:, inds_succ], y, NG, C_e_invsqrt)
-        alphas.append(a_i)
+        a_i = compute_a_dmc(t, Gs_i[:, inds_succ], y, NG, C_e_invsqrt)
 
-        t += a_i
+        t += (a_i ** -1)
         if np.abs(t - 1.0) < TOL:
             converged = True
 
-        ws_i = eki_update(ws_i, Gs_i, inds_succ, inds_fail, a_i, y, C_e, 
+        ws_i = eki_update(ws_i, Gs_i, Ne, inds_succ, inds_fail, a_i, y, C_e, 
                           localiser, failure_imputation)
         
         ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i)
@@ -155,10 +157,9 @@ def run_eki_dmc(F, G, prior, y, C_e, NF, Ne,
         Gs.append(Gs_i)
 
         i += 1
-        if verbose: 
-            print(f"{i:.2i} | {t:.4f}")
+        utils.info(f"Iteration {i} complete. t = {t:.4f}.")
 
-    return ws, ps, Fs, Gs, alphas, inds_succ
+    return ws, ps, Fs, Gs, inds_succ
 
 
 class EnsembleProblem():
