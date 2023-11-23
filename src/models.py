@@ -343,8 +343,8 @@ class Model():
             "cell": u.cell.index
         } for u in self.upflows])
 
-        total_mass = sum([u.rate * u.cell.column.area for u in self.upflows])
-        utils.info(f"Total mass input: {total_mass:.2f} kg/s")
+        # total_mass = sum([u.rate * u.cell.column.area for u in self.upflows])
+        # utils.info(f"Total mass input: {total_mass:.2f} kg/s")
 
     def add_rocktypes(self):
         """Adds rocks with given permeabilities (and constant porosity, 
@@ -517,8 +517,8 @@ class Model2D(Model):
         }
 
     def get_pr_data(self):
-        """Returns the temperatures, pressures and enthalpies from a 
-        production history simulation."""
+        """Returns the temperatures (deg C), pressures (MPa) and
+        enthalpies (kJ/kg) from a production history simulation."""
 
         with h5py.File(f"{self.pr_path}.h5", "r") as f:
         
@@ -531,9 +531,9 @@ class Model2D(Model):
 
             ns_temp = np.array(temp[0][cell_inds])
             pr_pres = np.array([p[cell_inds][self.feedzone_cell_inds]
-                                for p in pres])
+                                for p in pres]) / 1e6
             pr_enth = np.array([e[src_inds][-self.n_feedzones:]
-                                for e in enth])
+                                for e in enth]) / 1e3
 
         F_i = np.concatenate((ns_temp.flatten(),
                               pr_pres.flatten(),

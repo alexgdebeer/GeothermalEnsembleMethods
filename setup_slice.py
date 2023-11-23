@@ -361,6 +361,8 @@ def generate_prior(mesh, upflow_cell):
     
     return prior
 
+prior = generate_prior(mesh_crse, upflow_cell_crse)
+
 """
 Truth
 """
