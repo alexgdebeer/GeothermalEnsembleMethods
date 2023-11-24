@@ -8,8 +8,136 @@ from src import models, utils
 
 TOL = 1e-8
 
-# Could define a localiser object
-# It could take in the current ensemble and ensemble predictions (I think this would work with a wide range of procedures).
+# ----------------
+# Imputation functions
+# ----------------
+
+class Imputer():
+    pass
+
+class GaussianImputer(Imputer):
+    """Replaces any failed ensemble members by sampling from a Gaussian
+    with moments constructed using the successful ensemble members."""
+    
+    def impute(ws, inds_succ, inds_fail):
+
+        n_fail = len(inds_fail)
+
+        mu = np.mean(ws[:, inds_succ], axis=1)
+        cov = np.cov(ws[:, inds_succ]) + 1e-4 * np.eye(len(mu)) # TODO: read paper on this
+        
+        ws[:, inds_fail] = np.random.multivariate_normal(mu, cov, size=n_fail).T
+        return ws
+    
+class ResamplingImputer(Imputer):
+    """Replaces any failed ensemble members by sampling (with 
+    replacement) from the successful ensemble members."""
+
+    def impute(ws, inds_succ, inds_fail):
+        inds_rep = np.random.choice(inds_succ, size=len(inds_fail))
+        ws[:, inds_fail] = ws[:, inds_rep]
+        return ws
+
+# ----------------
+# Localisation functions
+# ----------------
+
+class Localiser():
+
+    def _compute_gain_eki(ws, Gs, a_i, C_e):
+        C_wG, C_GG = compute_covs(ws, Gs)
+        return C_wG @ inv(C_GG + a_i * C_e)
+
+class IdentityLocaliser(Localiser):
+    """Returns the Kalman gain without applying any localisation."""
+
+    def __init__(self):
+        pass
+
+    def compute_gain_eki(self, ws, Gs, a_i, C_e):
+        return self._compute_gain_eki(ws, Gs, a_i, C_e)
+
+class BootstrapLocaliser(Localiser):
+    """Carries out the bootstrap-based localisation procedure described 
+    by Zhang and Oliver (2010)."""
+    
+    def __init__(self, N_boot=100, sigalpha=0.60, tol=1e-8):
+
+        self.N_boot = N_boot
+        self.sigalpha = sigalpha
+        self.tol=tol
+
+    def compute_gain_eki(self, ws, Gs, a_i, C_e):
+
+        Nw, Ne = ws.shape
+        NG, Ne = Gs.shape
+        K = self._compute_gain_eki(ws, Gs, a_i, C_e)
+
+        Ks_boot = np.empty((Nw, NG, self.N_boot))
+
+        for k in range(self.N_boot):
+            inds_res = np.random.choice(Ne, Ne)
+            ws_res = ws[:, inds_res]
+            Gs_res = Gs[:, inds_res]
+            K_res = self._compute_gain_eki(ws_res, Gs_res, a_i, C_e)
+            Ks_boot[:, :, k] = K_res
+
+        var_Kis = np.mean((Ks_boot - K[:, :, np.newaxis]) ** 2, axis=2)
+        Rsq = var_Kis / (K ** 2 + self.tol)
+        P = 1 / (1 + Rsq * (1 + 1 / self.sigalpha ** 2))
+
+        # TEMP (use as a check...)
+        for i in range(Nw):
+            for j in range(NG):
+                r_sq = np.mean((Ks_boot[i, j, :] - K[i, j]) ** 2) / (K[i, j] ** 2)
+                print(1.0 / (1.0 + r_sq * (1 + 1 / (self.sigalpha ** 2))))
+                print(P[i, j])
+
+        return P * K 
+
+class CycleLocaliser(Localiser):
+    """Carries out a variant of the localisation procedure described by
+    Luo and Bhakta (2020)."""
+
+    def __init__(self):
+        pass # Maybe there are some parameters to define?
+
+    def gaspari_cohn(self, z):
+        if 0 <= z <= 1:
+            return -(1/4)*z**5 + (1/2)*z**4 + (5/8)*z**3 - \
+                (5/3)*z**2 + 1
+        elif 1 < z <= 2:
+            return (1/12)*z**5 - (1/2)*z**4 + (5/8)*z**3 + \
+                (5/3)*z**2 - 5*z + 4 - (2/3)*z**-1
+        return 0.0
+
+    def compute_gain_eki(self, ws, Gs, a_i, C_e):
+
+        Nw, Ne = ws.shape
+        NG, Ne = Gs.shape
+
+        K = self._compute_gain_eki(ws, Gs, a_i, C_e)
+        R_wG = compute_cors(ws, Gs)[0]
+
+        P = np.zeros((Nw, NG))
+        R_wGs = np.zeros((Nw, NG, Ne-1))
+
+        for i in range(Ne-1):
+            ws_cycled = np.roll(ws, shift=i+1, axis=1)
+            R_wGs[:, :, i] = compute_cors(ws_cycled, Gs)
+
+        error_sds = np.median(np.abs(R_wGs), axis=2) / 0.6745
+
+        for i in range(Nw):
+            for j in range(NG):
+                z = (1-np.abs(R_wG[i, j])) / (1-error_sds[i, j])
+                P[i, j] = self.gaspari_cohn(z)
+
+        return P * K
+
+# ----------------
+# General EKI functions
+# ----------------
 
 class EnsembleRunner():
     """Runs an ensemble and returns the results, including a list of 
@@ -49,58 +177,45 @@ class EnsembleRunner():
 
         return ps_i, Fs_i, Gs_i, inds_succ, inds_fail
 
-def impute_gaussian(ws, inds_succ, inds_fail):
-    """Replaces any failed ensemble members by sampling from a Gaussian
-    with moments constructed using the successful ensemble members."""
-    
-    n_fail = len(inds_fail)
+def compute_covs(ws, Gs):
 
-    mu = np.mean(ws[:, inds_succ], axis=1)
-    cov = np.cov(ws[:, inds_succ]) + 1e-4 * np.eye(len(mu))
-    
-    ws[:, inds_fail] = np.random.multivariate_normal(mu, cov, size=n_fail).T
-    return ws
+    Nw = ws.shape[0]
+    NG = Gs.shape[0]
 
-def impute_resample(ws, inds_succ, inds_fail):
-    """Replaces any failed ensemble members by sampling (with 
-    replacement) from the successful ensemble members."""
-    
-    inds_rep = np.random.choice(inds_succ, size=len(inds_fail))
-    ws[:, inds_fail] = ws[:, inds_rep]
-    return ws
+    C = np.cov(np.vstack((ws, Gs)))
+    C_wG = C[:Nw, -NG:]
+    C_GG = C[-NG:, -NG:]
 
-IMPUTERS = {
-    "gaussian": impute_gaussian,
-    "resample": impute_resample
-}
+    return C_wG, C_GG
 
-def compute_covs(ws_i, Gs_i):
+def compute_cors(ws, Gs):
 
-    N = ws_i.shape[1]
+    Nw = ws.shape[0]
+    NG = Gs.shape[0]
 
-    d_ws = ws_i - np.mean(ws_i, axis=1)[:, np.newaxis]
-    d_Gs = Gs_i - np.mean(Gs_i, axis=1)[:, np.newaxis]
+    R = np.corrcoef(np.vstack((ws, Gs)))
+    R_wG = R[:Nw, -NG:]
+    R_GG = R[-NG:, -NG:]
 
-    C_WG = (1 / (N-1)) * d_ws @ d_Gs.T
-    C_GG = (1 / (N-1)) * d_Gs @ d_Gs.T
-
-    return C_WG, C_GG
+    return R_wG, R_GG
 
 def eki_update(ws_i, Gs_i, Ne, inds_succ, inds_fail, a_i, y, C_e,
-               localiser=None, failure_imputation="gaussian"):
+               localiser, imputer):
     """Runs a single EKI update."""
 
     ys_i = np.random.multivariate_normal(y, a_i * C_e, size=Ne).T
 
-    C_WG, C_GG = compute_covs(ws_i[:, inds_succ], Gs_i[:, inds_succ])
+    K = localiser.compute_gain_eki(
+        ws_i[:, inds_succ], 
+        Gs_i[:, inds_succ], 
+        a_i, C_e
+    )
 
-    # TODO: localisation
+    ws_n = ws_i + K @ (ys_i - Gs_i)
 
-    ws_n = ws_i + C_WG @ inv(C_GG + a_i * C_e) @ (ys_i - Gs_i)
-
-    if inds_fail:
-        utils.info(f"Imputing {len(inds_fail)} failed ensemble members...")
-        ws_n = IMPUTERS[failure_imputation](ws_n, inds_succ, inds_fail)
+    if (n_fail := len(inds_fail)) > 0:
+        utils.info(f"Imputing {n_fail} failed ensemble members...")
+        ws_n = imputer.impute(ws_n, inds_succ, inds_fail)
     
     return ws_n
 
@@ -118,7 +233,8 @@ def compute_a_dmc(t, Gs, y, NG, C_e_invsqrt):
     return a_inv ** -1
 
 def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
-                localiser=None, failure_imputation="gaussian"):
+                localiser: Localiser=IdentityLocaliser, 
+                imputer: Imputer=GaussianImputer):
     """Runs EKI-DMC, as described in Iglesias and Yang (2021)."""
 
     C_e_invsqrt = sqrtm(inv(C_e))
@@ -146,8 +262,8 @@ def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
         if np.abs(t - 1.0) < TOL:
             converged = True
 
-        ws_i = eki_update(ws_i, Gs_i, Ne, inds_succ, inds_fail, a_i, y, C_e, 
-                          localiser, failure_imputation)
+        ws_i = eki_update(ws_i, Gs_i, Ne, inds_succ, inds_fail, 
+                          a_i, y, C_e, localiser, imputer)
         
         ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i)
         
@@ -161,6 +277,8 @@ def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
 
     return ws, ps, Fs, Gs, inds_succ
 
+
+# Old code...
 
 class EnsembleProblem():
 
@@ -227,191 +345,6 @@ class EnsembleProblem():
         with h5py.File(f"{fname}.h5", "w") as f:
             for k, v in self.results.items():
                 f.create_dataset(k, data=v)
-
-
-# class ESMDAProblem(EnsembleProblem):
-
-
-#     def __init__(self, *args, loc_type=None, loc_mat=None):
-        
-#         super().__init__(*args)
-
-#         self.loc_type = loc_type
-#         self.loc_mat = loc_mat
-#         self.alphas = []
-#         self.t = 0.0
-
-#         self.results = {
-#             "ts": self.ts, 
-#             "fs": self.fs, 
-#             "gs": self.gs, 
-#             "alphas": self.alphas, 
-#             "inds": self.en_inds
-#         }
-
-
-#     """Runs the ensemble. Failed simulations are removed from the 
-#     list of ensemble indices."""
-#     def run_ensemble(self):
-
-#         fs_i = np.zeros((self.Nf, self.Ne))
-#         gs_i = np.zeros((self.Ng, self.Ne))
-
-#         for (i, t) in enumerate(self.ts[-1].T):
-#             if i in self.en_inds:
-#                 if type(f_t := self.f(t)) == models.ExitFlag:
-#                     self.en_inds.remove(i)
-#                 else:
-#                     fs_i[:, i] = f_t
-#                     gs_i[:, i] = self.g(f_t)
-
-#         self.fs.append(fs_i)
-#         self.gs.append(gs_i)
-
-
-#     """Calculates ensemble (cross-)covariance matrices."""
-#     def compute_covs(self, dts, dgs):
-
-#         if self.loc_type == "linearised":
-#             cov_tt = self.loc_mat * (dts @ dts.T)
-#             jac = self.compute_jac(dts, dgs)
-#             cov_tg = cov_tt @ jac.T
-#             cov_gg = jac @ cov_tt @ jac.T
-#             return cov_tg, cov_gg
-        
-#         cov_tg = dts @ dgs.T
-#         cov_gg = dgs @ dgs.T
-#         return cov_tg, cov_gg
-    
-
-#     def compute_gain(self, dts, dgs):
-
-#         cov_tg, cov_gg = self.compute_covs(dts, dgs)
-#         K = cov_tg @ np.linalg.inv(cov_gg + self.alphas[-1] * self.lik.cov) # TODO: TSVD
-
-#         return K
-    
-
-#     """Carries out the bootstrapping-based localisation procedure described 
-#     by Zhang and Oliver (2010)."""
-#     def localise_bootstrap(self, K, Nb=100, sigalpha_sq=0.6**2):
-
-#         Ks = np.zeros((self.Nt, self.Ng, Nb))
-#         loc_mat = np.zeros((self.Nt, self.Ng))
-
-#         for k in range(Nb):
-
-#             inds_r = np.random.choice(self.en_inds, size=len(self.en_inds))
-#             dts = self.compute_dts(self.ts[-1][:,inds_r])
-#             dgs = self.compute_dgs(self.gs[-1][:,inds_r])
-
-#             Ks[:,:,k] = self._compute_gain(dts, dgs)
-            
-#         for (i, j) in it.product(range(self.Nt), range(self.Ng)):
-#             r_sq = np.mean((Ks[i, j, :] - K[i, j]) ** 2) / K[i, j] ** 2
-#             loc_mat[i, j] = 1.0 / (1.0 + r_sq * (1 + 1 / sigalpha_sq))
-
-#         return K * loc_mat
-    
-
-#     """Generates the localisation matrix for a version of the adaptive
-#     procedure described by Luo and Bhakta (2020) (also used in PEST)."""
-#     def localise_cycle(self):
-
-#         def compute_cor(dts, dgs):
-            
-#             t_sds_inv = np.diag(np.diag(dts @ dts.T) ** -0.5)
-#             g_sds_inv = np.diag(np.diag(dgs @ dgs.T) ** -0.5)
-
-#             cov = dts @ dgs.T
-#             cor = t_sds_inv @ cov @ g_sds_inv
-#             return cor
-        
-#         def gaspari_cohn(z):
-#             if 0 <= z <= 1:
-#                 return -(1/4)*z**5 + (1/2)*z**4 + (5/8)*z**3 - (5/3)*z**2 + 1
-#             elif 1 < z <= 2:
-#                 return (1/12)*z**5 - (1/2)*z**4 + (5/8)*z**3 + \
-#                        (5/3)*z**2 - 5*z + 4 - (2/3)*z**-1
-#             return 0.0
-
-#         loc_mat = np.zeros((self.Nt, self.Ny))
-#         cor_mats = np.zeros((self.Nt, self.Ny, len(self.en_inds)-1))
-
-#         dts = self.compute_dts(self.ts[0][:,self.en_inds])
-#         dgs = self.compute_dgs(self.gs[0][:,self.en_inds])
-#         cor = compute_cor(dts, dgs) 
-
-#         for i in range(len(self.en_inds)-1):
-#             dgs_s = np.roll(dgs, shift=i+1, axis=1)
-#             cor_mats[:,:,i] = compute_cor(dts, dgs_s)
-
-#         error_sd = np.median(np.abs(cor_mats), axis=2) / 0.6745
-
-#         for (i, j) in it.product(range(self.Nt), range(self.Ny)):
-#             loc_mat[i, j] = gaspari_cohn((1-np.abs(cor[i, j])) / (1-error_sd[i, j]))
-
-#         print(loc_mat)
-
-#         return loc_mat
-    
-
-#     def update_ensemble(self):
-
-#         # TODO: clean up
-#         ys_p = np.random.multivariate_normal(
-#             self.y, 
-#             self.alphas[-1] * self.lik.cov, 
-#             size=(self.Ne, )
-#         ).T
-        
-#         dts = self.compute_dts(self.ts[-1][:,self.en_inds])
-#         dgs = self.compute_dgs(self.gs[-1][:,self.en_inds])
-#         K = self.compute_gain(dts, dgs)
-
-#         if self.loc_type == "cycle":
-#             if self.loc_mat is None: # First iteration
-#                 self.loc_mat = self.localise_cycle()
-#             K *= self.loc_mat 
-
-#         elif self.loc_type == "bootstrap":
-#             K = self.localise_bootstrap(K)
-
-#         self.ts.append(self.ts[-1] + K @ (ys_p - self.gs[-1]))
-
-
-#     def compute_alpha(self):
-
-#         mu_S, var_S = self.compute_S()
-        
-#         q1 = self.Ny / (2 * mu_S)
-#         q2 = np.sqrt(self.Ny / (2 * var_S))
-#         alpha_inv = min(max(q1, q2), 1.0 - self.t)
-
-#         self.t += alpha_inv
-#         self.alphas.append(alpha_inv ** -1.0)
-
-#         utils.info(f"alpha: {self.alphas[-1]:.4f} | t: {self.t:.4f}")
-
-
-#     def is_converged(self):
-#         return np.abs(self.t-1.0) < 1e-8
-    
-
-#     def run(self):
-
-#         self.generate_initial_ensemble()
-#         self.run_ensemble()
-
-#         while True:
-
-#             utils.info(f"Beginning iteration {len(self.ts)}...")
-#             self.compute_alpha()
-#             self.update_ensemble()
-#             self.run_ensemble()
-
-#             if self.is_converged():
-#                 return
 
 
 class EnRMLProblem(EnsembleProblem):
