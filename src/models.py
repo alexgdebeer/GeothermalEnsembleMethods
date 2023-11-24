@@ -118,13 +118,16 @@ class PermField():
         self.n_hyperparams = len(self.bounds)
         self.n_params = self.n_hyperparams + self.mesh.fem_mesh.n_points
 
+    def convert_hyperparams(self, hps):
+        return [gauss_to_unif(hp, *bnds) 
+                for hp, bnds in zip(hps, self.bounds)]
+
     def get_perms(self, ps):
         """Returns the set of permeabilities that correspond to a given 
         set of (whitened) parameters."""
 
         hyperparams, W = ps[:self.n_hyperparams], ps[self.n_hyperparams:]
-        hyperparams = [gauss_to_unif(p, *bnds)
-                       for p, bnds in zip(hyperparams, self.bounds)]
+        hyperparams = self.convert_hyperparams(hyperparams)
         
         X = self.grf.generate_field(W, *hyperparams)
 
@@ -132,6 +135,9 @@ class PermField():
             return self.grf.G @ X
         elif self.model_type == ModelType.MODEL2D:
             return X
+        
+    def get_hyperparams(self, ws):
+        return self.convert_hyperparams(ws[:self.n_hyperparams])
 
     def level_set(self, perms):
         return np.array([self.level_func(p) for p in perms])
