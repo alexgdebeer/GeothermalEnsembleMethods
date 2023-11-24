@@ -249,6 +249,7 @@ def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
     ps = [ps_i]
     Fs = [Fs_i]
     Gs = [Gs_i]
+    inds = [inds_succ]
 
     i = 0
     t = 0
@@ -271,11 +272,12 @@ def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
         ps.append(ps_i)
         Fs.append(Fs_i)
         Gs.append(Gs_i)
+        inds.append(inds_succ)
 
         i += 1
         utils.info(f"Iteration {i} complete. t = {t:.4f}.")
 
-    return ws, ps, Fs, Gs, inds_succ
+    return ws, ps, Fs, Gs, inds
 
 
 # Old code...
