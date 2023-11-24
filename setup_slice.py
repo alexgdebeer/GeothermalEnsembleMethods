@@ -102,6 +102,12 @@ class SlicePrior():
     def sample(self, n=1):
         return np.random.normal(size=(self.n_params, n))
 
+    def get_hyperparams(self, ws):
+        hps_shal = self.grf_shal.get_hyperparams(ws[self.inds["grf_shal"]])
+        hps_clay = self.grf_clay.get_hyperparams(ws[self.inds["grf_clay"]])
+        hps_deep = self.grf_deep.get_hyperparams(ws[self.inds["grf_deep"]])
+        return hps_shal, hps_clay, hps_deep
+
 class DataHandler():
 
     def __init__(self, mesh: SliceMesh, temp_obs_xs, temp_obs_zs,
@@ -367,10 +373,10 @@ prior = generate_prior(mesh_crse, upflow_cell_crse)
 Truth
 """
 
+truth_dist = generate_prior(mesh_fine, upflow_cell_fine)
+
 def generate_truth(mesh: SliceMesh, model_name, wells, upflow_cell):
     """Generates the truth and observations using the fine model."""
-    
-    truth_dist = generate_prior(mesh, upflow_cell)
 
     w_t = truth_dist.sample()
     p_t = truth_dist.transform(w_t)
@@ -381,10 +387,10 @@ def generate_truth(mesh: SliceMesh, model_name, wells, upflow_cell):
     F_t = F(p_t, mesh, model_name, wells, upflow_cell)
     G_t = G(F_t, data_handler_fine)
 
-    np.save(W_TRUE_PATH, w_t)
-    np.save(P_TRUE_PATH, p_t)
-    np.save(F_TRUE_PATH, F_t)
-    np.save(G_TRUE_PATH, G_t)
+    # np.save(W_TRUE_PATH, w_t)
+    # np.save(P_TRUE_PATH, p_t)
+    # np.save(F_TRUE_PATH, F_t)
+    # np.save(G_TRUE_PATH, G_t)
 
     return w_t, p_t, F_t, G_t
 
