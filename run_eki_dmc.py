@@ -1,12 +1,15 @@
 import h5py
 
-from src.methods import run_eki_dmc
+from src.methods import *
 
 from setup_slice import *
 
 Np = n_blocks_crse + 1
 NF = n_blocks_crse + 2 * n_wells * (nt + 1)
-Ne = 100
+Ne = 20
+
+localiser = BootstrapLocaliser()
+imputer = GaussianImputer()
 
 ws, ps, Fs, Gs, inds_succ = run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne)
 
