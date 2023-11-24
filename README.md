@@ -4,8 +4,9 @@ This repository contains code for running ensemble Kalman methods for approximat
 
 ## TODO:
 ### Slice
- - Think about how the noise is generated (increase to 5-10%)
+ - Think about how the noise is generated (increase to 5-10%?)
  - Plot the vapour saturations for the true system (could be interesting)
+ - Update prior to be able to extract hyperparameters
 ### Channel
  - Add feedzone locations.
  - Tune Robin parameter on Matern fields.
@@ -14,13 +15,13 @@ This repository contains code for running ensemble Kalman methods for approximat
  - Develop method for visualising the convective plume of the model.
  - Think about inverse crimes (i.e. consider making a finer model)
  - Save data, truth, true states to file
+ - Rescale the pressures and enthalpies appropriately
 ### Both Models
  - Read paper on how to adjust ensemble covariance when defining Gaussian based on successful ensemble members.
  - Think about the initial conditions more carefully (thermal gradient?)
  - Check everything carefully!
- - Rescale the pressures and enthalpies appropriately
 ### Ensemble Methods
- - Tidy up EKI-DMC and EnRML code (less object-oriented?)
+ - Tidy up EnRML code
 ### Misc
  - Update NZGW code and slides.
  - Finish writing README (add some notes on the various algorithms, other implementations, etc).
