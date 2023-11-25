@@ -1,25 +1,23 @@
-import h5py
-import itertools as it
 import numpy as np
 
+from abc import ABC, abstractmethod
 from scipy.linalg import inv, sqrtm
 
 from src import models, utils
 
 TOL = 1e-8
 
-# ----------------
-# Imputation functions
-# ----------------
-
-class Imputer():
-    pass
+class Imputer(ABC):
+    
+    @abstractmethod 
+    def impute(self):
+        pass
 
 class GaussianImputer(Imputer):
     """Replaces any failed ensemble members by sampling from a Gaussian
     with moments constructed using the successful ensemble members."""
     
-    def impute(ws, inds_succ, inds_fail):
+    def impute(self, ws, inds_succ, inds_fail):
 
         n_fail = len(inds_fail)
 
@@ -33,29 +31,50 @@ class ResamplingImputer(Imputer):
     """Replaces any failed ensemble members by sampling (with 
     replacement) from the successful ensemble members."""
 
-    def impute(ws, inds_succ, inds_fail):
+    def impute(self, ws, inds_succ, inds_fail):
         inds_rep = np.random.choice(inds_succ, size=len(inds_fail))
         ws[:, inds_fail] = ws[:, inds_rep]
         return ws
 
-# ----------------
-# Localisation functions
-# ----------------
+class Localiser(ABC):
 
-class Localiser():
+    @abstractmethod
+    def compute_gain_eki(self):
+        pass
 
     def _compute_gain_eki(ws, Gs, a_i, C_e):
         C_wG, C_GG = compute_covs(ws, Gs)
         return C_wG @ inv(C_GG + a_i * C_e)
 
 class IdentityLocaliser(Localiser):
-    """Returns the Kalman gain without applying any localisation."""
-
-    def __init__(self):
-        pass
+    """Computes the Kalman gain without using localisation."""
 
     def compute_gain_eki(self, ws, Gs, a_i, C_e):
         return self._compute_gain_eki(ws, Gs, a_i, C_e)
+
+class FisherLocaliser(Localiser):
+    """Carries out the localisation procedure described by Flowerdew 
+    (2015)."""
+
+    def compute_gain_eki(self, ws, Gs, a_i, C_e):
+        
+        Nw, Ne = ws.shape
+        NG, Ne = Gs.shape
+
+        K = self._compute_gain_eki(ws, Gs, a_i, C_e)
+
+        R_wG = compute_cors(ws, Gs)[0]
+        P = np.zeros(K.shape)
+
+        for i in range(Nw):
+            for j in range(NG):
+                cor_ij = R_wG[i, j]
+                s = np.log((1+cor_ij) / (1-cor_ij)) / 2
+                sig_s = (np.tanh(s + np.sqrt(Ne-3)**-1) - \
+                         np.tanh(s - np.sqrt(Ne-3)**-1)) / 2
+                P[i, j] = cor_ij**2 / (cor_ij**2 + sig_s**2)
+
+        return P * K
 
 class BootstrapLocaliser(Localiser):
     """Carries out the bootstrap-based localisation procedure described 
@@ -99,16 +118,11 @@ class CycleLocaliser(Localiser):
     """Carries out a variant of the localisation procedure described by
     Luo and Bhakta (2020)."""
 
-    def __init__(self):
-        pass # Maybe there are some parameters to define?
-
     def gaspari_cohn(self, z):
         if 0 <= z <= 1:
-            return -(1/4)*z**5 + (1/2)*z**4 + (5/8)*z**3 - \
-                (5/3)*z**2 + 1
+            return -(1/4)*z**5 + (1/2)*z**4 + (5/8)*z**3 - (5/3)*z**2 + 1
         elif 1 < z <= 2:
-            return (1/12)*z**5 - (1/2)*z**4 + (5/8)*z**3 + \
-                (5/3)*z**2 - 5*z + 4 - (2/3)*z**-1
+            return (1/12)*z**5 - (1/2)*z**4 + (5/8)*z**3 + (5/3)*z**2 - 5*z + 4 - (2/3)*z**-1
         return 0.0
 
     def compute_gain_eki(self, ws, Gs, a_i, C_e):
@@ -134,10 +148,6 @@ class CycleLocaliser(Localiser):
                 P[i, j] = self.gaspari_cohn(z)
 
         return P * K
-
-# ----------------
-# General EKI functions
-# ----------------
 
 class EnsembleRunner():
     """Runs an ensemble and returns the results, including a list of 
@@ -233,8 +243,8 @@ def compute_a_dmc(t, Gs, y, NG, C_e_invsqrt):
     return a_inv ** -1
 
 def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
-                localiser: Localiser=IdentityLocaliser, 
-                imputer: Imputer=GaussianImputer):
+                localiser: Localiser=IdentityLocaliser(), 
+                imputer: Imputer=GaussianImputer()):
     """Runs EKI-DMC, as described in Iglesias and Yang (2021)."""
 
     C_e_invsqrt = sqrtm(inv(C_e))
@@ -278,12 +288,3 @@ def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
         utils.info(f"Iteration {i} complete. t = {t:.4f}.")
 
     return ws, ps, Fs, Gs, inds
-
-    U, S, Vt = np.linalg.svd(A, full_matrices=False)
-
-    S_cum = np.cumsum(S)
-    for (i, c) in enumerate(S_cum):
-        if c / S_cum[-1] >= energy:
-            return U[:, :i], S[:i], Vt.T[:, :i]
-        
-    raise Exception("Error in TSVD function.")
