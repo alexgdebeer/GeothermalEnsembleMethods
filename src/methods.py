@@ -26,7 +26,7 @@ class GaussianImputer(Imputer):
         
         ws[:, inds_fail] = np.random.multivariate_normal(mu, cov, size=n_fail).T
         return ws
-    
+
 class ResamplingImputer(Imputer):
     """Replaces any failed ensemble members by sampling (with 
     replacement) from the successful ensemble members."""
@@ -77,12 +77,12 @@ class FisherLocaliser(Localiser):
         return P * K
 
 class BootstrapLocaliser(Localiser):
-    """Carries out the bootstrap-based localisation procedure described 
-    by Zhang and Oliver (2010)."""
+    """Carries out the localisation procedure described by Zhang and 
+    Oliver (2010)."""
     
     def __init__(self, N_boot=100, sigalpha=0.60, tol=1e-8):
 
-        self.N_boot = N_boot
+        self.n_boot = N_boot
         self.sigalpha = sigalpha
         self.tol=tol
 
@@ -92,9 +92,9 @@ class BootstrapLocaliser(Localiser):
         NG, Ne = Gs.shape
         K = self._compute_gain_eki(ws, Gs, a_i, C_e)
 
-        Ks_boot = np.empty((Nw, NG, self.N_boot))
+        Ks_boot = np.empty((Nw, NG, self.n_boot))
 
-        for k in range(self.N_boot):
+        for k in range(self.n_boot):
             inds_res = np.random.choice(Ne, Ne)
             ws_res = ws[:, inds_res]
             Gs_res = Gs[:, inds_res]
@@ -114,9 +114,13 @@ class BootstrapLocaliser(Localiser):
 
         return P * K 
 
-class CycleLocaliser(Localiser):
-    """Carries out a variant of the localisation procedure described by
-    Luo and Bhakta (2020)."""
+class ShuffleLocaliser(Localiser):
+    """Carries out the localisation procedure described by Luo and 
+    Bhakta (2020)."""
+
+    def __init__(self, n_shuffle=50):
+        self.n_shuffle = n_shuffle
+        self.P = None
 
     def gaspari_cohn(self, z):
         if 0 <= z <= 1:
@@ -124,21 +128,37 @@ class CycleLocaliser(Localiser):
         elif 1 < z <= 2:
             return (1/12)*z**5 - (1/2)*z**4 + (5/8)*z**3 + (5/3)*z**2 - 5*z + 4 - (2/3)*z**-1
         return 0.0
+    
+    def shuffle_inds(self, Ne):
+        
+        inds = np.arange(Ne)
+        np.random.shuffle(inds)
+        
+        for i in range(Ne):
+            if inds[i] == i:
+                inds[(i+1)%Ne], inds[i] = inds[i], inds[(i+1)%Ne]
+
+        return inds
 
     def compute_gain_eki(self, ws, Gs, a_i, C_e):
+
+        K = self._compute_gain_eki(ws, Gs, a_i, C_e)
+
+        if self.P:
+            return self.P * K
 
         Nw, Ne = ws.shape
         NG, Ne = Gs.shape
 
-        K = self._compute_gain_eki(ws, Gs, a_i, C_e)
         R_wG = compute_cors(ws, Gs)[0]
 
         P = np.zeros((Nw, NG))
-        R_wGs = np.zeros((Nw, NG, Ne-1))
+        R_wGs = np.zeros((Nw, NG, self.n_shuffle))
 
-        for i in range(Ne-1):
-            ws_cycled = np.roll(ws, shift=i+1, axis=1)
-            R_wGs[:, :, i] = compute_cors(ws_cycled, Gs)[0]
+        for i in range(self.n_shuffle):
+            inds_shuffled = self.shuffle_inds(Ne)
+            ws_shuffled = ws[:, inds_shuffled]
+            R_wGs[:, :, i] = compute_cors(ws_shuffled, Gs)[0]
 
         error_sds = np.median(np.abs(R_wGs), axis=2) / 0.6745
 
@@ -147,6 +167,7 @@ class CycleLocaliser(Localiser):
                 z = (1-np.abs(R_wG[i, j])) / (1-error_sds[i, j])
                 P[i, j] = self.gaspari_cohn(z)
 
+        self.P = P
         return P * K
 
 class EnsembleRunner():
@@ -187,25 +208,31 @@ class EnsembleRunner():
 
         return ps_i, Fs_i, Gs_i, inds_succ, inds_fail
 
+def compute_deltas(xs):
+    N = xs.shape[1]
+    mu = np.mean(xs, dims=1)[:, np.newaxis]
+    deltas = (1 / np.sqrt(N-1)) * (xs - mu)
+    return deltas
+
 def compute_covs(ws, Gs):
 
-    Nw = ws.shape[0]
-    NG = Gs.shape[0]
-
-    C = np.cov(np.vstack((ws, Gs)))
-    C_wG = C[:Nw, -NG:]
-    C_GG = C[-NG:, -NG:]
+    dws = compute_deltas(ws)
+    dGs = compute_deltas(Gs)
+    
+    C_wG = dws @ dGs.T
+    C_GG = dGs @ dGs.T
 
     return C_wG, C_GG
 
 def compute_cors(ws, Gs):
 
-    Nw = ws.shape[0]
-    NG = Gs.shape[0]
+    sd_w_inv = inv(np.diag(np.std(ws, axis=1)))
+    sd_G_inv = inv(np.diag(np.std(Gs, axis=1)))
 
-    R = np.corrcoef(np.vstack((ws, Gs)))
-    R_wG = R[:Nw, -NG:]
-    R_GG = R[-NG:, -NG:]
+    C_wG, C_GG = compute_covs(ws, Gs)
+
+    R_wG = sd_w_inv @ C_wG @ sd_G_inv 
+    R_GG = sd_G_inv @ C_GG @ sd_G_inv
 
     return R_wG, R_GG
 
