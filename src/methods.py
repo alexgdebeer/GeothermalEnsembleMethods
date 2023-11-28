@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 
 from abc import ABC, abstractmethod
@@ -42,7 +43,7 @@ class Localiser(ABC):
     def compute_gain_eki(self):
         pass
 
-    def _compute_gain_eki(ws, Gs, a_i, C_e):
+    def _compute_gain_eki(self, ws, Gs, a_i, C_e):
         C_wG, C_GG = compute_covs(ws, Gs)
         return C_wG @ inv(C_GG + a_i * C_e)
 
@@ -80,9 +81,9 @@ class BootstrapLocaliser(Localiser):
     """Carries out the localisation procedure described by Zhang and 
     Oliver (2010)."""
     
-    def __init__(self, N_boot=100, sigalpha=0.60, tol=1e-8):
+    def __init__(self, n_boot=100, sigalpha=0.60, tol=1e-8):
 
-        self.n_boot = N_boot
+        self.n_boot = n_boot
         self.sigalpha = sigalpha
         self.tol=tol
 
@@ -102,15 +103,8 @@ class BootstrapLocaliser(Localiser):
             Ks_boot[:, :, k] = K_res
 
         var_Kis = np.mean((Ks_boot - K[:, :, np.newaxis]) ** 2, axis=2)
-        Rsq = var_Kis / (K ** 2 + self.tol)
+        Rsq = var_Kis / np.maximum(K ** 2, self.tol)
         P = 1 / (1 + Rsq * (1 + 1 / self.sigalpha ** 2))
-
-        # TEMP (use as a check...)
-        for i in range(Nw):
-            for j in range(NG):
-                r_sq = np.mean((Ks_boot[i, j, :] - K[i, j]) ** 2) / (K[i, j] ** 2)
-                print(1.0 / (1.0 + r_sq * (1 + 1 / (self.sigalpha ** 2))))
-                print(P[i, j])
 
         return P * K 
 
@@ -144,7 +138,7 @@ class ShuffleLocaliser(Localiser):
 
         K = self._compute_gain_eki(ws, Gs, a_i, C_e)
 
-        if self.P:
+        if self.P is not None:
             return self.P * K
 
         Nw, Ne = ws.shape
@@ -210,7 +204,7 @@ class EnsembleRunner():
 
 def compute_deltas(xs):
     N = xs.shape[1]
-    mu = np.mean(xs, dims=1)[:, np.newaxis]
+    mu = np.mean(xs, axis=1)[:, np.newaxis]
     deltas = (1 / np.sqrt(N-1)) * (xs - mu)
     return deltas
 
@@ -315,3 +309,114 @@ def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
         utils.info(f"Iteration {i} complete. t = {t:.4f}.")
 
     return ws, ps, Fs, Gs, inds
+
+def compute_tsvd(A, energy=0.99):
+    
+    U, S, Vt = np.linalg.svd(A)
+    V = Vt.T
+
+    if np.minimum(S) < -TOL:
+        raise Exception("Negative eigenvalue encountered in TSVD.")
+
+    n_eigvals = len(S)
+    eig_cum = np.cumsum(S)
+
+    for i in range(n_eigvals):
+        if eig_cum[i] / eig_cum[-1] >= energy:
+            return U[:, 1:i], S[1:i], V[:, 1:i]
+    
+    raise Exception("Issue with TSVD computation.")
+
+def enrml_update(ws, Gs, ys, C_e_invsqrt, ws_pr, Uw_pr, Sw_pr, lam, 
+                 localiser, imputer):
+    
+    pass
+
+def compute_S():
+    pass # TODO: write
+
+# Need some additional parameters
+def run_enrml(F, G, prior, y, C_e, Np, NF, Ne, 
+              gamma=10, lam_min=0.01, 
+              max_cuts=5, max_its=30, 
+              dS_min=0.01, dw_min=0.5,
+              localiser: Localiser=IdentityLocaliser(),
+              imputer: Imputer=GaussianImputer()):
+    
+    C_e_invsqrt = sqrtm(inv(C_e))
+    NG = len(y)
+
+    ensemble = EnsembleRunner(prior, F, G, Np, NF, NG, Ne)
+
+    ws_pr = prior.sample(n=Ne)
+    ps_pr, Fs_pr, Gs_pr, inds_succ_pr, inds_fail_pr = ensemble.run(ws_i)
+    S_pr = compute_S(Gs_pr, ys, C_e_invsqrt) # TODO: define S
+    lam = 10**np.floor(np.log10(S_pr / 2*NG))
+    
+    ws = [ws_pr]
+    ps = [ps_pr]
+    Fs = [Fs_pr]
+    Gs = [Gs_pr]
+    Ss = [S_pr]
+    lams = [lam]
+    inds = [inds_succ_pr]
+
+    ys = np.random.multivariate_normal(mean=y, cov=C_e, size=Ne).T
+
+    dw_pr = compute_deltas(ws_pr)
+    Uw_pr, Sw_pr, _ = compute_tsvd(dw_pr)
+
+    i = 0
+    en_ind = 0
+    n_cuts = 0
+    while i <= max_its:
+
+        ws_i = enrml_update(
+            ws[en_ind], Gs[en_ind], ys, C_e_invsqrt, 
+            ws_pr, Uw_pr, Sw_pr, lam, localiser, imputer) # Probably need inds succ and inds fail in here...
+        
+        ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i)
+        S_i = compute_S(Gs_i, ys, C_e_invsqrt)
+        
+        ws.append(ws_i)
+        ps.append(ps_i)
+        Fs.append(Fs_i)
+        Gs.append(Gs_i)
+        Ss.append(S_i)
+        lams.append(lam)
+        inds.append(inds_succ)
+        i += 1
+
+        if S_i <= Ss[en_ind]:
+
+            dS = 1 - (S_i / Ss[en_ind])
+            dw_max = np.max(np.abs(ws_i - ws[en_ind]))
+
+            en_ind = i
+            n_cuts = 0 
+            lam = max(lam / gamma, lam_min)
+
+            # TODO: print some stuff
+
+            if (dS < dS_min) and (dw_max < dw_min):
+                utils.info("Convergence criteria met.")
+                return ws, ps, Fs, Gs, Ss, lams, en_ind, inds_succ 
+            
+        else:
+
+            # TODO: print some stuff
+            n_cuts += 1
+            lam *= gamma 
+
+            if n_cuts == max_cuts:
+                utils.info(f"Terminating: {n_cuts} consecutive cuts made.")
+                return ws, ps, Fs, Gs, Ss, lams, en_ind, inds_succ
+
+    utils.info("Terminating: maximum number of iterations exceeded.")
+    return ws, ps, Fs, Gs, Ss, lams, en_ind, inds_succ 
+
+def save_results(fname: str, results: dict):
+
+    with h5py.File(fname, "w") as f:
+        for (k, v) in results.items():
+            f.create_dataset(k, data=v)
