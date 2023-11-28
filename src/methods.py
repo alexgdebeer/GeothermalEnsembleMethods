@@ -39,19 +39,28 @@ class ResamplingImputer(Imputer):
 
 class Localiser(ABC):
 
-    @abstractmethod
     def compute_gain_eki(self):
-        pass
+        raise Exception(f"{type(self)} cannot be used with EKI.")
+
+    def compute_gain_enrml(self):
+        raise Exception(f"{type(self)} cannot be used with EnRML.")
 
     def _compute_gain_eki(self, ws, Gs, a_i, C_e):
         C_wG, C_GG = compute_covs(ws, Gs)
         return C_wG @ inv(C_GG + a_i * C_e)
+    
+    def _compute_gain_enrml(self, dw, UG, SG, VG, C_e_invsqrt, lam):
+        psi = np.diag(SG / (lam + 1.0 + SG**2))
+        return dw @ VG @ psi @ UG.T @ C_e_invsqrt
 
 class IdentityLocaliser(Localiser):
     """Computes the Kalman gain without using localisation."""
 
     def compute_gain_eki(self, ws, Gs, a_i, C_e):
         return self._compute_gain_eki(ws, Gs, a_i, C_e)
+
+    def compute_gain_enrml(self, ws, Gs, dw, UG, SG, VG, C_e_invsqrt, lam):
+        return self._compute_gain_enrml(dw, UG, SG, VG, C_e_invsqrt, lam)
 
 class FisherLocaliser(Localiser):
     """Carries out the localisation procedure described by Flowerdew 
@@ -87,6 +96,14 @@ class BootstrapLocaliser(Localiser):
         self.sigalpha = sigalpha
         self.tol=tol
 
+    def compute_P(self, K, Ks_boot):
+
+        var_Kis = np.mean((Ks_boot - K[:, :, np.newaxis]) ** 2, axis=2)
+        Rsq = var_Kis / np.maximum(K ** 2, self.tol)
+        P = 1 / (1 + Rsq * (1 + 1 / self.sigalpha ** 2))
+
+        return P
+
     def compute_gain_eki(self, ws, Gs, a_i, C_e):
 
         Nw, Ne = ws.shape
@@ -102,11 +119,32 @@ class BootstrapLocaliser(Localiser):
             K_res = self._compute_gain_eki(ws_res, Gs_res, a_i, C_e)
             Ks_boot[:, :, k] = K_res
 
-        var_Kis = np.mean((Ks_boot - K[:, :, np.newaxis]) ** 2, axis=2)
-        Rsq = var_Kis / np.maximum(K ** 2, self.tol)
-        P = 1 / (1 + Rsq * (1 + 1 / self.sigalpha ** 2))
+        P = self.compute_P(K, Ks_boot)
+        return P * K
+    
+    def compute_gain_enrml(self, ws, Gs, dw, UG, SG, VG, C_e_invsqrt, lam):
 
-        return P * K 
+        Nw, Ne = ws.shape
+        NG, Ne = Gs.shape
+        K = self._compute_gain_enrml(dw, UG, SG, VG, C_e_invsqrt, lam)
+
+        Ks_boot = np.empty((Nw, NG, self.n_boot))
+
+        for k in range(self.n_boot):
+
+            inds_res = np.random.choice(Ne, Ne)
+            
+            dw_res = compute_deltas(ws[:, inds_res])
+            dG_res = compute_deltas(Gs[:, inds_res])
+            UG_res, SG_res, VG_res = compute_tsvd(dG_res)
+            
+            Ks_boot[:, :, k] = self._compute_gain_enrml(
+                dw_res, UG_res, SG_res, VG_res, 
+                C_e_invsqrt, lam 
+            )
+        
+        P = self.compute_P(K, Ks_boot)
+        return P * K
 
 class ShuffleLocaliser(Localiser):
     """Carries out the localisation procedure described by Luo and 
@@ -133,16 +171,14 @@ class ShuffleLocaliser(Localiser):
                 inds[(i+1)%Ne], inds[i] = inds[i], inds[(i+1)%Ne]
 
         return inds
-
-    def compute_gain_eki(self, ws, Gs, a_i, C_e):
-
-        K = self._compute_gain_eki(ws, Gs, a_i, C_e)
+    
+    def compute_gain(self, K, ws, Gs):
 
         if self.P is not None:
             return self.P * K
-
+        
         Nw, Ne = ws.shape
-        NG, Ne = Gs.shape
+        NG, Ne = Gs.shape 
 
         R_wG = compute_cors(ws, Gs)[0]
 
@@ -163,6 +199,14 @@ class ShuffleLocaliser(Localiser):
 
         self.P = P
         return P * K
+
+    def compute_gain_eki(self, ws, Gs, a_i, C_e):
+        K = self._compute_gain_eki(ws, Gs, a_i, C_e)
+        return self.compute_gain(K, ws, Gs)
+    
+    def compute_gain_enrml(self, ws, Gs, dw, UG, SG, VG, C_e_invsqrt, lam):
+        K = self._compute_gain_enrml(dw, UG, SG, VG, C_e_invsqrt, lam)
+        return self.compute_gain(K, ws, Gs)
 
 class EnsembleRunner():
     """Runs an ensemble and returns the results, including a list of 
@@ -231,7 +275,7 @@ def compute_cors(ws, Gs):
     return R_wG, R_GG
 
 def eki_update(ws_i, Gs_i, Ne, inds_succ, inds_fail, a_i, y, C_e,
-               localiser, imputer):
+               localiser: Localiser, imputer: Imputer):
     """Runs a single EKI update."""
 
     ys_i = np.random.multivariate_normal(y, a_i * C_e, size=Ne).T
@@ -328,14 +372,37 @@ def compute_tsvd(A, energy=0.99):
     raise Exception("Issue with TSVD computation.")
 
 def enrml_update(ws, Gs, ys, C_e_invsqrt, ws_pr, Uw_pr, Sw_pr, lam, 
-                 localiser, imputer):
+                 inds_succ, inds_fail,
+                 localiser: Localiser, imputer: Imputer):
     
-    pass
+    dw = compute_deltas(ws[:, inds_succ])
+    dG = compute_deltas(Gs[:, inds_fail])
 
-def compute_S():
-    pass # TODO: write
+    UG, SG, VG = compute_tsvd(C_e_invsqrt @ dG)
 
-# Need some additional parameters
+    K = localiser.compute_gain_enrml(ws[:, inds_succ], Gs[inds_succ], 
+                                     dw, UG, SG, VG, C_e_invsqrt, lam) 
+    
+    psi = np.diag((lam + 1 + SG**2)**-1)
+
+    dw_pr = dw @ VG @ psi @ VG.T @ dw.T @ \
+        Uw_pr @ np.diag(Sw_pr**-2) @ Uw_pr.T @ \
+            (ws[:, inds_succ] - ws_pr[:, inds_succ])
+    
+    dw_obs = K @ (Gs[:, inds_succ] - ys[:, inds_succ])
+    ws[: inds_succ] -= (dw_pr + dw_obs) 
+
+    if (n_fail := len(inds_fail)) > 0:
+        utils.info(f"Imputing {n_fail} failed ensemble members...")
+        ws = imputer.impute(ws, inds_succ, inds_fail)
+    
+    return ws
+
+def compute_S(Gs, ys, C_e_invsqrt):
+    # TODO: check whether perturbed observations should be in here...
+    Ss = np.sum((C_e_invsqrt @ (Gs - ys)) ** 2, axis=0)
+    return np.mean(Ss)
+
 def run_enrml(F, G, prior, y, C_e, Np, NF, Ne, 
               gamma=10, lam_min=0.01, 
               max_cuts=5, max_its=30, 
@@ -349,8 +416,8 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
     ensemble = EnsembleRunner(prior, F, G, Np, NF, NG, Ne)
 
     ws_pr = prior.sample(n=Ne)
-    ps_pr, Fs_pr, Gs_pr, inds_succ_pr, inds_fail_pr = ensemble.run(ws_i)
-    S_pr = compute_S(Gs_pr, ys, C_e_invsqrt) # TODO: define S
+    ps_pr, Fs_pr, Gs_pr, inds_succ, inds_fail = ensemble.run(ws_i)
+    S_pr = compute_S(Gs_pr, ys, C_e_invsqrt)
     lam = 10**np.floor(np.log10(S_pr / 2*NG))
     
     ws = [ws_pr]
@@ -359,21 +426,22 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
     Gs = [Gs_pr]
     Ss = [S_pr]
     lams = [lam]
-    inds = [inds_succ_pr]
+    inds = [inds_succ]
 
     ys = np.random.multivariate_normal(mean=y, cov=C_e, size=Ne).T
 
     dw_pr = compute_deltas(ws_pr)
     Uw_pr, Sw_pr, _ = compute_tsvd(dw_pr)
 
-    i = 0
+    i = 1
     en_ind = 0
     n_cuts = 0
     while i <= max_its:
 
         ws_i = enrml_update(
             ws[en_ind], Gs[en_ind], ys, C_e_invsqrt, 
-            ws_pr, Uw_pr, Sw_pr, lam, localiser, imputer) # Probably need inds succ and inds fail in here...
+            ws_pr, Uw_pr, Sw_pr, lam, inds_succ, inds_fail, 
+            localiser, imputer)
         
         ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i)
         S_i = compute_S(Gs_i, ys, C_e_invsqrt)
@@ -396,7 +464,8 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
             n_cuts = 0 
             lam = max(lam / gamma, lam_min)
 
-            # TODO: print some stuff
+            utils.info(f"Iteration {i}: step accepted.")
+            utils.info(f"dS = {dS:.2f}, dw_max = {dw_max:.2f}.")
 
             if (dS < dS_min) and (dw_max < dw_min):
                 utils.info("Convergence criteria met.")
@@ -404,7 +473,7 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
             
         else:
 
-            # TODO: print some stuff
+            utils.info(f"Iteration {i}: step rejected.")
             n_cuts += 1
             lam *= gamma 
 
