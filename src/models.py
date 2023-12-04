@@ -1,18 +1,23 @@
+from abc import ABC, abstractmethod
 from copy import deepcopy
 from enum import Enum
 from itertools import product
-from scipy import stats
+import os
+import subprocess
 
 import h5py
 import layermesh.mesh as lm
 import numpy as np
-import os
 import pyvista as pv
 import pywaiwera
+from scipy import stats
 import yaml
 
 from src.consts import *
 from src import utils
+
+WAI_PATH_NESI = "/nesi/project/uoa00463/bin/waiwera"
+NESI = True
 
 EPS = 1e-8
 
@@ -27,7 +32,7 @@ class ModelType(Enum):
     MODEL2D = 1
     MODEL3D = 2
 
-class Mesh():
+class Mesh(ABC):
     pass
 
 class SliceMesh(Mesh):
@@ -272,11 +277,11 @@ class ClayCap():
 
         return col_weightings
 
-class Model():
+class Model(ABC):
     """Base class for models, with a set of default methods."""
 
     def __init__(self, path: str, mesh: Mesh, perms: np.ndarray, 
-                 wells: list[Well], upflows: list[MassUpflow], 
+                 wells: list, upflows: list, 
                  dt: float, tmax: float):
 
         self.ns_path = f"{path}_NS"
@@ -301,14 +306,9 @@ class Model():
         self.generate_ns()
         self.generate_pr()
 
+    @abstractmethod
     def initialise_ns_model(self):
-
-        self.ns_model = {
-            "eos": {"name": "we"},
-            "gravity": GRAVITY,
-            "logfile": {"echo": False},
-            "mesh": {"filename": f"{self.mesh.name}.msh"}
-        }
+        pass
 
     def add_boundaries(self):
         """Adds an atmospheric boundary condition to the top of the 
@@ -427,6 +427,7 @@ class Model():
         the final model state."""
 
         self.ns_model["output"] = {
+            "filename": f"{self.ns_path}.h5",
             "frequency": 0, 
             "initial": False, 
             "final": True
@@ -436,6 +437,7 @@ class Model():
         """Sets up production history checkpoints."""
         
         self.pr_model["output"] = {
+            "filename": f"{self.pr_path}.h5",
             "checkpoint": {
                 "time": [self.dt], 
                 "repeat": True
@@ -463,6 +465,8 @@ class Model():
 
         self.pr_model = deepcopy(self.ns_model)
 
+        self.pr_model["logfile"]["filename"] = f"{self.pr_path}.yaml"
+
         self.add_wells()
         self.add_pr_timestepping()
         self.add_pr_output()
@@ -475,14 +479,22 @@ class Model():
         """Simulates the model and returns a flag that indicates 
         whether the simulation was successful."""
 
-        env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
-        env.run_waiwera(f"{self.ns_path}.json", noupdate=True)
+        if NESI:
+            subprocess.call(["srun", WAI_PATH_NESI, f"{self.ns_path}.json"])
+        else: 
+            env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
+            env.run_waiwera(f"{self.ns_path}.json", noupdate=True)
         
         flag = self.get_exitflag(self.ns_path)
         if flag == ExitFlag.FAILURE: 
             return flag
 
-        env.run_waiwera(f"{self.pr_path}.json", noupdate=True)
+        if NESI:
+            subprocess.call(["srun", WAI_PATH_NESI, f"{self.pr_path}.json"])
+        else: 
+            env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
+            env.run_waiwera(f"{self.pr_path}.json", noupdate=True)
+        
         return self.get_exitflag(self.pr_path)
 
     def get_exitflag(self, log_path):
@@ -514,7 +526,10 @@ class Model2D(Model):
         self.ns_model = {
             "eos": {"name": "we"},
             "gravity": GRAVITY,
-            "logfile": {"echo": False},
+            "logfile": {
+                "filename": f"{self.ns_path}.yaml",
+                "echo": False
+            },
             "mesh": {
                 "filename": f"{self.mesh.name}.msh", 
                 "thickness": self.mesh.dy

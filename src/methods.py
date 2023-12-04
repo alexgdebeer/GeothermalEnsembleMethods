@@ -1,7 +1,7 @@
+from abc import ABC, abstractmethod
+
 import h5py
 import numpy as np
-
-from abc import ABC, abstractmethod
 from scipy.linalg import inv, sqrtm
 
 from src import models, utils
@@ -235,7 +235,7 @@ class EnsembleRunner():
         for i, w_i in enumerate(ws_i.T):
             utils.info(f"Simulating ensemble member {i+1}...")
             p_i = self.prior.transform(w_i)
-            F_i = self.F(p_i)
+            F_i = self.F(p_i, i=i)
             if type(F_i) == models.ExitFlag:
                 inds_fail.append(i)
             else: 
@@ -359,7 +359,7 @@ def compute_tsvd(A, energy=0.99):
     U, S, Vt = np.linalg.svd(A)
     V = Vt.T
 
-    if np.minimum(S) < -TOL:
+    if np.min(S) < -TOL:
         raise Exception("Negative eigenvalue encountered in TSVD.")
 
     n_eigvals = len(S)
@@ -376,11 +376,11 @@ def enrml_update(ws, Gs, ys, C_e_invsqrt, ws_pr, Uw_pr, Sw_pr, lam,
                  localiser: Localiser, imputer: Imputer):
     
     dw = compute_deltas(ws[:, inds_succ])
-    dG = compute_deltas(Gs[:, inds_fail])
+    dG = compute_deltas(Gs[:, inds_succ])
 
     UG, SG, VG = compute_tsvd(C_e_invsqrt @ dG)
 
-    K = localiser.compute_gain_enrml(ws[:, inds_succ], Gs[inds_succ], 
+    K = localiser.compute_gain_enrml(ws[:, inds_succ], Gs[:, inds_succ], 
                                      dw, UG, SG, VG, C_e_invsqrt, lam) 
     
     psi = np.diag((lam + 1 + SG**2)**-1)
@@ -390,7 +390,7 @@ def enrml_update(ws, Gs, ys, C_e_invsqrt, ws_pr, Uw_pr, Sw_pr, lam,
             (ws[:, inds_succ] - ws_pr[:, inds_succ])
     
     dw_obs = K @ (Gs[:, inds_succ] - ys[:, inds_succ])
-    ws[: inds_succ] -= (dw_pr + dw_obs) 
+    ws[:, inds_succ] -= (dw_pr + dw_obs) 
 
     if (n_fail := len(inds_fail)) > 0:
         utils.info(f"Imputing {n_fail} failed ensemble members...")
@@ -414,10 +414,11 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
     NG = len(y)
 
     ensemble = EnsembleRunner(prior, F, G, Np, NF, NG, Ne)
+    ys = np.random.multivariate_normal(mean=y, cov=C_e, size=Ne).T
 
     ws_pr = prior.sample(n=Ne)
-    ps_pr, Fs_pr, Gs_pr, inds_succ, inds_fail = ensemble.run(ws_i)
-    S_pr = compute_S(Gs_pr, ys, C_e_invsqrt)
+    ps_pr, Fs_pr, Gs_pr, inds_succ, inds_fail = ensemble.run(ws_pr)
+    S_pr = compute_S(Gs_pr[:, inds_succ], ys[:, inds_succ], C_e_invsqrt)
     lam = 10**np.floor(np.log10(S_pr / 2*NG))
     
     ws = [ws_pr]
@@ -427,8 +428,6 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
     Ss = [S_pr]
     lams = [lam]
     inds = [inds_succ]
-
-    ys = np.random.multivariate_normal(mean=y, cov=C_e, size=Ne).T
 
     dw_pr = compute_deltas(ws_pr)
     Uw_pr, Sw_pr, _ = compute_tsvd(dw_pr)
@@ -444,7 +443,7 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
             localiser, imputer)
         
         ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i)
-        S_i = compute_S(Gs_i, ys, C_e_invsqrt)
+        S_i = compute_S(Gs_i[:, inds_succ], ys[:, inds_succ], C_e_invsqrt)
         
         ws.append(ws_i)
         ps.append(ps_i)
@@ -460,7 +459,7 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
             dS = 1 - (S_i / Ss[en_ind])
             dw_max = np.max(np.abs(ws_i - ws[en_ind]))
 
-            en_ind = i
+            en_ind = i-1
             n_cuts = 0 
             lam = max(lam / gamma, lam_min)
 
@@ -469,7 +468,7 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
 
             if (dS < dS_min) and (dw_max < dw_min):
                 utils.info("Convergence criteria met.")
-                return ws, ps, Fs, Gs, Ss, lams, en_ind, inds_succ 
+                return ws, ps, Fs, Gs, Ss, lams, en_ind, inds 
             
         else:
 
@@ -479,13 +478,25 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
 
             if n_cuts == max_cuts:
                 utils.info(f"Terminating: {n_cuts} consecutive cuts made.")
-                return ws, ps, Fs, Gs, Ss, lams, en_ind, inds_succ
+                return ws, ps, Fs, Gs, Ss, lams, en_ind, inds
 
     utils.info("Terminating: maximum number of iterations exceeded.")
-    return ws, ps, Fs, Gs, Ss, lams, en_ind, inds_succ 
+    return ws, ps, Fs, Gs, Ss, lams, en_ind, inds 
 
-def save_results(fname: str, results: dict):
+def save_results_eki(fname: str, results: dict):
 
     with h5py.File(fname, "w") as f:
-        for (k, v) in results.items():
-            f.create_dataset(k, data=v)
+        for key, vals in results.items():
+            for i, val in enumerate(vals):
+                f.create_dataset(f"{key}_{i}", data=val)
+
+def save_results_enrml(fname: str, results: dict, post_ind: int):
+
+    with h5py.File(fname, "w") as f:
+
+        for key, vals in results.items():
+            for i, val in enumerate(vals):
+                f.create_dataset(f"{key}_{i}", data=val)
+
+        f.create_dataset("algorithm", data="enrml")
+        f.create_dataset("post_ind", data=post_ind)
