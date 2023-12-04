@@ -2,6 +2,16 @@
 
 This repository contains code for running ensemble Kalman methods for approximate Bayesian inference on a set of simple geothermal models.
 
+## Getting Started
+
+To run the code in this repository, first ensure that Python 3.8 is installed on your computer. Then, create a virtual environment with the project dependencies by running the following at the command line:
+
+```
+python3.8 -m venv venv
+source venv/bin/activate 
+pip install -r requirements.txt
+```
+
 ## TODO:
 ### Slice
  - Think about how the noise is generated (increase to 5-10%?)
@@ -26,10 +36,3 @@ This repository contains code for running ensemble Kalman methods for approximat
  - Update NZGW code and slides.
  - Finish writing README (add some notes on the various algorithms, other implementations, etc).
  - Make a Python environment for this repository?
-
-## Getting Started
-```
-python3.8 -m venv venv
-source venv/bin/activate 
-pip install -r requirements.txt
-```
