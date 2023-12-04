@@ -26,3 +26,10 @@ This repository contains code for running ensemble Kalman methods for approximat
  - Update NZGW code and slides.
  - Finish writing README (add some notes on the various algorithms, other implementations, etc).
  - Make a Python environment for this repository?
+
+## Getting Started
+```
+python3.8 -m venv venv
+source venv/bin/activate 
+pip install -r requirements.txt
+```
