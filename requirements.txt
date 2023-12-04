@@ -1,0 +1,7 @@
+colorcet==3.0.1
+layermesh==0.3.2
+pip==23.3.1
+pyvista==0.42.3
+pywaiwera==1.4.0
+PyYAML==6.0.1
+setuptools==41.2.0
