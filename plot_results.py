@@ -13,14 +13,15 @@ plt.rc("font", family="serif")
 # - Prior vs posterior ensemble members
 # - Prior vs posterior predictions
 # - Hyperparameters (permeability lengthscales and standard deviations, focus on clay cap and also lower section of geometry)
+# - Heatmap
 
 MIN_PERM = -17
 MAX_PERM = -13.5
 
 # Read in the observations
-with h5py.File("data/slice/eki_dmc.h5", "r") as f:
+with h5py.File("data/slice/eki_dmc_fisher.h5", "r") as f:
 
-    inds_succ = f["inds_succ"]
+    inds_succ = f["inds"]
 
     ws = f["ws"][:][-1][:, inds_succ]
     ps = f["ps"][:][-1][:, inds_succ]
@@ -28,13 +29,13 @@ with h5py.File("data/slice/eki_dmc.h5", "r") as f:
     Gs = f["Gs"][:][-1][:, inds_succ]
 
 PLOT_MEAN = True
-PLOT_STDS = False
-PLOT_PREDICTIONS = False
+PLOT_STDS = True
+PLOT_PREDICTIONS = True
 PLOT_ENSEMBLE_MEMBERS = True
-PLOT_UPFLOWS = False 
+PLOT_UPFLOWS = True 
 PLOT_HYPERPARAMS = True
 
-WELL_TO_PLOT = 4
+WELL_TO_PLOT = 2
 
 if PLOT_MEAN:
 
@@ -68,6 +69,8 @@ if PLOT_STDS:
 
     std_post = np.std(ps, axis=1)[:-1]
     std_post = np.reshape(std_post, (mesh_crse.nx, mesh_crse.nz))
+
+    print(np.mean(std_post))
     
     fig, axes = plt.subplots(1, 2, figsize=(6, 3))
 
