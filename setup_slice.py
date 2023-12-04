@@ -305,10 +305,13 @@ Model functions
 """
 
 def F(p_i, mesh=mesh_crse, model_name=model_name_crse, 
-      wells=wells_crse, upflow_cell=upflow_cell_crse):
+      wells=wells_crse, upflow_cell=upflow_cell_crse, i=None):
     """Given a set of transformed parameters, forms and runs the 
     corresponding model, then returns the full model output and model
     predictions."""
+
+    if i is not None:
+        model_name += f"_{i}"
 
     *logks, upflow_rate = p_i
     upflows = [MassUpflow(upflow_cell, upflow_rate)]
@@ -387,10 +390,10 @@ def generate_truth(mesh: SliceMesh, model_name, wells, upflow_cell):
     F_t = F(p_t, mesh, model_name, wells, upflow_cell)
     G_t = G(F_t, data_handler_fine)
 
-    # np.save(W_TRUE_PATH, w_t)
-    # np.save(P_TRUE_PATH, p_t)
-    # np.save(F_TRUE_PATH, F_t)
-    # np.save(G_TRUE_PATH, G_t)
+    np.save(W_TRUE_PATH, w_t)
+    np.save(P_TRUE_PATH, p_t)
+    np.save(F_TRUE_PATH, F_t)
+    np.save(G_TRUE_PATH, G_t)
 
     return w_t, p_t, F_t, G_t
 
