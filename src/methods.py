@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from multiprocessing import Pool, cpu_count
 
 import h5py
 import numpy as np
@@ -223,7 +224,13 @@ class EnsembleRunner():
         self.NG = NG 
         self.Ne = Ne
 
-    def run(self, ws_i):
+    def run(self, ws_i, parallel=True):
+        if parallel:
+            return self.run_parallel(ws_i)
+        else: 
+            return self.run_serial(ws_i)
+
+    def run_serial(self, ws_i):
 
         ps_i = np.empty((self.Np, self.Ne))
         Fs_i = np.empty((self.NF, self.Ne))
@@ -243,6 +250,43 @@ class EnsembleRunner():
                 ps_i[:, i] = p_i
                 Fs_i[:, i] = F_i 
                 Gs_i[:, i] = self.G(F_i)
+
+        return ps_i, Fs_i, Gs_i, inds_succ, inds_fail
+    
+    def run_parallel(self, ws_i):
+
+        print(f"Number of CPUs: {cpu_count()}")
+
+        def run_single(w_i, i):
+
+            utils.info(f"Simulating ensemble member {i+1}...")
+            p_i = self.prior.transform(w_i)
+            F_i = self.F(p_i, i=i)
+
+            if type(F_i) == models.ExitFlag:
+                return (p_i, False, None, None)
+            return (F_i, True, F_i, self.G(F_i))
+
+        ps_i = np.empty((self.Np, self.Ne))
+        Fs_i = np.empty((self.NF, self.Ne))
+        Gs_i = np.empty((self.NG, self.Ne))
+
+        inds_succ = []
+        inds_fail = []
+
+        with Pool(processes=20) as p: # TODO: edit this...
+            args = [(i, w_i) for i, w_i in enumerate(ws_i.T)]
+            res = p.map(run_single, args)
+
+        for i, r in enumerate(res):
+            p_i, successful, F_i, G_i = r
+            ps_i[:, i] = p_i
+            if not successful:
+                inds_fail.append(i)
+            else:
+                inds_succ.append(i)
+                Fs_i[:, i] = F_i
+                Gs_i[:, i] = G_i
 
         return ps_i, Fs_i, Gs_i, inds_succ, inds_fail
 
