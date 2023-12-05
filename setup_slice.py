@@ -301,46 +301,20 @@ data_handler_fine = DataHandler(mesh_fine, well_xs, temp_obs_zs, prod_obs_ts, tm
 noise_level = 0.02
 
 """
-Model functions
+Ensemble functions
 """
 
-# TODO: figure out how to get around this when generating the truth...
-def F(p_i, mesh=mesh_crse, model_name=model_name_crse, 
-      wells=wells_crse, upflow_cell=upflow_cell_crse, i=None):
-    """Given a set of transformed parameters, forms and runs the 
-    corresponding model, then returns the full model output and model
-    predictions."""
+def generate_particle(p_i, num):
+    name = f"{model_name_crse}_{num}"
+    *logks, upflow_rate = p_i 
+    upflows = [MassUpflow(upflow_cell_crse, upflow_rate)]
+    model = Model2D(name, mesh_crse, logks, wells_crse, upflows, dt, tmax)
+    return model
 
-    if i is not None:
-        model_name += f"_{i}"
-
-    *logks, upflow_rate = p_i
-    upflows = [MassUpflow(upflow_cell, upflow_rate)]
-    
-    model = Model2D(model_name, mesh, logks, wells, upflows, dt, tmax)
-
-    if (flag := model.run()) == ExitFlag.FAILURE: 
-        return flag
-    return model.get_pr_data()
-
-def generate_ensemble(ps, mesh=mesh_crse, model_name=model_name_crse, 
-                      wells=wells_crse, upflow_cell=upflow_cell_crse, i=None):
-    
-    ensemble = []
-
-    for i, p_i in enumerate(ps.T):
-
-        name = f"{model_name}_{i}"
-        *logks, upflow_rate = p_i
-        upflows = [MassUpflow(upflow_cell, upflow_rate)]
-        model = Model2D(name, mesh, logks, wells, upflows, dt, tmax)
-
-        ensemble.append(model)
-
-    return ensemble
-
-def G(F_i, data_handler=data_handler_crse):
-    return data_handler.get_obs(F_i)
+def get_result(particle: Model2D):
+    F_i = particle.get_pr_data()
+    G_i = data_handler_crse.get_obs(F_i)
+    return F_i, G_i
 
 """
 Prior
@@ -395,17 +369,24 @@ Truth
 
 truth_dist = generate_prior(mesh_fine, upflow_cell_fine)
 
-def generate_truth(mesh: SliceMesh, model_name, wells, upflow_cell):
+def generate_truth():
     """Generates the truth and observations using the fine model."""
 
     w_t = truth_dist.sample()
     p_t = truth_dist.transform(w_t)
 
     # TEMP: sanity check
-    mesh.m.slice_plot(value=p_t[:-1], colourmap="viridis")
+    mesh_fine.m.slice_plot(value=p_t[:-1], colourmap="viridis")
 
-    F_t = F(p_t, mesh, model_name, wells, upflow_cell)
-    G_t = G(F_t, data_handler_fine)
+    *logks_t, upflow_rate_t = p_t
+    upflows = [MassUpflow(upflow_cell_fine, upflow_rate_t)]
+    
+    model = Model2D(model_name_fine, mesh_fine, logks_t, 
+                    wells_fine, upflows, dt, tmax)
+
+    model.run()
+    F_t = model.get_pr_data()
+    G_t = data_handler_fine.get_obs(F_t)
 
     np.save(W_TRUE_PATH, w_t)
     np.save(P_TRUE_PATH, p_t)
