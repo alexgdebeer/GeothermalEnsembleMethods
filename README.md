@@ -15,8 +15,8 @@ pip install -r requirements.txt
 ## TODO:
 ### Slice
  - Think about how the noise is generated (increase to 5-10%?)
+ - Try a different truth
  - Plot the vapour saturations for the true system (could be interesting)
- - Update prior to be able to extract hyperparameters
 ### Channel
  - Add feedzone locations.
  - Tune Robin parameter on Matern fields.
@@ -30,7 +30,6 @@ pip install -r requirements.txt
  - Read paper on how to adjust ensemble covariance when defining Gaussian based on successful ensemble members.
  - Think about the initial conditions more carefully (thermal gradient?)
  - Check everything carefully!
- - Add an Ensemble object into models.py
 ### Ensemble Methods
  - Tidy up EnRML code
 ### Misc
