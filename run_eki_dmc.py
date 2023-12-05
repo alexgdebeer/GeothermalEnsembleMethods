@@ -3,14 +3,16 @@ from setup_slice import *
 
 Np = n_blocks_crse + 1
 NF = n_blocks_crse + 2 * n_wells * (nt + 1)
+NG = len(y)
 Ne = 100
 
+ensemble = Ensemble(prior, generate_particle, get_result, Np, NF, NG, Ne)
 localiser = IdentityLocaliser()
 imputer = GaussianImputer()
 
 ws, ps, Fs, Gs, inds = run_eki_dmc(
-    generate_ensemble, G, prior, y, C_e, Np, NF, Ne, 
-    localiser, imputer, nesi=True)
+    ensemble, prior, y, C_e, Ne,
+    localiser, imputer, nesi=False)
 
 fname = "eki_dmc.h5"
 results = {
