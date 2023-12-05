@@ -3,6 +3,7 @@ from copy import deepcopy
 from enum import Enum
 from itertools import product
 import os
+import subprocess
 
 import h5py
 import layermesh.mesh as lm
@@ -12,10 +13,8 @@ import pywaiwera
 from scipy import stats
 import yaml
 
-from src.consts import *
 from src import utils
-
-NESI = True
+from src.consts import *
 
 EPS = 1e-8
 
@@ -567,3 +566,112 @@ class Model3D(Model):
             },
             "title": "3D Model"
         }
+
+class Ensemble():
+
+    def __init__(self, prior, generate_particle, get_result, 
+                 Np, NF, NG, Ne):
+
+        self.prior = prior
+        self.generate_particle = generate_particle
+        self.get_result = get_result
+
+        self.Np = Np 
+        self.NF = NF 
+        self.NG = NG
+        self.Ne = Ne
+
+    def transform_params(self, ws):
+        ps = np.empty((self.Np, self.Ne))
+        for i, w_i in enumerate(ws.T):
+            ps[:, i] = self.prior.transform(w_i)
+        return ps
+
+    def generate(self, ps):
+        self.ensemble = []
+        for i, p_i in enumerate(ps.T):
+            particle = self.generate_particle(p_i, i)
+            self.ensemble.append(particle)
+        return self.ensemble
+    
+    def get_results(self, inds_succ):
+        Fs = np.empty((self.NF, self.Ne))
+        Gs = np.empty((self.NG, self.Ne))
+        for i, particle in enumerate(self.ensemble):
+            if i in inds_succ:
+                F_i, G_i = self.get_result(particle)
+                Fs[:, i] = F_i 
+                Gs[:, i] = G_i 
+        return Fs, Gs
+
+    def run_local(self):
+
+        utils.info("Running locally...")
+
+        inds_succ = []
+        inds_fail = []
+
+        for i, particle in enumerate(self.ensemble):
+            if particle.run() == ExitFlag.FAILURE:
+                inds_fail.append(i)
+            else: 
+                inds_succ.append(i)
+
+        Fs, Gs = self.get_results(inds_succ)
+        return Fs, Gs, inds_succ, inds_fail
+    
+    @utils.timer
+    def run_nesi(self):
+        """Runs the current ensemble using on NeSI."""
+
+        def generate_cmd(paths):
+            cmd = ""
+            for path in paths:
+                cmd += f"srun {NESI_OPTIONS} {NESI_WAI_PATH} {path} & "
+            cmd += "wait"
+            return cmd
+
+        inds_succ_ns = []
+        inds_fail_ns = []
+        inds_succ = []
+        inds_fail = []
+        
+        ns_paths = [f"{p.ns_path}.json" for p in self.ensemble]
+        pr_paths = [f"{p.pr_path}.json" for p in self.ensemble]
+
+        ns_cmd = generate_cmd(ns_paths)
+        print(ns_cmd)
+        subprocess.run(ns_cmd, shell=True)
+
+        ns_flags = [p.get_exitflag(p.ns_path) for p in self.ensemble]
+        for i, flag in enumerate(ns_flags):
+            if flag == ExitFlag.SUCCESS:
+                inds_succ_ns.append(i)
+            else: 
+                inds_fail_ns.append(i)
+
+        pr_cmd = generate_cmd(pr_paths[inds_succ_ns])
+        print(pr_cmd)
+        subprocess.run(pr_cmd, shell=True)
+
+        for i, p in enumerate(self.ensemble):
+            if i in inds_succ_ns:
+                if p.get_exitflag(p.pr_path) == ExitFlag.SUCCESS:
+                    inds_succ.append(i)
+                else: inds_fail.append(i)
+            else: inds_fail.append(i)
+
+        Fs, Gs = self.get_results(inds_succ)
+        return Fs, Gs, inds_succ, inds_fail
+
+    def run(self, ws, nesi):
+
+        ps = self.transform_params(ws)
+        self.generate(ps)
+        
+        if nesi: 
+            Fs, Gs, inds_succ, inds_fail = self.run_nesi()
+        else:
+            Fs, Gs, inds_succ, inds_fail = self.run_local()
+
+        return ps, Fs, Gs, inds_succ, inds_fail

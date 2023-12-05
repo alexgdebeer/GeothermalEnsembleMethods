@@ -24,4 +24,5 @@ MSG_ABORTED = ["warn", "timestep", "aborted"]
 
 SECS_PER_WEEK = 60.0 ** 2 * 24.0 * 7.0
 
-WAI_PATH_NESI = "/nesi/project/uoa00463/bin/waiwera"
+NESI_WAI_PATH = "/nesi/project/uoa00463/bin/waiwera"
+NESI_OPTIONS = "--exclusive --exact --ntasks=1 --nodes=1 --cpus-per-task=1"

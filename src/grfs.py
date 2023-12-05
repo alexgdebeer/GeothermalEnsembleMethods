@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from enum import Enum
 import numpy as np
 import pyvista as pv
@@ -19,8 +20,10 @@ class BC(Enum):
     NEUMANN = 1
     ROBIN = 2
 
-class MaternField():
-    pass
+class MaternField(ABC):
+    @abstractmethod
+    def generate_field():
+        pass
 
 class MaternField2D(MaternField):
 
