@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
-from multiprocessing import Pool, cpu_count
+import subprocess
 
 import h5py
 import numpy as np
 from scipy.linalg import inv, sqrtm
 
-from src import models, utils
+from src import utils
+from src.models import *
 
 TOL = 1e-8
 
@@ -213,82 +214,102 @@ class EnsembleRunner():
     """Runs an ensemble and returns the results, including a list of 
     indices of any failed simulations."""
 
-    def __init__(self, prior, F, G, Np, NF, NG, Ne):
+    def __init__(self, prior, generate_ensemble, G, Np, NF, NG, Ne):
         
         self.prior = prior 
-        self.F = F 
+        self.generate_ensemble = generate_ensemble 
         self.G = G
         
         self.Np = Np 
         self.NF = NF 
         self.NG = NG 
         self.Ne = Ne
+    
+    def transform_params(self, ws):
+        ps = np.empty((self.Np, self.Ne))
+        for i, w_i in enumerate(ws.T):
+            ps[:, i] = self.prior.transform(w_i)
+        return ps
 
-    def run(self, ws_i, parallel=True):
-        if parallel:
-            return self.run_parallel(ws_i)
-        else: 
-            return self.run_serial(ws_i)
+    def run_local(self, ws):
 
-    def run_serial(self, ws_i):
-
-        ps_i = np.empty((self.Np, self.Ne))
-        Fs_i = np.empty((self.NF, self.Ne))
-        Gs_i = np.empty((self.NG, self.Ne))
+        Fs = np.empty((self.NF, self.Ne))
+        Gs = np.empty((self.NG, self.Ne))
 
         inds_succ = []
         inds_fail = []
 
-        for i, w_i in enumerate(ws_i.T):
-            utils.info(f"Simulating ensemble member {i+1}...")
-            p_i = self.prior.transform(w_i)
-            F_i = self.F(p_i, i=i)
-            if type(F_i) == models.ExitFlag:
+        ps = self.transform_params(ws)
+
+        utils.info("Generating ensemble...")
+        ensemble = self.generate_ensemble(ps)
+
+        for i, p in enumerate(ensemble):
+            if p.run() == ExitFlag.FAILURE:
                 inds_fail.append(i)
             else: 
+                Fs[:, i] = p.get_pr_data()
+                Gs[:, i] = self.G(Fs[:, i])
                 inds_succ.append(i)
-                ps_i[:, i] = p_i
-                Fs_i[:, i] = F_i 
-                Gs_i[:, i] = self.G(F_i)
 
-        return ps_i, Fs_i, Gs_i, inds_succ, inds_fail
-    
-    def run_parallel(self, ws_i):
+        return ps, Fs, Gs, inds_succ, inds_fail
 
-        print(f"Number of CPUs: {cpu_count()}")
+    def run_nesi(self, ws):
 
-        def run_single(w_i, i):
+        Fs = np.empty((self.NF, self.Ne))
+        Gs = np.empty((self.NG, self.Ne))
 
-            utils.info(f"Simulating ensemble member {i+1}...")
-            p_i = self.prior.transform(w_i)
-            F_i = self.F(p_i, i=i)
-
-            if type(F_i) == models.ExitFlag:
-                return (p_i, False, None, None)
-            return (F_i, True, F_i, self.G(F_i))
-
-        ps_i = np.empty((self.Np, self.Ne))
-        Fs_i = np.empty((self.NF, self.Ne))
-        Gs_i = np.empty((self.NG, self.Ne))
-
+        inds_succ_ns = []
+        inds_fail_ns = []
         inds_succ = []
         inds_fail = []
 
-        with Pool(processes=20) as p: # TODO: edit this...
-            args = [(i, w_i) for i, w_i in enumerate(ws_i.T)]
-            res = p.map(run_single, args)
+        ps = self.transform_params(ws)
+        ensemble = self.generate_ensemble(ps)
+        
+        ns_paths = [f"{p.ns_path}.json" for p in ensemble]
+        pr_paths = [f"{p.pr_path}.json" for p in ensemble]
 
-        for i, r in enumerate(res):
-            p_i, successful, F_i, G_i = r
-            ps_i[:, i] = p_i
-            if not successful:
-                inds_fail.append(i)
-            else:
-                inds_succ.append(i)
-                Fs_i[:, i] = F_i
-                Gs_i[:, i] = G_i
+        # Run the NS simulations
+        ns_cmd = []
+        for path in ns_paths:
+            ns_cmd.extend(["srun", "-c1", WAI_PATH_NESI, path, "&"])
+        ns_cmd.append("wait")
+        print(ns_cmd)
+        subprocess.call(ns_cmd)
 
-        return ps_i, Fs_i, Gs_i, inds_succ, inds_fail
+        ns_flags = [p.get_exitflag(p.ns_path) for p in ensemble]
+
+        # Run the PR simulations
+        pr_cmd = []
+        for i, (path, flag) in enumerate(zip(pr_paths, ns_flags)):
+            if flag == ExitFlag.SUCCESS:
+                pr_cmd.extend(["srun", "-c1", WAI_PATH_NESI, path, "&"])
+                inds_succ_ns.append(i)
+            else: 
+                inds_fail_ns.append(i)
+        pr_cmd.append("wait")
+        subprocess.call(pr_cmd)
+
+        for i, p in enumerate(ensemble):
+            if i in inds_succ_ns:
+                if p.get_exitflag(p.pr_path) == ExitFlag.SUCCESS:
+                    inds_succ.append(i)
+                else: inds_fail.append(i)
+            else: inds_fail.append(i)
+
+        for i, p in enumerate(ensemble):
+            if i in inds_succ:
+                Fs[:, i] = p.get_pr_data()
+                Gs[:, i] = self.G(Fs[:, i])
+
+        return ps, Fs, Gs, inds_succ, inds_fail
+    
+    def run(self, ws, nesi):
+        if nesi:
+            return self.run_nesi(ws)
+        else: 
+            return self.run_local(ws)
 
 def compute_deltas(xs):
     N = xs.shape[1]
@@ -351,9 +372,10 @@ def compute_a_dmc(t, Gs, y, NG, C_e_invsqrt):
 
     return a_inv ** -1
 
-def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
+def run_eki_dmc(generate_ensemble, G, prior, y, C_e, Np, NF, Ne,
                 localiser: Localiser=IdentityLocaliser(), 
-                imputer: Imputer=GaussianImputer()):
+                imputer: Imputer=GaussianImputer(),
+                nesi=False):
     """Runs EKI-DMC, as described in Iglesias and Yang (2021)."""
 
     C_e_invsqrt = sqrtm(inv(C_e))
@@ -361,8 +383,8 @@ def run_eki_dmc(F, G, prior, y, C_e, Np, NF, Ne,
 
     ws_i = prior.sample(n=Ne)
 
-    ensemble = EnsembleRunner(prior, F, G, Np, NF, NG, Ne)
-    ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i)
+    ensemble = EnsembleRunner(prior, generate_ensemble, G, Np, NF, NG, Ne) # TODO: could probably have a second ensemble object
+    ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i, nesi)
     
     ws = [ws_i]
     ps = [ps_i]

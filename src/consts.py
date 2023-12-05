@@ -23,3 +23,5 @@ MSG_MAX_ITS = ["info", "timestep", "max_timesteps_reached"]
 MSG_ABORTED = ["warn", "timestep", "aborted"]
 
 SECS_PER_WEEK = 60.0 ** 2 * 24.0 * 7.0
+
+WAI_PATH_NESI = "/nesi/project/uoa00463/bin/waiwera"

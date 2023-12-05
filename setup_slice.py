@@ -304,6 +304,7 @@ noise_level = 0.02
 Model functions
 """
 
+# TODO: figure out how to get around this when generating the truth...
 def F(p_i, mesh=mesh_crse, model_name=model_name_crse, 
       wells=wells_crse, upflow_cell=upflow_cell_crse, i=None):
     """Given a set of transformed parameters, forms and runs the 
@@ -321,6 +322,22 @@ def F(p_i, mesh=mesh_crse, model_name=model_name_crse,
     if (flag := model.run()) == ExitFlag.FAILURE: 
         return flag
     return model.get_pr_data()
+
+def generate_ensemble(ps, mesh=mesh_crse, model_name=model_name_crse, 
+                      wells=wells_crse, upflow_cell=upflow_cell_crse, i=None):
+    
+    ensemble = []
+
+    for i, p_i in enumerate(ps.T):
+
+        name = f"{model_name}_{i}"
+        *logks, upflow_rate = p_i
+        upflows = [MassUpflow(upflow_cell, upflow_rate)]
+        model = Model2D(name, mesh, logks, wells, upflows, dt, tmax)
+
+        ensemble.append(model)
+
+    return ensemble
 
 def G(F_i, data_handler=data_handler_crse):
     return data_handler.get_obs(F_i)

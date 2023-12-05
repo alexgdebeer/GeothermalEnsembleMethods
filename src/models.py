@@ -3,7 +3,6 @@ from copy import deepcopy
 from enum import Enum
 from itertools import product
 import os
-import subprocess
 
 import h5py
 import layermesh.mesh as lm
@@ -16,7 +15,6 @@ import yaml
 from src.consts import *
 from src import utils
 
-WAI_PATH_NESI = "/nesi/project/uoa00463/bin/waiwera"
 NESI = True
 
 EPS = 1e-8
@@ -479,21 +477,15 @@ class Model(ABC):
         """Simulates the model and returns a flag that indicates 
         whether the simulation was successful."""
 
-        if NESI:
-            subprocess.call(["srun", WAI_PATH_NESI, f"{self.ns_path}.json"])
-        else: 
-            env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
-            env.run_waiwera(f"{self.ns_path}.json", noupdate=True)
+        env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
+        env.run_waiwera(f"{self.ns_path}.json", noupdate=True)
         
         flag = self.get_exitflag(self.ns_path)
         if flag == ExitFlag.FAILURE: 
             return flag
 
-        if NESI:
-            subprocess.call(["srun", WAI_PATH_NESI, f"{self.pr_path}.json"])
-        else: 
-            env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
-            env.run_waiwera(f"{self.pr_path}.json", noupdate=True)
+        env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
+        env.run_waiwera(f"{self.pr_path}.json", noupdate=True)
         
         return self.get_exitflag(self.pr_path)
 

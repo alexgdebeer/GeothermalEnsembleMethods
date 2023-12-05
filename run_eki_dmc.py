@@ -5,14 +5,14 @@ Np = n_blocks_crse + 1
 NF = n_blocks_crse + 2 * n_wells * (nt + 1)
 Ne = 100
 
-localiser = BootstrapLocaliser()
+localiser = IdentityLocaliser()
 imputer = GaussianImputer()
 
 ws, ps, Fs, Gs, inds = run_eki_dmc(
-    F, G, prior, y, C_e, Np, NF, Ne, 
-    localiser, imputer)
+    generate_ensemble, G, prior, y, C_e, Np, NF, Ne, 
+    localiser, imputer, nesi=True)
 
-fname = "eki_dmc_boot.h5"
+fname = "eki_dmc.h5"
 results = {
     "ws": ws, 
     "ps": ps, 
