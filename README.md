@@ -30,6 +30,7 @@ pip install -r requirements.txt
  - Read paper on how to adjust ensemble covariance when defining Gaussian based on successful ensemble members.
  - Think about the initial conditions more carefully (thermal gradient?)
  - Check everything carefully!
+ - Add an Ensemble object into models.py
 ### Ensemble Methods
  - Tidy up EnRML code
 ### Misc
