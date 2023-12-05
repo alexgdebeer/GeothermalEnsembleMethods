@@ -2,7 +2,7 @@ __pycache__
 .DS_Store
 .git
 
-venv/
+venv
 
 .cid
 .idcheck
