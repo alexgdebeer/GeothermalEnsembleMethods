@@ -110,6 +110,9 @@ class Well():
     def __init__(self, x: float, y: float, depth: float, mesh, 
                  feedzone_depth: float, feedzone_rate: float):
         
+        self.x = x
+        self.y = y
+
         self.max_elev = mesh.m.find((x, y, depth)).column.surface
         self.min_elev = depth
         self.coords = np.array([[x, y, self.max_elev], 
