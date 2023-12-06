@@ -64,7 +64,7 @@ class SliceMesh(Mesh):
         dys = [self.dy]
         dzs = [self.dz] * nz
 
-        self.m = lm.mesh(rectangular=(dxs, dys, dzs))
+        self.m: lm.mesh = lm.mesh(rectangular=(dxs, dys, dzs))
 
         self.cell_xs = np.array([c.centre[0] for c in self.m.cell])
         self.cell_zs = np.array([c.centre[-1] for c in self.m.cell])
@@ -73,7 +73,7 @@ class SliceMesh(Mesh):
         self.zs = np.array([l.centre for l in self.m.layer])
 
         points = [c.centre for c in self.m.cell]
-        self.fem_mesh = pv.PolyData(points).delaunay_2d()
+        self.fem_mesh: pv.PolyData = pv.PolyData(points).delaunay_2d()
 
         if not os.path.exists(f"{self.name}.msh"):
             utils.info("Writing mesh to file...")
@@ -88,12 +88,14 @@ class IrregularMesh(Mesh):
     def __init__(self, name):
 
         self.name = name
-        self.m = lm.mesh(f"{self.name}.h5")
+        self.m: lm.mesh = lm.mesh(f"{self.name}.h5")
 
-        self.cell_centres = [cell.centre for cell in self.m.cell]
-        self.col_centres = [col.centre for col in self.m.column]
-        self.col_cells = {col.index: [c.index for c in col.cell] 
-                          for col in self.m.column}
+        self.cell_centres = [c.centre for c in self.m.cell]
+        self.col_centres = [c.centre for c in self.m.column]
+        
+        self.col_cells = {
+            col.index: [c.index for c in col.cell] 
+            for col in self.m.column}
         
         self.fem_mesh = pv.UnstructuredGrid(f"{self.name}.vtu")
         self.fem_mesh = self.fem_mesh.triangulate()
@@ -105,7 +107,7 @@ class MassUpflow():
 
 class Well():
     
-    def __init__(self, x: float, y: float, depth: float, mesh: Mesh, 
+    def __init__(self, x: float, y: float, depth: float, mesh, 
                  feedzone_depth: float, feedzone_rate: float):
         
         self.max_elev = mesh.m.find((x, y, depth)).column.surface
@@ -229,19 +231,22 @@ class Fault():
         
         cells = [cell for col in cols for cell in col.cell]
         return cells, cols
-        
 
 class ClayCap():
 
-    def __init__(self, mesh, bounds, n_terms, coef_sds):
+    def __init__(self, mesh: IrregularMesh, 
+                 bounds, n_terms, coef_sds):
         
         self.cell_centres = np.array([c.centre for c in mesh.m.cell])
         self.col_centres = np.array([c.centre for c in mesh.m.column])
 
+        self.cx = mesh.m.centre[0]
+        self.cy = mesh.m.centre[1]
+
         self.bounds = bounds 
         self.n_terms = n_terms 
         self.coef_sds = coef_sds
-        self.n_params = 6 + 4 * self.n_terms ** 2
+        self.n_params = len(bounds) + 4 * self.n_terms ** 2
 
     def cartesian_to_spherical(self, ds):
 
@@ -270,26 +275,25 @@ class ClayCap():
         
         return rs
     
-    def get_cap_params(self, ps):
+    def get_cap_params(self, pars):
         """Given a set of unit normal variables, generates the 
         corresponding set of clay cap parameters."""
 
-        geom = [gauss_to_unif(p, *self.bounds[i]) 
-                for i, p in enumerate(ps[:6])]
+        geom = transform_pars(pars[:4], self.bounds)
 
-        coefs = np.reshape(self.coef_sds * ps[6:], 
-                           (self.n_terms, self.n_terms, 4))
+        coefs_shape = (self.n_terms, self.n_terms, 4)
+        coefs = np.reshape(self.coef_sds * pars[4:], coefs_shape)
 
         return geom, coefs
 
-    def get_cells_in_cap(self, params):
+    def get_cells_in_cap(self, pars):
         """Returns an array of booleans that indicate whether each cell 
         is contained within the clay cap."""
 
-        # Unpack parameters
-        geom, coefs = self.get_cap_params(params)
-        *centre, width_h, width_v, dip = geom
+        geom, coefs = self.get_cap_params(pars)
+        cz, width_h, width_v, dip = geom
 
+        centre = np.array([self.cx, self.cy, cz])
         ds = self.cell_centres - centre
         ds[:, -1] += (dip / width_h**2) * (ds[:, 0]**2 + ds[:, 1]**2) 
 
@@ -299,20 +303,6 @@ class ClayCap():
                                            width_h, width_v, coefs)
         
         return (cell_radii < cap_radii).nonzero()
-    
-    def get_upflow_weightings(self, params, mesh):
-        """Returns a list of values by which the upflow in each column 
-        should be multiplied."""
-
-        cx, cy, *_ = self.get_cap_params(params)[0]
-
-        s = 800 # TODO: make this into an input
-
-        col_centres = [col.centre for col in mesh.m.column]
-        col_weightings = np.array([np.exp(-(((c[0]-cx)/s)**2 + ((c[1]-cy)/s)**2)) / 2
-                                   for c in col_centres])
-
-        return col_weightings
 
 class Model(ABC):
     """Base class for models, with a set of default methods."""
@@ -386,8 +376,8 @@ class Model(ABC):
             "cell": u.cell.index
         } for u in self.upflows])
 
-        # total_mass = sum([u.rate * u.cell.column.area for u in self.upflows])
-        # utils.info(f"Total mass input: {total_mass:.2f} kg/s")
+        total_mass = sum([u.rate * u.cell.column.area for u in self.upflows])
+        utils.info(f"Total mass input: {total_mass:.2f} kg/s")
 
     def add_rocktypes(self):
         """Adds rocks with given permeabilities (and constant porosity, 
@@ -464,7 +454,6 @@ class Model(ABC):
         the final model state."""
 
         self.ns_model["output"] = {
-            "filename": f"{self.ns_path}.h5",
             "frequency": 0, 
             "initial": False, 
             "final": True
@@ -474,7 +463,6 @@ class Model(ABC):
         """Sets up production history checkpoints."""
         
         self.pr_model["output"] = {
-            "filename": f"{self.pr_path}.h5",
             "checkpoint": {
                 "time": [self.dt], 
                 "repeat": True
@@ -501,8 +489,6 @@ class Model(ABC):
         """Generates the production history model."""
 
         self.pr_model = deepcopy(self.ns_model)
-
-        self.pr_model["logfile"]["filename"] = f"{self.pr_path}.yaml"
 
         self.add_wells()
         self.add_pr_timestepping()
@@ -549,25 +535,6 @@ class Model(ABC):
 
         raise Exception(f"Unknown exit condition. Check {log_path}.yaml.")
 
-class Model2D(Model):
-    """2D Model (note: can currently only be used with a RegularMesh)."""
-
-    def initialise_ns_model(self):
-        
-        self.ns_model = {
-            "eos": {"name": "we"},
-            "gravity": GRAVITY,
-            "logfile": {
-                "filename": f"{self.ns_path}.yaml",
-                "echo": False
-            },
-            "mesh": {
-                "filename": f"{self.mesh.name}.msh", 
-                "thickness": self.mesh.dy
-            },
-            "title": "2D Model"
-        }
-
     def get_pr_data(self):
         """Returns the temperatures (deg C), pressures (MPa) and
         enthalpies (kJ/kg) from a production history simulation."""
@@ -592,6 +559,22 @@ class Model2D(Model):
                               pr_enth.flatten()))
 
         return F_i
+
+class Model2D(Model):
+    """2D Model (note: can currently only be used with a RegularMesh)."""
+
+    def initialise_ns_model(self):
+        
+        self.ns_model = {
+            "eos": {"name": "we"},
+            "gravity": GRAVITY,
+            "logfile": {"echo": False},
+            "mesh": {
+                "filename": f"{self.mesh.name}.msh", 
+                "thickness": self.mesh.dy
+            },
+            "title": "2D Model"
+        }
 
 class Model3D(Model):
 
