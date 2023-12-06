@@ -17,21 +17,21 @@ Classes
 
 class ChannelPrior():
 
-    def __init__(self, mesh, cap, channel, 
-                 grf_ext, grf_flt, grf_cap, 
-                 grf_upflow, level_width):
+    def __init__(self, mesh: IrregularMesh, cap: ClayCap, 
+                 fault: Fault, grf_ext: PermField, 
+                 grf_flt: PermField, grf_cap: PermField, 
+                 grf_upflow: UpflowField):
 
         self.mesh = mesh 
 
         self.cap = cap
-        self.channel = channel
+        self.fault = fault
         self.grf_ext = grf_ext 
         self.grf_flt = grf_flt
         self.grf_cap = grf_cap
         self.grf_upflow = grf_upflow
-        self.level_width = level_width
 
-        self.param_counts = [0, cap.n_params, channel.n_params, 
+        self.param_counts = [0, cap.n_params, fault.n_params, 
                              grf_ext.n_params, grf_flt.n_params, 
                              grf_cap.n_params, grf_upflow.n_params]
         
@@ -40,7 +40,7 @@ class ChannelPrior():
 
         self.inds = {
             "cap"        : np.arange(*self.param_inds[0:2]),
-            "channel"    : np.arange(*self.param_inds[1:3]),
+            "fault"      : np.arange(*self.param_inds[1:3]),
             "grf_ext"    : np.arange(*self.param_inds[2:4]),
             "grf_flt"    : np.arange(*self.param_inds[3:5]),
             "grf_cap"    : np.arange(*self.param_inds[4:6]),
@@ -57,11 +57,11 @@ class ChannelPrior():
         perms_flt = self.grf_flt.get_perms(params[self.inds["grf_flt"]])
         perms_cap = self.grf_cap.get_perms(params[self.inds["grf_cap"]])
 
-        perms_ext = self.grf_ext.apply_level_set(perms_ext, self.level_width)
-        perms_flt = self.grf_flt.apply_level_set(perms_flt, self.level_width)
-        perms_cap = self.grf_cap.apply_level_set(perms_cap, self.level_width)
+        perms_ext = self.grf_ext.level_set(perms_ext)
+        perms_flt = self.grf_flt.level_set(perms_flt)
+        perms_cap = self.grf_cap.level_set(perms_cap)
 
-        fault_cells, fault_cols = self.channel.get_cells_in_channel(params[self.inds["channel"]])
+        fault_cells, fault_cols = self.fault.get_cells_in_fault(params[self.inds["fault"]])
         fault_cell_inds = [c.index for c in fault_cells]
         fault_col_inds = [c.index for c in fault_cols]
 
@@ -89,7 +89,6 @@ Model parameters
 """
 
 mesh = IrregularMesh(MESH_NAME)
-# print(mesh.m.centre)
 
 well_xs = [500, 550, 1250, 750]
 well_ys = [750, 500, 1250, 750]
@@ -119,44 +118,58 @@ mu_perm_flt = -13
 mu_perm_cap = -16
 
 # Bounds for marginal standard deviations and x, y, z lengthscales
-bounds_perm_ext = [(0.4, 0.8), (1500, 2000), (1500, 2000), (200, 800)]
-bounds_perm_flt = [(0.20, 0.30), (1500, 2000), (1500, 2000), (200, 800)]
-bounds_perm_cap = [(0.20, 0.30), (1500, 2000), (1500, 2000), (200, 800)]
+bounds_perm_ext = [(0.75, 1.25), (1000, 2000), (1000, 2000), (200, 800)]
+bounds_perm_flt = [(0.5, 1.0), (1000, 2000), (1000, 2000), (200, 800)]
+bounds_perm_cap = [(0.5, 1.0), (1000, 2000), (1000, 2000), (200, 800)]
 
 grf_2d = MaternField2D(mesh)
 grf_3d = MaternField3D(mesh)
 
+def levels_ext(p):
+    """Level set mapping for all non-fault and non-cap regions."""
+    if   p < -1.5: return -15.0
+    elif p < -0.5: return -14.5
+    elif p <  0.5: return -14.0
+    elif p <  1.5: return -13.5
+    else: return -13.0
+
+def levels_flt(p):
+    """Level set mapping for fault."""
+    if   p < -0.5: return -13.5
+    elif p <  0.5: return -13.0
+    else: return -12.5
+
+def levels_cap(p):
+    """Level set mapping for clay cap."""
+    if   p < -0.5: return -17.0
+    elif p <  0.5: return -16.5
+    else: return -16.0
+
 # Generate the clay cap and permeability fields
 clay_cap = ClayCap(mesh, bounds_geom_cap, n_terms, coef_sds)
-perm_field_ext = PermeabilityField(mesh, grf_3d, mu_perm_ext, bounds_perm_ext)
-perm_field_flt = PermeabilityField(mesh, grf_3d, mu_perm_flt, bounds_perm_flt)
-perm_field_cap = PermeabilityField(mesh, grf_3d, mu_perm_cap, bounds_perm_cap)
+perm_field_ext = PermField(mesh, grf_3d, bounds_perm_ext, levels_ext)
+perm_field_flt = PermField(mesh, grf_3d, bounds_perm_flt, levels_flt)
+perm_field_cap = PermField(mesh, grf_3d, bounds_perm_cap, levels_cap)
 
 """
-Channel
+Fault
 """
 
-# Bounds for amplitude, period, angle, intercept, width
-bounds_channel = [(-200, 200), (500, 1500), (-np.pi/8, np.pi/8), 
-                  (650, 850), (75, 150)]
+bounds_fault = [(500, 1000), (500, 1000), (100, 200)]
 
 mu_upflow = 1.5e-6
-
-# Bounds for marginal standard deviations and x, y lengthscales
 bounds_upflow = [(0.1e-6, 0.5e-6), (200, 1000), (200, 1000)]
 
-channel = Channel(mesh, bounds_channel)
+fault = Fault(mesh, bounds_fault)
 upflow_field = UpflowField(mesh, grf_2d, mu_upflow, bounds_upflow)
 
 """
 Prior
 """
 
-level_width = 0.25
-
-prior = ChannelPrior(mesh, clay_cap, channel, perm_field_ext, 
+prior = ChannelPrior(mesh, clay_cap, fault, perm_field_ext, 
                      perm_field_flt, perm_field_cap, 
-                     upflow_field, level_width)
+                     upflow_field)
 
 """
 Timestepping 
@@ -166,7 +179,7 @@ dt = SECS_PER_WEEK
 tmax = 52 * SECS_PER_WEEK
 
 """
-Model functions
+Plotting functions
 """
 
 def plot_vals_on_mesh(mesh, vals):
@@ -218,6 +231,9 @@ def plot_wells(mesh, perms, wells: list[Well]):
     #     p.add_lines(well.coords, color="black", width=5)
     p.show()
 
+"""
+Model functions
+"""
 
 def run_model(white_noise):
 

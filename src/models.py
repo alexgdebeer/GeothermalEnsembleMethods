@@ -21,6 +21,17 @@ EPS = 1e-8
 def gauss_to_unif(x, lb, ub):
     return lb + stats.norm.cdf(x) * (ub - lb)
 
+def transform_pars(pars, bounds):
+
+    if len(pars) != len(bounds):
+        raise Exception("Number of parameters != number of bounds")
+    
+    pars_trans = [
+        gauss_to_unif(par, *bound) 
+        for par, bound in zip(pars, bounds)]
+
+    return pars_trans
+
 class ExitFlag(Enum):
     SUCCESS = 1
     FAILURE = 2
@@ -190,6 +201,35 @@ class Channel():
         cols = [col for col in self.mesh.m.column if in_channel(*col.centre, *pars)]
         cells = [cell for col in cols for cell in col.cell]
         return cells, cols
+
+class Fault():
+
+    def __init__(self, mesh: IrregularMesh, bounds):
+        
+        self.mesh = mesh
+        self.x0 = self.mesh.m.bounds[0][0]
+        self.x1 = self.mesh.m.bounds[1][0]
+        self.bounds = bounds
+        self.n_params = 3
+
+    def get_cells_in_fault(self, pars):
+        """Returns the cells and columns contained within the fault 
+        specified by a given set of parameters."""
+        
+        def in_fault(x, y, y0, y1, w):
+            dx = (x - self.x0) / (self.x1 - self.x0)
+            cy = y0 + (y1 - y0) * dx
+            return cy - (w/2) <= y <= cy + (w/2)
+
+        pars = transform_pars(pars, self.bounds)
+
+        cols = [
+            col for col in self.mesh.m.column 
+            if in_fault(*col.centre, *pars)]
+        
+        cells = [cell for col in cols for cell in col.cell]
+        return cells, cols
+        
 
 class ClayCap():
 
