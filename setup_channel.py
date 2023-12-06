@@ -20,7 +20,7 @@ class ChannelPrior():
     def __init__(self, mesh: IrregularMesh, cap: ClayCap, 
                  fault: Fault, grf_ext: PermField, 
                  grf_flt: PermField, grf_cap: PermField, 
-                 grf_upflow: UpflowField):
+                 grf_upflow: UpflowField, ls_upflows):
 
         self.mesh = mesh 
 
@@ -30,6 +30,8 @@ class ChannelPrior():
         self.grf_flt = grf_flt
         self.grf_cap = grf_cap
         self.grf_upflow = grf_upflow
+
+        self.compute_upflow_weightings(ls_upflows)
 
         self.param_counts = [0, cap.n_params, fault.n_params, 
                              grf_ext.n_params, grf_flt.n_params, 
@@ -46,6 +48,17 @@ class ChannelPrior():
             "grf_cap"    : np.arange(*self.param_inds[4:6]),
             "grf_upflow" : np.arange(*self.param_inds[5:7])
         }
+
+    def compute_upflow_weightings(self, lengthscale):
+
+        mesh_centre = self.mesh.m.centre[:2]
+        col_centres = np.array([c.centre for c in self.mesh.m.column])
+        
+        dxy = col_centres - mesh_centre
+        ds = np.sum(-((dxy / lengthscale) ** 2), axis=1)
+
+        upflow_weightings = np.exp(ds)
+        self.upflow_weightings = upflow_weightings
 
     def transform(self, params):
 
@@ -69,10 +82,8 @@ class ChannelPrior():
         perms[fault_cell_inds] = perms_flt[fault_cell_inds]
         perms[cap_cell_inds] = perms_cap[cap_cell_inds]
 
-        upflow_weightings = self.cap.get_upflow_weightings(params[self.inds["cap"]], self.mesh)
-
         upflow_rates = self.grf_upflow.get_upflows(params[self.inds["grf_upflow"]])
-        upflow_rates *= upflow_weightings
+        upflow_rates *= self.upflow_weightings
         upflow_rates = upflow_rates[fault_col_inds]
         upflow_cells = [col.cell[-1] for col in fault_cols]
 
@@ -90,8 +101,8 @@ Model parameters
 
 mesh = IrregularMesh(MESH_NAME)
 
-well_xs = [500, 550, 1250, 750]
-well_ys = [750, 500, 1250, 750]
+well_xs = [450, 750, 1000, 700, 525, 950,  825, 400, 1100]
+well_ys = [775, 750,  750, 475, 975, 525, 1025, 425, 1050]
 n_wells = len(well_xs)
 well_depths = [-750] * n_wells
 feedzone_depths = [-600] * n_wells
@@ -105,20 +116,13 @@ wells = [Well(x, y, depth, mesh, fz_depth, fz_rate)
 Clay cap
 """
 
-# Bounds for centre of cap (x, y, z coordinates), width (horizontal and 
-# vertical) and dip
-bounds_geom_cap = [(700, 800), (700, 800), (-300, -225),
-                   (425, 475), (50, 75), (100, 200)]
+# Bounds for depth of clay cap, width (horizontal and vertical) and dip
+bounds_geom_cap = [(-300, -225), (425, 475), (50, 75), (100, 200)]
 n_terms = 5
 coef_sds = 5
 
-# Mean of the (log-)permeabilities in the exterior, fault and clay cap
-mu_perm_ext = -14
-mu_perm_flt = -13
-mu_perm_cap = -16
-
 # Bounds for marginal standard deviations and x, y, z lengthscales
-bounds_perm_ext = [(0.75, 1.25), (1000, 2000), (1000, 2000), (200, 800)]
+bounds_perm_ext = [(0.75, 1.5), (1000, 2000), (1000, 2000), (200, 800)]
 bounds_perm_flt = [(0.5, 1.0), (1000, 2000), (1000, 2000), (200, 800)]
 bounds_perm_cap = [(0.5, 1.0), (1000, 2000), (1000, 2000), (200, 800)]
 
@@ -155,9 +159,9 @@ perm_field_cap = PermField(mesh, grf_3d, bounds_perm_cap, levels_cap)
 Fault
 """
 
-bounds_fault = [(500, 1000), (500, 1000), (100, 200)]
+bounds_fault = [(400, 1100), (400, 1100), (100, 150)]
 
-mu_upflow = 1.5e-6
+mu_upflow = 1.0e-4
 bounds_upflow = [(0.1e-6, 0.5e-6), (200, 1000), (200, 1000)]
 
 fault = Fault(mesh, bounds_fault)
@@ -167,9 +171,11 @@ upflow_field = UpflowField(mesh, grf_2d, mu_upflow, bounds_upflow)
 Prior
 """
 
+ls_upflows = 400
+
 prior = ChannelPrior(mesh, clay_cap, fault, perm_field_ext, 
                      perm_field_flt, perm_field_cap, 
-                     upflow_field)
+                     upflow_field, ls_upflows)
 
 """
 Timestepping 
@@ -182,13 +188,13 @@ tmax = 52 * SECS_PER_WEEK
 Plotting functions
 """
 
-def plot_vals_on_mesh(mesh, vals):
+def plot_vals_on_mesh(mesh: IrregularMesh, vals):
 
     cell_centres = mesh.fem_mesh.cell_centers().points
     cell_vals = [vals[mesh.m.find(c, indices=True)] for c in cell_centres]
     
     mesh.fem_mesh["values"] = cell_vals
-    slices = mesh.fem_mesh.slice_along_axis(n=5, axis="x")
+    slices = mesh.fem_mesh.slice_along_axis(n=5, axis="y")
     slices.plot(scalars="values", cmap="turbo")
 
 def plot_upflows(mesh, upflows):
@@ -199,7 +205,7 @@ def plot_upflows(mesh, upflows):
 
     mesh.m.layer_plot(value=values, colourmap="coolwarm")
 
-def plot_wells(mesh, perms, wells: list[Well]):
+def plot_wells(mesh, perms, wells):
 
     def get_well_tubes(wells: list[Well]):
         
