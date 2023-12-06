@@ -374,29 +374,3 @@ class Gaussian1D():
         """Transforms a set of whitened variates to the correct 
         distribution."""
         return self.mu + self.chol @ ws
-
-# class Gaussian2D():
-#     """2D Gaussian distribution with squared-exponential covariance function."""
-
-#     def __init__(self, mu, std, lx, lz, cells):
-        
-#         self.cells = cells
-#         self.cell_xs = np.array([c.centre[0] for c in cells])
-#         self.cell_zs = np.array([c.centre[-1] for c in cells])
-#         self.n_cells = len(cells)
-
-#         self.std = std 
-#         self.lx = lx
-#         self.lz = lz
-
-#         self.mu = np.array([mu] * self.n_cells)
-#         self.generate_cov()
-
-#     def generate_cov(self):
-
-#         self.x_dists = self.cell_xs[:, np.newaxis] - self.cell_xs.T
-#         self.z_dists = self.cell_zs[:, np.newaxis] - self.cell_zs.T
-
-#         self.cor = np.exp(-0.5 * (self.x_dists / self.lx) ** 2 + \
-#                           -0.5 * (self.z_dists / self.lz) ** 2)
-#         self.cov = self.std ** 2 * self.cor + 1e-8 * np.eye(self.n_cells)
