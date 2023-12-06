@@ -321,7 +321,7 @@ class MaternField3D(MaternField):
         
         if bcs == BC.ROBIN:
             if lam is None:
-                lam = 1.42 * np.sqrt(lx * ly * lz)
+                lam = 1e+3 * np.cbrt(lx * ly * lz)
             A = self.M + K + (lx * ly * lz / lam) * self.N 
 
         elif bcs == BC.NEUMANN:
