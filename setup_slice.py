@@ -2,13 +2,13 @@
 
 import numpy as np
 from scipy import sparse, stats 
-from scipy.interpolate import RegularGridInterpolator
 
 from src.consts import SECS_PER_WEEK
+from src.data_handlers import *
 from src.grfs import *
 from src.models import *
 
-np.random.seed(9) # 11 not bad
+np.random.seed(24) # 9, 11, 24 not bad
 
 DATA_FOLDER = "data/slice"
 MODEL_FOLDER = "models/slice"
@@ -108,135 +108,6 @@ class SlicePrior():
         hps_deep = self.grf_deep.get_hyperparams(ws[self.inds["grf_deep"]])
         return hps_shal, hps_clay, hps_deep
 
-class DataHandler():
-
-    def __init__(self, mesh: SliceMesh, temp_obs_xs, temp_obs_zs,
-                 prod_obs_ts, tmax, nt):
-
-        self.mesh = mesh
-
-        self.n_wells = len(well_xs)
-        self.tmax = tmax 
-        self.ts = np.linspace(0, tmax, nt+1)
-        self.nt = nt
-        
-        # Temperature observation coordinates
-        self.temp_obs_xs = temp_obs_xs
-        self.temp_obs_zs = temp_obs_zs
-        self.temp_obs_cs = np.array([[x, z] for z in temp_obs_zs 
-                                     for x in temp_obs_xs])
-        
-        # Production observation times
-        self.prod_obs_ts = prod_obs_ts
-        self.inds_prod_obs = np.searchsorted(self.ts, prod_obs_ts-EPS)
-
-        self.n_prod_obs_ts = len(self.prod_obs_ts)
-
-        self.n_temp_full = self.mesh.nx * self.mesh.nz 
-        self.n_pres_full = (self.nt+1) * self.n_wells
-        self.n_enth_full = (self.nt+1) * self.n_wells
-
-        self.n_temp_obs = len(self.temp_obs_cs)
-        self.n_pres_obs = self.n_prod_obs_ts * self.n_wells
-        self.n_enth_obs = self.n_prod_obs_ts * self.n_wells
-
-        self.generate_inds_full()
-        self.generate_inds_obs()
-
-    def generate_inds_full(self):
-        """Generates indices used to extract temperatures, pressures 
-        and enthalpies from a vector of complete data."""
-        self.inds_full_temp = np.arange(self.n_temp_full)
-        self.inds_full_pres = np.arange(self.n_pres_full) + 1 + self.inds_full_temp[-1]
-        self.inds_full_enth = np.arange(self.n_enth_full) + 1 + self.inds_full_pres[-1]
-
-    def generate_inds_obs(self):
-        """Generates indices used to extract temperatures, pressures 
-        and enthalpy observations from a vector of observations."""
-        self.inds_obs_temp = np.arange(self.n_temp_obs)
-        self.inds_obs_pres = np.arange(self.n_pres_obs) + 1 + self.inds_obs_temp[-1]
-        self.inds_obs_enth = np.arange(self.n_enth_obs) + 1 + self.inds_obs_pres[-1]
-
-    def get_full_temperatures(self, F_i):
-        """Extracts the temperatures from a set of data."""
-        temp = F_i[self.inds_full_temp]
-        temp = np.reshape(temp, (self.mesh.nz, self.mesh.nx)) # TODO: check
-        return temp
-    
-    def get_full_pressures(self, F_i):
-        """Extracts the pressures from a complete set of data."""
-        pres = F_i[self.inds_full_pres]
-        return self.reshape_obs(pres)
-
-    def get_full_enthalpies(self, F_i):
-        """Extracts the enthalpies from a complete set of data."""
-        enth = F_i[self.inds_full_enth]
-        return self.reshape_obs(enth)
-    
-    def get_full_states(self, F_i):
-        temp = self.get_full_temperatures(F_i)
-        pres = self.get_full_pressures(F_i)
-        enth = self.get_full_enthalpies(F_i)
-        return temp, pres, enth 
-    
-    def get_obs_temperatures(self, temp_full):
-        """Extracts the temperatures at each observation point from a 
-        full set of temperatures."""
-        mesh_coords = (self.mesh.xs, self.mesh.zs)
-        interpolator = RegularGridInterpolator(mesh_coords, temp_full.T)
-        temp_obs = interpolator(self.temp_obs_cs) # TODO: check
-        return self.reshape_obs(temp_obs)
-    
-    def get_obs_pressures(self, pres_full):
-        """Extracts the pressures at each observation location from a 
-        full set of pressures."""
-        return pres_full[self.inds_prod_obs, :]
-
-    def get_obs_enthalpies(self, enth_full):
-        """Extracts the enthalpies at each observation location from a
-        full set of enthalpies."""
-        return enth_full[self.inds_prod_obs, :]
-    
-    def get_obs_states(self, F_i):
-        """Extracts the observations from a complete vector of model 
-        output, and returns each type of observation individually."""
-        temp_full, pres_full, enth_full = self.get_full_states(F_i)
-        temp_obs = self.get_obs_temperatures(temp_full)
-        pres_obs = self.get_obs_pressures(pres_full)
-        enth_obs = self.get_obs_enthalpies(enth_full)
-        return temp_obs, pres_obs, enth_obs
-    
-    def get_obs(self, F_i):
-        """Extracts the observations from a complete vector of model
-        output, and returns them as a vector."""
-        temp_obs, pres_obs, enth_obs = self.get_obs_states(F_i)
-        obs = np.concatenate((temp_obs.flatten(), 
-                              pres_obs.flatten(), 
-                              enth_obs.flatten()))
-        return obs
-    
-    def reshape_obs(self, obs):
-        """Reshapes observations 2D arrays such that each row contains
-        the observations for a single well."""
-        return np.reshape(obs, (-1, self.n_wells))
-
-    def split_obs(self, G_i):
-        """Splits a set of observations into temperatures, pressures 
-        and enthalpies."""
-        temp_obs = self.reshape_obs(G_i[self.inds_obs_temp])
-        pres_obs = self.reshape_obs(G_i[self.inds_obs_pres])
-        enth_obs = self.reshape_obs(G_i[self.inds_obs_enth])
-        return temp_obs, pres_obs, enth_obs
-    
-    def downhole_temps(self, temps):
-        """Generates the downhole temperatures for a given well.
-        TODO: cut off at well depths?"""
-        mesh_coords = (self.mesh.xs, self.mesh.zs)
-        interpolator = RegularGridInterpolator(mesh_coords, temps.T)
-        well_coords = np.array([[x, z] for z in self.mesh.zs for x in self.temp_obs_xs])
-        temp_well = interpolator(well_coords)
-        return self.reshape_obs(temp_well)
-
 """
 Meshes
 """
@@ -293,10 +164,12 @@ Observations
 """
 
 temp_obs_zs = np.array([-300, -500, -700, -900, -1100, -1300])
+temp_obs_cs = np.array([[x, z] for z in temp_obs_zs for x in well_xs])
+
 prod_obs_ts = np.array([0, 13, 26, 39, 52]) * SECS_PER_WEEK
 
-data_handler_crse = DataHandler(mesh_crse, well_xs, temp_obs_zs, prod_obs_ts, tmax, nt)
-data_handler_fine = DataHandler(mesh_fine, well_xs, temp_obs_zs, prod_obs_ts, tmax, nt)
+data_handler_crse = DataHandler2D(mesh_crse, wells_crse, temp_obs_cs, prod_obs_ts, tmax, nt)
+data_handler_fine = DataHandler2D(mesh_fine, wells_crse, temp_obs_cs, prod_obs_ts, tmax, nt)
 
 noise_level = 0.02
 
@@ -430,6 +303,5 @@ if READ_TRUTH:
     y, C_e = read_data()
 
 else:
-    w_t, p_t, F_t, G_t = generate_truth(mesh_fine, model_name_fine, 
-                                        wells_fine, upflow_cell_fine)
+    w_t, p_t, F_t, G_t = generate_truth()
     y, C_e = generate_data(G_t)

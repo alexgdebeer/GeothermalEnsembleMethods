@@ -14,6 +14,7 @@ class DataHandler(ABC):
         self.mesh = mesh
         self.cell_cs = np.array([c.centre for c in mesh.m.cell])
 
+        self.wells = wells
         self.n_wells = len(wells)
         self.feedzone_coords = np.array([w.feedzone_cell.centre for w in wells])
 
@@ -57,9 +58,9 @@ class DataHandler(ABC):
         contains the observations for a single well."""
         return np.reshape(obs, (-1, self.n_wells))
 
+    @abstractmethod
     def get_full_temperatures(self, F_i):
-        temp = F_i[self.inds_full_temp]
-        return temp
+        raise NotImplementedError()
     
     def get_full_pressures(self, F_i):
         pres = F_i[self.inds_full_pres]
@@ -117,6 +118,11 @@ class DataHandler(ABC):
 
 class DataHandler2D(DataHandler):
 
+    def get_full_temperatures(self, F_i):
+        temp = F_i[self.inds_full_temp]
+        temp = np.reshape(temp, (self.mesh.nz, self.mesh.nx)) # TODO: check
+        return temp
+
     def get_obs_temperatures(self, temp_full):
         """Extracts the temperatures at each observation point from a 
         full set of temperatures."""
@@ -131,11 +137,19 @@ class DataHandler2D(DataHandler):
         TODO: cut off at well depths?"""
         mesh_coords = (self.mesh.xs, self.mesh.zs)
         interpolator = RegularGridInterpolator(mesh_coords, temps.T)
-        well_coords = np.array([[x, z] for z in self.mesh.zs for x in self.temp_obs_xs])
-        temp_well = interpolator(well_coords)
-        return self.reshape_obs(temp_well)
+
+        downhole_coords = np.array([[w.x, z] 
+                                    for z in self.mesh.zs
+                                    for w in self.wells])
+        
+        temp_well = interpolator(downhole_coords)
+        return self.reshape_to_wells(temp_well)
 
 class DataHandler3D(DataHandler):
+
+    def get_full_temperatures(self, F_i):
+        temp = F_i[self.inds_full_temp]
+        return temp
 
     def get_obs_temperatures(self, temp_full):
         """Extracts the temperatures at each observation point from a 
