@@ -4,11 +4,11 @@ This repository contains code for running ensemble Kalman methods for approximat
 
 ## Running Locally
 
-To run the code in this repository on a local machine, first install Python >= 3.8. Then, create a virtual environment with the project dependencies by running the following at the command line:
+To run the code in this repository on a local machine, first install Python >= 3.8. 
+
+Then, install the project dependencies by running the following at the command line:
 ```
-python3.{VERSION} -m venv venv
-source venv/bin/activate 
-pip install -r requirements.txt
+python3.{VERSION} -m pip install -r requirements.txt
 ```
 where ```{VERSION}``` is replaced with your version of Python.
 
@@ -16,9 +16,10 @@ where ```{VERSION}``` is replaced with your version of Python.
 ### Slice
  - N/A
 ### Channel
+ - Update feedzone rates.
  - Generate and visualise data.
  - Tune Robin parameter on Matern fields.
- - Figure out what the level width should be.
+ - Figure out what the level set lengthscales and standard deviations should be.
  - Set up mechanism to save true parameters, states and data to file.
  - Develop method for visualising the convective plume of the model.
  - Think about inverse crimes (i.e. consider making a finer model)
