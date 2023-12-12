@@ -14,7 +14,7 @@ MASS_ENTHALPY = 1.5e+6
 HEAT_RATE = 0.2
 
 MAX_NS_TSTEPS = 500
-MAX_PR_TSTEPS = 1000
+MAX_PR_TSTEPS = 200
 NS_STEPSIZE = 1.0e+15
 
 MSG_END_TIME = ["info", "timestep", "end_time_reached"]
