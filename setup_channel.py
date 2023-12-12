@@ -2,111 +2,43 @@
 
 import numpy as np
 
-from src.consts import *
+from src.consts import SECS_PER_WEEK
+from src.data_handlers import DataHandler3D
 from src.grfs import *
 from src.models import *
+from src.priors import ChannelPrior
 
-# np.random.seed(2)
+np.random.seed(6) # 6 good
+
+DATA_FOLDER = "data/channel"
+MODEL_FOLDER = "models/channel"
+W_TRUE_PATH = f"{DATA_FOLDER}/w_true.npy"
+P_TRUE_PATH = f"{DATA_FOLDER}/p_true.npy"
+F_TRUE_PATH = f"{DATA_FOLDER}/F_true.npy"
+G_TRUE_PATH = f"{DATA_FOLDER}/G_true.npy"
+OBS_PATH = f"{DATA_FOLDER}/obs.npy"
+COV_PATH = f"{DATA_FOLDER}/C_e.npy"
+
+READ_TRUTH = True 
 
 MESH_NAME = "models/channel/gCH"
 MODEL_NAME = "models/channel/CH"
 
 """
-Classes
-"""
-
-class ChannelPrior():
-
-    def __init__(self, mesh: IrregularMesh, cap: ClayCap, 
-                 fault: Fault, grf_ext: PermField, 
-                 grf_flt: PermField, grf_cap: PermField, 
-                 grf_upflow: UpflowField, ls_upflows):
-
-        self.mesh = mesh 
-
-        self.cap = cap
-        self.fault = fault
-        self.grf_ext = grf_ext 
-        self.grf_flt = grf_flt
-        self.grf_cap = grf_cap
-        self.grf_upflow = grf_upflow
-
-        self.compute_upflow_weightings(ls_upflows)
-
-        self.param_counts = [0, cap.n_params, fault.n_params, 
-                             grf_ext.n_params, grf_flt.n_params, 
-                             grf_cap.n_params, grf_upflow.n_params]
-        
-        self.n_params = sum(self.param_counts)
-        self.param_inds = np.cumsum(self.param_counts)
-
-        self.inds = {
-            "cap"        : np.arange(*self.param_inds[0:2]),
-            "fault"      : np.arange(*self.param_inds[1:3]),
-            "grf_ext"    : np.arange(*self.param_inds[2:4]),
-            "grf_flt"    : np.arange(*self.param_inds[3:5]),
-            "grf_cap"    : np.arange(*self.param_inds[4:6]),
-            "grf_upflow" : np.arange(*self.param_inds[5:7])
-        }
-
-    def compute_upflow_weightings(self, lengthscale):
-
-        mesh_centre = self.mesh.m.centre[:2]
-        col_centres = np.array([c.centre for c in self.mesh.m.column])
-        
-        dxy = col_centres - mesh_centre
-        ds = np.sum(-((dxy / lengthscale) ** 2), axis=1)
-
-        upflow_weightings = np.exp(ds)
-        self.upflow_weightings = upflow_weightings
-
-    def transform(self, params):
-
-        params = np.squeeze(params)
-
-        cap_cell_inds = self.cap.get_cells_in_cap(params[self.inds["cap"]])
-
-        perms_ext = self.grf_ext.get_perms(params[self.inds["grf_ext"]])
-        perms_flt = self.grf_flt.get_perms(params[self.inds["grf_flt"]])
-        perms_cap = self.grf_cap.get_perms(params[self.inds["grf_cap"]])
-
-        perms_ext = self.grf_ext.level_set(perms_ext)
-        perms_flt = self.grf_flt.level_set(perms_flt)
-        perms_cap = self.grf_cap.level_set(perms_cap)
-
-        fault_cells, fault_cols = self.fault.get_cells_in_fault(params[self.inds["fault"]])
-        fault_cell_inds = [c.index for c in fault_cells]
-        fault_col_inds = [c.index for c in fault_cols]
-
-        perms = np.copy(perms_ext)
-        perms[fault_cell_inds] = perms_flt[fault_cell_inds]
-        perms[cap_cell_inds] = perms_cap[cap_cell_inds]
-
-        upflow_rates = self.grf_upflow.get_upflows(params[self.inds["grf_upflow"]])
-        upflow_rates *= self.upflow_weightings
-        upflow_rates = upflow_rates[fault_col_inds]
-        upflow_cells = [col.cell[-1] for col in fault_cols]
-
-        upflows = [MassUpflow(c, max(r, 0.0)) 
-                   for c, r in zip(upflow_cells, upflow_rates)]
-
-        return perms, upflows
-
-    def sample(self, n=1):
-        return np.random.normal(size=(n, self.n_params))
-
-"""
 Model parameters
 """
+
+tmax, nt = 104.0 * SECS_PER_WEEK, 24
+dt = tmax / nt
 
 mesh = IrregularMesh(MESH_NAME)
 
 well_xs = [450, 750, 1000, 700, 525, 950,  825, 400, 1100]
 well_ys = [775, 750,  750, 475, 975, 525, 1025, 425, 1050]
 n_wells = len(well_xs)
-well_depths = [-750] * n_wells
-feedzone_depths = [-600] * n_wells
-feedzone_rates = [-0.2] * n_wells
+well_depths = [-800] * n_wells
+feedzone_depths = [-500] * n_wells
+feedzone_rates = [-1.5] * n_wells # TODO: change...
 
 wells = [Well(x, y, depth, mesh, fz_depth, fz_rate)
          for (x, y, depth, fz_depth, fz_rate) 
@@ -131,11 +63,11 @@ grf_3d = MaternField3D(mesh)
 
 def levels_ext(p):
     """Level set mapping for all non-fault and non-cap regions."""
-    if   p < -1.5: return -15.0
-    elif p < -0.5: return -14.5
-    elif p <  0.5: return -14.0
-    elif p <  1.5: return -13.5
-    else: return -13.0
+    if   p < -1.5: return -15.5
+    elif p < -0.5: return -15.0
+    elif p <  0.5: return -14.5
+    elif p <  1.5: return -14.0
+    else: return -13.5
 
 def levels_flt(p):
     """Level set mapping for fault."""
@@ -168,21 +100,43 @@ fault = Fault(mesh, bounds_fault)
 upflow_field = UpflowField(mesh, grf_2d, mu_upflow, bounds_upflow)
 
 """
+Observations
+"""
+
+temp_obs_zs = [-200, -300, -400, -500, -600, -700, -800]
+temp_obs_cs = np.array([[x, y, z] 
+                        for z in temp_obs_zs 
+                        for x, y in zip(well_xs, well_ys)])
+
+prod_obs_ts = np.array([0, 13, 26, 39, 52]) * SECS_PER_WEEK
+
+data_handler = DataHandler3D(mesh, wells, temp_obs_cs, prod_obs_ts, tmax, nt)
+
+"""
+Ensemble functions
+"""
+
+def generate_particle(p_i, num):
+    name = f"{MODEL_NAME}_{num}"
+    logks_t, upflows_t = prior.split(p_i)
+    model = Model3D(name, mesh, logks_t, wells, upflows_t, dt, tmax)
+    return model
+
+def get_result(particle: Model3D):
+    F_i = particle.get_pr_data() # May need to change this to just return enthalpies...
+    G_i = data_handler.get_obs(F_i)
+    return F_i, G_i
+
+"""
 Prior
 """
 
+# Parameter associated with Gaussian kernel for upflows
 ls_upflows = 400
 
 prior = ChannelPrior(mesh, clay_cap, fault, perm_field_ext, 
                      perm_field_flt, perm_field_cap, 
                      upflow_field, ls_upflows)
-
-"""
-Timestepping 
-"""
-
-dt = SECS_PER_WEEK
-tmax = 52 * SECS_PER_WEEK
 
 """
 Plotting functions
@@ -258,20 +212,75 @@ def run_model(white_noise):
 Truth generation
 """
 
-white_noise = prior.sample()
-flag = run_model(white_noise)
+noise_level = 0.02
 
-print(flag)
+def generate_truth():
 
-import h5py
+    w_t = prior.sample()
+    p_t = prior.transform(w_t)
 
-with h5py.File(f"{MODEL_NAME}_PR.h5", "r") as f:
+    logks_t, upflows_t = prior.split(p_t)
 
-    cell_inds = f["cell_index"][:, 0]
-    src_inds = f["source_index"][:, 0]
+    model_t = Model3D(MODEL_NAME, mesh, logks_t, wells, upflows_t, dt, tmax)
+
+    plot_wells(mesh, logks_t, wells)
+    plot_vals_on_mesh(mesh, logks_t)
+    plot_upflows(mesh, upflows_t)
     
-    temps = f["cell_fields"]["fluid_temperature"][0][cell_inds]
+    if model_t.run() != ExitFlag.SUCCESS:
+        raise Exception("Truth failed to run.")
 
-plot_vals_on_mesh(mesh, temps)
+    F_t = model_t.get_pr_data()
+    G_t = data_handler.get_obs(F_t)
 
-# mesh.m.slice_plot(value=ts, colourmap="coolwarm")
+    np.save(W_TRUE_PATH, w_t)
+    np.save(P_TRUE_PATH, p_t)
+    np.save(F_TRUE_PATH, F_t)
+    np.save(G_TRUE_PATH, G_t)
+
+    temps = data_handler.get_full_temperatures(F_t)
+    plot_vals_on_mesh(mesh, temps)
+    return w_t, p_t, F_t, G_t
+
+def read_truth():
+
+    w_t = np.load(W_TRUE_PATH)
+    p_t = np.load(P_TRUE_PATH)
+    F_t = np.load(F_TRUE_PATH)
+    G_t = np.load(G_TRUE_PATH)
+    
+    return w_t, p_t, F_t, G_t
+
+def generate_data(G_t):
+
+    temp_t, pres_t, enth_t = data_handler.split_obs(G_t)
+
+    cov_temp = (noise_level * np.max(temp_t)) ** 2 * np.eye(temp_t.size)
+    cov_pres = (noise_level * np.max(pres_t)) ** 2 * np.eye(pres_t.size)
+    cov_enth = (noise_level * np.max(enth_t)) ** 2 * np.eye(enth_t.size)
+
+    C_e = sparse.block_diag((cov_temp, cov_pres, cov_enth)).toarray()
+    y = np.random.multivariate_normal(G_t, C_e)
+
+    np.save(OBS_PATH, y)
+    np.save(COV_PATH, C_e)
+
+    return y, C_e
+
+def read_data():
+    y = np.load(OBS_PATH)
+    C_e = np.load(COV_PATH)
+    return y, C_e
+
+if READ_TRUTH:
+    w_t, p_t, F_t, G_t = read_truth()
+    y, C_e = read_data()
+
+else:
+    w_t, p_t, F_t, G_t = generate_truth()
+    y, C_e = generate_data(G_t)
+
+# This won't work with a fine / coarse model setup
+Np = len(p_t)
+NF = len(F_t)
+NG = len(y) # This will though
