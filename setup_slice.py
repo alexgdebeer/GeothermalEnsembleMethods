@@ -1,12 +1,13 @@
 """Setup script for 2D vertical slice model."""
 
 import numpy as np
-from scipy import sparse, stats 
+from scipy import sparse
 
 from src.consts import SECS_PER_WEEK
 from src.data_handlers import *
 from src.grfs import *
 from src.models import *
+from src.priors import SlicePrior
 
 np.random.seed(24) # 9, 11, 24 not bad
 
@@ -21,92 +22,6 @@ OBS_PATH = f"{DATA_FOLDER}/obs.npy"
 COV_PATH = f"{DATA_FOLDER}/C_e.npy"
 
 READ_TRUTH = True
-
-"""
-Classes
-"""
-
-class SlicePrior():
-
-    def __init__(self, mesh, depth_shal, gp_boundary, 
-                 grf_shal, grf_clay, grf_deep,
-                 mass_rate_bounds):
-
-        self.mesh = mesh
-
-        self.depth_shal = depth_shal
-        self.gp_boundary = gp_boundary
-        
-        self.grf_shal = grf_shal
-        self.grf_clay = grf_clay
-        self.grf_deep = grf_deep
-
-        self.mass_rate_bounds = mass_rate_bounds
-
-        self.param_counts = [0, gp_boundary.n_params, 
-                             grf_shal.n_params, grf_clay.n_params, 
-                             grf_deep.n_params, 1]
-
-        self.n_params = sum(self.param_counts)
-        self.param_inds = np.cumsum(self.param_counts)
-
-        self.inds = {
-            "boundary" : np.arange(*self.param_inds[0:2]),
-            "grf_shal" : np.arange(*self.param_inds[1:3]),
-            "grf_clay" : np.arange(*self.param_inds[2:4]),
-            "grf_deep" : np.arange(*self.param_inds[3:5])
-        }
-
-    def combine_perms(self, boundary, perms_shal, perms_clay, perms_deep):
-
-        perms = np.zeros((perms_shal.shape))
-        for i, cell in enumerate(self.mesh.m.cell):
-
-            cx, _, cz = cell.centre
-            x_ind = np.abs(self.gp_boundary.xs - cx).argmin()
-
-            if cz > self.depth_shal:
-                perms[i] = perms_shal[i]
-            elif cz > boundary[x_ind]:
-                perms[i] = perms_clay[i]
-            else: 
-                perms[i] = perms_deep[i]
-
-        return perms
-
-    def transform_mass_rate(self, mass_rate):
-        return self.mass_rate_bounds[0] + \
-            np.ptp(self.mass_rate_bounds) * stats.norm.cdf(mass_rate)
-
-    def transform(self, ws):
-
-        ws = np.squeeze(ws)
-
-        perms_shal = self.grf_shal.get_perms(ws[self.inds["grf_shal"]])
-        perms_clay = self.grf_clay.get_perms(ws[self.inds["grf_clay"]])
-        perms_deep = self.grf_deep.get_perms(ws[self.inds["grf_deep"]])
-
-        perms_shal = self.grf_shal.level_set(perms_shal)
-        perms_clay = self.grf_clay.level_set(perms_clay)
-        perms_deep = self.grf_deep.level_set(perms_deep)
-
-        boundary = self.gp_boundary.transform(ws[self.inds["boundary"]])
-        perms = self.combine_perms(boundary, perms_shal, perms_clay, perms_deep)
-
-        mass_rate = ws[-1]
-        mass_rate = self.transform_mass_rate(mass_rate)
-        
-        ps = np.append(perms, mass_rate)
-        return ps
-
-    def sample(self, n=1):
-        return np.random.normal(size=(self.n_params, n))
-
-    def get_hyperparams(self, ws):
-        hps_shal = self.grf_shal.get_hyperparams(ws[self.inds["grf_shal"]])
-        hps_clay = self.grf_clay.get_hyperparams(ws[self.inds["grf_clay"]])
-        hps_deep = self.grf_deep.get_hyperparams(ws[self.inds["grf_deep"]])
-        return hps_shal, hps_clay, hps_deep
 
 """
 Meshes
