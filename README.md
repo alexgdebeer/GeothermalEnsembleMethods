@@ -16,15 +16,10 @@ where ```{VERSION}``` is replaced with your version of Python.
 ### Slice
  - N/A
 ### Channel
- - Update feedzone rates.
  - Generate and visualise data.
  - Tune Robin parameter on Matern fields.
- - Figure out what the level set lengthscales and standard deviations should be.
- - Set up mechanism to save true parameters, states and data to file.
- - Develop method for visualising the convective plume of the model.
  - Think about inverse crimes (i.e. consider making a finer model)
 ### Both Models
- - Read paper on how to adjust ensemble covariance when defining Gaussian based on successful ensemble members.
  - Check everything carefully!
 ### Ensemble Methods
  - Fix EnRML code.
