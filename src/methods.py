@@ -7,6 +7,7 @@ from scipy.linalg import inv, sqrtm
 from src import utils
 from src.models import *
 
+EPS_IMPUTERS = 1e-4
 TOL = 1e-8
 
 class Imputer(ABC):
@@ -24,7 +25,7 @@ class GaussianImputer(Imputer):
         n_fail = len(inds_fail)
 
         mu = np.mean(ws[:, inds_succ], axis=1)
-        cov = np.cov(ws[:, inds_succ]) + 1e-4 * np.eye(len(mu)) # TODO: read paper on this
+        cov = np.cov(ws[:, inds_succ]) + EPS_IMPUTERS * np.eye(len(mu))
         
         ws[:, inds_fail] = np.random.multivariate_normal(mu, cov, size=n_fail).T
         return ws
@@ -34,8 +35,12 @@ class ResamplingImputer(Imputer):
     replacement) from the successful ensemble members."""
 
     def impute(self, ws, inds_succ, inds_fail):
+
+        size = (ws.shape[0], len(inds_fail))
+        perturbations = EPS_IMPUTERS * np.random.normal(size=size)
+
         inds_rep = np.random.choice(inds_succ, size=len(inds_fail))
-        ws[:, inds_fail] = ws[:, inds_rep]
+        ws[:, inds_fail] = ws[:, inds_rep] + perturbations
         return ws
 
 class Localiser(ABC):
@@ -363,7 +368,7 @@ def enrml_update(ws, Gs, ys, C_e_invsqrt, ws_pr, Uw_pr, Sw_pr, lam,
     return ws
 
 def compute_S(Gs, ys, C_e_invsqrt):
-    # TODO: check whether perturbed observations should be in here...
+    """Computes mean of EnRML misfit functions for each particle."""
     Ss = np.sum((C_e_invsqrt @ (Gs - ys)) ** 2, axis=0)
     return np.mean(Ss)
 
