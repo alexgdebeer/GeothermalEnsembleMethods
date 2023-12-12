@@ -174,7 +174,7 @@ class ChannelPrior(Prior):
 
     def split(self, p_i):
 
-        logks = p_i[-self.mesh.m.num_columns:]
+        logks = p_i[:-self.mesh.m.num_columns]
         mass_rates_t = p_i[-self.mesh.m.num_columns:]
 
         upflows = []
@@ -186,4 +186,4 @@ class ChannelPrior(Prior):
         return logks, upflows
 
     def sample(self, n=1):
-        return np.random.normal(size=(n, self.n_params))
+        return np.random.normal(size=(self.n_params, n))
