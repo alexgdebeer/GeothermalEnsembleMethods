@@ -178,7 +178,7 @@ class MaternField3D(MaternField):
         self.fem_mesh = mesh.fem_mesh 
 
         self.get_mesh_data()
-        self.build_fem_matrices()
+        self.load_fem_matrices()
         self.build_geo_to_mesh_mapping()
         self.build_point_to_cell_mapping()
         
@@ -200,12 +200,29 @@ class MaternField3D(MaternField):
         self.n_elements = self.fem_mesh.n_cells
         self.n_boundary_facets = len(self.boundary_facets)
 
+    def load_fem_matrices(self):
+        
+        try:
+            self.M = sparse.load_npz("M.npz")
+            self.Kx = sparse.load_npz("Kx.npz")
+            self.Ky = sparse.load_npz("Ky.npz")
+            self.Kz = sparse.load_npz("Kz.npz")
+            self.N = sparse.load_npz("N.npz")
+            self.L = np.load("L.npy")
+        except FileNotFoundError:
+            utils.info("FEM matrices not found. Constructing...")
+            self.build_fem_matrices()
+            sparse.save_npz("M", self.M)
+            sparse.save_npz("Kx", self.Kx)
+            sparse.save_npz("Ky", self.Ky)
+            sparse.save_npz("Kz", self.Kz)
+            sparse.save_npz("N", self.N)
+            np.save("L", self.L)
+
     @utils.timer
     def build_fem_matrices(self):
         """Builds the FEM matrices required to generate Matern fields in three 
         dimensions."""
-
-        utils.info(f"Constructing FEM matrices (points: {self.n_points})...")
 
         M_i = np.zeros((16 * self.n_elements, ))
         M_j = np.zeros((16 * self.n_elements, ))
@@ -312,6 +329,7 @@ class MaternField3D(MaternField):
         self.P = sparse.coo_matrix((P_v, (P_i, P_j)), 
                                    shape=(self.n_elements, self.n_points))
 
+    @utils.timer
     def generate_field(self, W, sigma, lx, ly, lz, bcs=BC.ROBIN, lam=None):
         """Generates a Matern field."""
 

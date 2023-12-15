@@ -218,6 +218,139 @@ class ShuffleLocaliser(Localiser):
         K = self._compute_gain_enrml(dw, UG, SG, VG, C_e_invsqrt, lam)
         return self.compute_gain(K, ws, Gs)
 
+class Inflator(ABC):
+    
+    @abstractmethod
+    def update_eki(self):
+        pass 
+
+    @abstractmethod
+    def update_enrml(self):
+        pass
+
+    def _update_eki(self, ws, Gs, Ne, 
+                    inds_succ, inds_fail, alpha, y, C_e,
+                    localiser: Localiser, imputer: Imputer):
+        """Runs a single EKI update."""
+
+        ys_i = np.random.multivariate_normal(y, alpha*C_e, size=Ne).T
+
+        K = localiser.compute_gain_eki(
+            ws[:, inds_succ], 
+            Gs[:, inds_succ], 
+            alpha, C_e
+        )
+
+        ws[:, inds_succ] += K @ (ys_i[:, inds_succ] - Gs[:, inds_succ])
+
+        if (n_fail := len(inds_fail)) > 0:
+            utils.info(f"Imputing {n_fail} failed ensemble members...")
+            ws_up = imputer.impute(ws_up, inds_succ, inds_fail)
+        
+        return ws_up
+    
+    def _update_enrml(self, ws, Gs, ys, C_e_invsqrt, ws_pr, Uw_pr, Sw_pr, lam, 
+                     inds_succ, inds_fail,
+                     localiser: Localiser, imputer: Imputer):
+    
+        dw = compute_deltas(ws[:, inds_succ])
+        dG = compute_deltas(Gs[:, inds_succ])
+
+        UG, SG, VG = compute_tsvd(C_e_invsqrt @ dG)
+
+        K = localiser.compute_gain_enrml(ws[:, inds_succ], Gs[:, inds_succ], 
+                                        dw, UG, SG, VG, C_e_invsqrt, lam) 
+        
+        psi = np.diag((lam + 1 + SG**2)**-1)
+
+        dw_pr = dw @ VG @ psi @ VG.T @ dw.T @ \
+            Uw_pr @ np.diag(Sw_pr**-2) @ Uw_pr.T @ \
+                (ws[:, inds_succ] - ws_pr[:, inds_succ])
+        
+        dw_obs = K @ (Gs[:, inds_succ] - ys[:, inds_succ])
+        ws[:, inds_succ] -= (dw_pr + dw_obs) 
+
+        if (n_fail := len(inds_fail)) > 0:
+            utils.info(f"Imputing {n_fail} failed ensemble members...")
+            ws = imputer.impute(ws, inds_succ, inds_fail)
+        
+        return ws
+
+class IdentityInflator(Inflator):
+    """Updates the current ensemble without applying any inflation."""
+
+    def update_eki(self, *args):
+        return self._update_eki(*args)
+
+    def update_enrml(self, *args):
+        return self._update_enrml(*args)
+
+class AdaptiveInflator(Inflator):
+    """Updates the current ensemble using the adaptive inflation 
+    method described by Evensen (2009)."""
+
+    def __init__(self, n_dummy_params=50):
+        self.n_dummy_params = n_dummy_params
+
+    def generate_dummy_params(self, n_succ):
+
+        size = (self.n_dummy_params, n_succ)
+        dummy_params = np.random.normal(size=size)
+        
+        for r in dummy_params:
+            mean, std = np.mean(r), np.std(r)
+            r = (r - mean) / std
+        
+        return dummy_params
+    
+    def update_eki(self, ws, Gs, Ne, inds_succ, inds_fail, 
+                   alpha, y, C_e, localiser, imputer):
+        
+        Nw, Ne = ws.shape
+        n_succ = len(inds_succ)
+
+        dummy_params = np.zeros((self.n_dummy_params, Ne))
+        dummy_params[:, inds_succ] = self.generate_dummy_params(n_succ)
+
+        ws_aug = np.vstack((ws, dummy_params))
+
+        ws_aug = self._update_eki(
+            ws_aug, Gs, Ne, inds_succ, inds_fail, 
+            alpha, y, C_e, localiser, imputer
+        )
+
+        ws_new = ws_aug[1:Nw, :]
+        dummy_params = ws_new[(Nw+1):, inds_succ]
+        fac = 1 / np.mean(np.std(dummy_params, axis=1))
+
+        utils.info(f"Inflation factor: {fac}")
+
+        mu_w = np.mean(ws, axis=1)[:, np.newaxis]
+        return fac * (ws_new - mu_w) + mu_w
+
+    def update_enrml(self, ws, Gs, ys, C_e_invsqrt, 
+                     ws_pr, Uw_pr, Sw_pr, lam, 
+                     inds_succ, inds_fail, localiser, imputer):
+
+        Nw, Ne = ws.shape 
+        dummy_params = self.generate_dummy_params(Ne)
+        ws_aug = np.vstack((ws, dummy_params))
+
+        ws_aug = self._update_enrml(
+            ws, Gs, ys, C_e_invsqrt,  
+            ws_pr, Uw_pr, Sw_pr, lam, 
+            inds_succ, inds_fail, localiser, imputer
+        )
+
+        ws_new = ws_aug[1:Nw, :]
+        dummy_params = ws_new[(Nw+1):, inds_succ]
+        fac = 1 / np.mean(np.std(dummy_params, axis=1))
+
+        utils.info(f"Inflation factor: {fac}")
+
+        mu_w = np.mean(ws, axis=1)[:, np.newaxis]
+        return fac * (ws_new - mu_w) + mu_w
+
 def compute_deltas(xs):
     N = xs.shape[1]
     mu = np.mean(xs, axis=1)[:, np.newaxis]
@@ -246,26 +379,6 @@ def compute_cors(ws, Gs):
 
     return R_wG, R_GG
 
-def eki_update(ws_i, Gs_i, Ne, inds_succ, inds_fail, a_i, y, C_e,
-               localiser: Localiser, imputer: Imputer):
-    """Runs a single EKI update."""
-
-    ys_i = np.random.multivariate_normal(y, a_i*C_e, size=Ne).T
-
-    K = localiser.compute_gain_eki(
-        ws_i[:, inds_succ], 
-        Gs_i[:, inds_succ], 
-        a_i, C_e
-    )
-
-    ws_n = ws_i + K @ (ys_i - Gs_i)
-
-    if (n_fail := len(inds_fail)) > 0:
-        utils.info(f"Imputing {n_fail} failed ensemble members...")
-        ws_n = imputer.impute(ws_n, inds_succ, inds_fail)
-    
-    return ws_n
-
 def compute_a_dmc(t, Gs, y, NG, C_e_invsqrt):
     """Computes the EKI inflation factor following Iglesias and Yang 
     (2021)."""
@@ -279,9 +392,9 @@ def compute_a_dmc(t, Gs, y, NG, C_e_invsqrt):
 
     return a_inv ** -1
 
-def run_eki_dmc(ensemble: Ensemble, prior, 
-                y, C_e, Ne,
-                localiser: Localiser=IdentityLocaliser(), 
+def run_eki_dmc(ensemble: Ensemble, prior, y, C_e,
+                localiser: Localiser=IdentityLocaliser(),
+                inflator: Inflator=IdentityInflator(), 
                 imputer: Imputer=GaussianImputer(),
                 nesi=True):
     """Runs EKI-DMC, as described in Iglesias and Yang (2021)."""
@@ -289,7 +402,7 @@ def run_eki_dmc(ensemble: Ensemble, prior,
     C_e_invsqrt = sqrtm(inv(C_e))
     NG = len(y)
 
-    ws_i = prior.sample(n=Ne)
+    ws_i = prior.sample(n=ensemble.Ne)
 
     ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i, nesi)
     
@@ -311,8 +424,10 @@ def run_eki_dmc(ensemble: Ensemble, prior,
         if np.abs(t - 1.0) < TOL:
             converged = True
 
-        ws_i = eki_update(ws_i, Gs_i, Ne, inds_succ, inds_fail, 
-                          a_i, y, C_e, localiser, imputer)
+        ws_i = inflator.update_eki(
+            ws_i, Gs_i, ensemble.Ne, inds_succ, inds_fail, 
+            a_i, y, C_e, localiser, imputer
+        )
         
         ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i, nesi)
         
@@ -344,52 +459,26 @@ def compute_tsvd(A, energy=0.99):
     
     raise Exception("Issue with TSVD computation.")
 
-def enrml_update(ws, Gs, ys, C_e_invsqrt, ws_pr, Uw_pr, Sw_pr, lam, 
-                 inds_succ, inds_fail,
-                 localiser: Localiser, imputer: Imputer):
-    
-    dw = compute_deltas(ws[:, inds_succ])
-    dG = compute_deltas(Gs[:, inds_succ])
-
-    UG, SG, VG = compute_tsvd(C_e_invsqrt @ dG)
-
-    K = localiser.compute_gain_enrml(ws[:, inds_succ], Gs[:, inds_succ], 
-                                     dw, UG, SG, VG, C_e_invsqrt, lam) 
-    
-    psi = np.diag((lam + 1 + SG**2)**-1)
-
-    dw_pr = dw @ VG @ psi @ VG.T @ dw.T @ \
-        Uw_pr @ np.diag(Sw_pr**-2) @ Uw_pr.T @ \
-            (ws[:, inds_succ] - ws_pr[:, inds_succ])
-    
-    dw_obs = K @ (Gs[:, inds_succ] - ys[:, inds_succ])
-    ws[:, inds_succ] -= (dw_pr + dw_obs) 
-
-    if (n_fail := len(inds_fail)) > 0:
-        utils.info(f"Imputing {n_fail} failed ensemble members...")
-        ws = imputer.impute(ws, inds_succ, inds_fail)
-    
-    return ws
-
 def compute_S(Gs, ys, C_e_invsqrt):
     """Computes mean of EnRML misfit functions for each particle."""
     Ss = np.sum((C_e_invsqrt @ (Gs - ys)) ** 2, axis=0)
     return np.mean(Ss)
 
-def run_enrml(ensemble: Ensemble, prior, y, C_e, Np, NF, Ne, 
+def run_enrml(ensemble: Ensemble, prior, y, C_e, 
               gamma=10, lam_min=0.01, 
               max_cuts=5, max_its=30, 
               dS_min=0.01, dw_min=0.5,
               localiser: Localiser=IdentityLocaliser(),
+              inflator: Inflator=IdentityInflator(),
               imputer: Imputer=GaussianImputer(),
               nesi=True):
     
     C_e_invsqrt = sqrtm(inv(C_e))
     NG = len(y)
 
-    ys = np.random.multivariate_normal(mean=y, cov=C_e, size=Ne).T
+    ys = np.random.multivariate_normal(mean=y, cov=C_e, size=ensemble.Ne).T
 
-    ws_pr = prior.sample(n=Ne)
+    ws_pr = prior.sample(n=ensemble.Ne)
     ps_pr, Fs_pr, Gs_pr, inds_succ, inds_fail = ensemble.run(ws_pr, nesi)
     S_pr = compute_S(Gs_pr[:, inds_succ], ys[:, inds_succ], C_e_invsqrt)
     lam = 10**np.floor(np.log10(S_pr / 2*NG))
@@ -410,7 +499,7 @@ def run_enrml(ensemble: Ensemble, prior, y, C_e, Np, NF, Ne,
     n_cuts = 0
     while i <= max_its:
 
-        ws_i = enrml_update(
+        ws_i = inflator.update_enrml(
             ws[en_ind], Gs[en_ind], ys, C_e_invsqrt, 
             ws_pr, Uw_pr, Sw_pr, lam, inds_succ, inds_fail, 
             localiser, imputer)
