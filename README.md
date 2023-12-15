@@ -23,6 +23,7 @@ where ```{VERSION}``` is replaced with your version of Python.
  - Check everything carefully!
 ### Ensemble Methods
  - Fix EnRML code.
+ - Fix up random number generation.
 ### Misc
  - Update NZGW code and slides.
  - Finish writing README (add some notes on the various algorithms, other implementations, etc).
