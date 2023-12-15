@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 import h5py
 import numpy as np
+from numpy.random import default_rng
 from scipy.linalg import inv, sqrtm
 
 from src import utils
@@ -27,7 +28,10 @@ class GaussianImputer(Imputer):
         mu = np.mean(ws[:, inds_succ], axis=1)
         cov = np.cov(ws[:, inds_succ]) + EPS_IMPUTERS * np.eye(len(mu))
         
-        ws[:, inds_fail] = np.random.multivariate_normal(mu, cov, size=n_fail).T
+        ws[:, inds_fail] = default_rng(0).multivariate_normal(
+            mu, cov, method="chol", size=n_fail
+        ).T
+
         return ws
 
 class ResamplingImputer(Imputer):
@@ -246,7 +250,7 @@ def eki_update(ws_i, Gs_i, Ne, inds_succ, inds_fail, a_i, y, C_e,
                localiser: Localiser, imputer: Imputer):
     """Runs a single EKI update."""
 
-    ys_i = np.random.multivariate_normal(y, a_i * C_e, size=Ne).T
+    ys_i = np.random.multivariate_normal(y, a_i*C_e, size=Ne).T
 
     K = localiser.compute_gain_eki(
         ws_i[:, inds_succ], 
@@ -372,22 +376,21 @@ def compute_S(Gs, ys, C_e_invsqrt):
     Ss = np.sum((C_e_invsqrt @ (Gs - ys)) ** 2, axis=0)
     return np.mean(Ss)
 
-def run_enrml(F, G, prior, y, C_e, Np, NF, Ne, 
+def run_enrml(ensemble: Ensemble, prior, y, C_e, Np, NF, Ne, 
               gamma=10, lam_min=0.01, 
               max_cuts=5, max_its=30, 
               dS_min=0.01, dw_min=0.5,
               localiser: Localiser=IdentityLocaliser(),
-              imputer: Imputer=GaussianImputer()):
+              imputer: Imputer=GaussianImputer(),
+              nesi=True):
     
     C_e_invsqrt = sqrtm(inv(C_e))
     NG = len(y)
 
-    raise Exception("Fix me!!")
-    ensemble = Ensemble(prior, F, G, Np, NF, NG, Ne)
     ys = np.random.multivariate_normal(mean=y, cov=C_e, size=Ne).T
 
     ws_pr = prior.sample(n=Ne)
-    ps_pr, Fs_pr, Gs_pr, inds_succ, inds_fail = ensemble.run(ws_pr)
+    ps_pr, Fs_pr, Gs_pr, inds_succ, inds_fail = ensemble.run(ws_pr, nesi)
     S_pr = compute_S(Gs_pr[:, inds_succ], ys[:, inds_succ], C_e_invsqrt)
     lam = 10**np.floor(np.log10(S_pr / 2*NG))
     
@@ -412,7 +415,7 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
             ws_pr, Uw_pr, Sw_pr, lam, inds_succ, inds_fail, 
             localiser, imputer)
         
-        ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i)
+        ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i, nesi)
         S_i = compute_S(Gs_i[:, inds_succ], ys[:, inds_succ], C_e_invsqrt)
         
         ws.append(ws_i)
@@ -455,10 +458,16 @@ def run_enrml(F, G, prior, y, C_e, Np, NF, Ne,
 
 def save_results_eki(fname: str, results: dict):
 
+    post_ind = len(results["ws"]-1)
+
     with h5py.File(fname, "w") as f:
+        
         for key, vals in results.items():
             for i, val in enumerate(vals):
                 f.create_dataset(f"{key}_{i}", data=val)
+
+        f.create_dataset("algorithm", "eki")
+        f.create_dataset("post_ind", data=post_ind)
 
 def save_results_enrml(fname: str, results: dict, post_ind: int):
 
