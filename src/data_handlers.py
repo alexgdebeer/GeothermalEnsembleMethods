@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator, griddata
+from scipy.interpolate import LinearNDInterpolator, RegularGridInterpolator
 
 from src.consts import *
 from src.models import *
@@ -154,8 +154,20 @@ class DataHandler3D(DataHandler):
     def get_obs_temperatures(self, temp_full):
         """Extracts the temperatures at each observation point from a 
         full set of temperatures."""
-        temp_obs = griddata(self.cell_cs, temp_full, self.temp_obs_cs)
-        return self.reshape_to_wells(temp_obs) # TODO: check this properly
+        interp = LinearNDInterpolator(self.mesh.tri, temp_full)
+        temp_obs = interp(self.temp_obs_cs)
+        return self.reshape_to_wells(temp_obs)
 
-    def downhole_temps(self, temps):
-        return super().downhole_temps()
+    def downhole_temps(self, temp_full, well_num):
+        """Returns interpolated temperatures down a single well."""
+
+        well = self.wells[well_num]
+        elevs = [l.centre for l in self.mesh.m.layer
+                 if well.min_elev <= l.centre <= well.max_elev]
+        if well.min_elev not in elevs:
+            elevs.append(well.min_elev)
+        
+        coords = np.array([[well.x, well.y, e] for e in elevs])
+        interp = LinearNDInterpolator(self.mesh.tri, temp_full)
+        downhole_temps = interp(coords)
+        return elevs, downhole_temps
