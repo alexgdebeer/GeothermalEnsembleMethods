@@ -11,6 +11,7 @@ import numpy as np
 import pyvista as pv
 import pywaiwera
 from scipy import stats
+from scipy.spatial import Delaunay
 import yaml
 
 from src import utils
@@ -92,6 +93,7 @@ class IrregularMesh(Mesh):
 
         self.cell_centres = [c.centre for c in self.m.cell]
         self.col_centres = [c.centre for c in self.m.column]
+        self.tri = Delaunay(self.cell_centres)
         
         self.col_cells = {
             col.index: [c.index for c in col.cell] 
@@ -408,7 +410,8 @@ class Model(ABC):
         self.pr_model["source"].extend([{
             "component": "water",
             "rate": w.feedzone_rate,
-            "cell": w.feedzone_cell.index
+            "cell": w.feedzone_cell.index,
+            "interpolation": "step"
         } for w in self.wells])
 
     def add_ns_incon(self):
@@ -500,10 +503,21 @@ class Model(ABC):
 
         utils.save_json(self.pr_model, f"{self.pr_path}.json")
 
+    def delete_output_files(self):
+        """Removes output files from previous simulation."""
+
+        for fname in [f"{self.ns_path}.h5", f"{self.pr_path}.h5"]:
+            try:
+                os.remove(fname)
+            except OSError:
+                pass
+
     @utils.timer
     def run(self):
         """Simulates the model and returns a flag that indicates 
         whether the simulation was successful."""
+
+        self.delete_output_files()
 
         env = pywaiwera.docker.DockerEnv(check=False, verbose=False)
         env.run_waiwera(f"{self.ns_path}.json", noupdate=True)
@@ -586,7 +600,7 @@ class Model3D(Model):
         self.ns_model = {
             "eos": {"name": "we"},
             "gravity": GRAVITY,
-            "logfile": {"echo": True},
+            "logfile": {"echo": False},
             "mesh": {
                 "filename": f"{self.mesh.name}.msh"
             },
@@ -608,6 +622,7 @@ class Ensemble():
         self.Ne = Ne
 
     def transform_params(self, ws):
+        # TODO: parallelise for NeSI?
         ps = np.empty((self.Np, self.Ne))
         for i, w_i in enumerate(ws.T):
             ps[:, i] = self.prior.transform(w_i)
@@ -676,7 +691,7 @@ class Ensemble():
             else: 
                 inds_fail_ns.append(i)
 
-        pr_cmd = generate_cmd(pr_paths[inds_succ_ns])
+        pr_cmd = generate_cmd([pr_paths[i] for i in inds_succ_ns])
         print(pr_cmd)
         subprocess.run(pr_cmd, shell=True)
 
