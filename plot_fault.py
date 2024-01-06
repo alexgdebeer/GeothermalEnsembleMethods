@@ -4,7 +4,7 @@ from scipy.interpolate import NearestNDInterpolator
 from plotting import *
 from setup_fault import *
 
-RESULTS_FOLDER = "data/faults/results"
+RESULTS_FOLDER = "data/fault/results"
 PLOTS_FOLDER = "plots/fault"
 
 RESULTS_FNAMES = [
@@ -15,7 +15,7 @@ RESULTS_FNAMES = [
 
 ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
-PLOT_MESH = False
+PLOT_MESH = True
 PLOT_TRUTH = False
 PLOT_DATA = False
 
@@ -60,9 +60,6 @@ def read_results(algnames, fnames):
                 "Fs_post" : f[f"Fs_{post_ind}"][:, inds_succ_post],
                 "Gs_post" : f[f"Gs_{post_ind}"][:, inds_succ_post]
             }
-
-            print(post_ind)
-            print(np.mean([len(f[f"inds_succ_{i}"][:]) for i in range(post_ind+1)]))
 
     return results
 
@@ -138,6 +135,7 @@ if PLOT_PRIOR_CAPS:
 
     ws_cap = results["EKI"]["ws_pri"][prior.inds["cap"], 10:13]
     cap_cell_inds = [prior.cap.get_cells_in_cap(w) for w in ws_cap.T]
+    print(cap_cell_inds)
     fname = f"{PLOTS_FOLDER}/caps_pri.png"
     plot_caps_3d(mesh_crse.m, fem_mesh_crse, cap_cell_inds, fname)
 
@@ -255,15 +253,41 @@ if PLOT_INTERVALS:
     fname = f"{PLOTS_FOLDER}/intervals.png"
     plot_intervals_3d(mesh_crse.m, fem_mesh_crse, intervals, fname)
 
-if PLOT_CBARS:
+if PLOT_HYPERPARAMS:
+    
+    ind = 0 # External
 
-    temp_label = "Temperature [$^\circ$C]"
-    perm_label = "log$_{10}$(Permeability) [log$_{10}$(m$^2$)]"
+    def get_hyperparams(ws):
+        return np.array([prior.get_hyperparams(w_i)[ind] for w_i in ws.T])
+
+    hps = [
+        get_hyperparams(results["EKI"]["ws_pri"])[:, [0, 1, 3]],
+        get_hyperparams(results["EKI"]["ws_post"])[:, [0, 1, 3]],
+        get_hyperparams(results["EKI-BOOT"]["ws_post"])[:, [0, 1, 3]],
+        get_hyperparams(results["EKI-INF"]["ws_post"])[:, [0, 1, 3]],
+    ]
+
+    hps_t = np.array(truth_dist.get_hyperparams(w_t)[ind])[[0, 1, 3]]
+
+    std_lims_x = bounds_perm_ext[0]
+    std_lims_y = (0, 4) 
+    lenh_lims_x = bounds_perm_ext[1]
+    lenh_lims_y = (0, 0.001)
+    lenv_lims_x = bounds_perm_ext[3]
+    lenv_lims_y = (0, 0.002)
+
+    labels = ["Standard Deviation", "$x_{1}$ Lengthscale [m]", "$x_{3}$ Lengthscale [m]"]
+
+    fname = f"{PLOTS_FOLDER}/hyperparams.pdf"
+    plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x, 
+                     lenh_lims_y, lenv_lims_x, lenv_lims_y, labels, fname) 
+
+if PLOT_CBARS:
 
     temp_fname = f"{PLOTS_FOLDER}/cbar_temps.pdf"
     perm_fname = f"{PLOTS_FOLDER}/cbar_perms.pdf"
     stds_fname = f"{PLOTS_FOLDER}/cbar_stds.pdf"
 
-    plot_colourbar(CMAP_TEMP, MIN_TEMP_3D, MAX_TEMP_3D, temp_label, temp_fname)
-    plot_colourbar(CMAP_PERM, MIN_PERM_3D, MAX_PERM_3D, perm_label, perm_fname)
-    plot_colourbar(CMAP_PERM, MIN_STDS_3D, MAX_STDS_3D, perm_label, perm_fname)
+    plot_colourbar(CMAP_TEMP, MIN_TEMP_3D, MAX_TEMP_3D, LABEL_TEMP, temp_fname)
+    plot_colourbar(CMAP_PERM, MIN_PERM_3D, MAX_PERM_3D, LABEL_PERM, perm_fname)
+    plot_colourbar(CMAP_PERM, MIN_STDS_3D, MAX_STDS_3D, LABEL_PERM, stds_fname)

@@ -244,7 +244,7 @@ def plot_predictions(Fs, data_handler,
     plt.savefig(fname)
 
 def plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x, 
-                     lenh_lims_y, lenv_lims_x, lenv_lims_y, fname):
+                     lenh_lims_y, lenv_lims_x, lenv_lims_y, labels, fname):
 
     fig, axes = plt.subplots(3, 4, figsize=(FULL_WIDTH, 0.9 * FULL_WIDTH))
 
@@ -271,12 +271,9 @@ def plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x,
     axes[0][2].set_title(ALG_LABELS[2], fontsize=TITLE_SIZE)
     axes[0][3].set_title(ALG_LABELS[3], fontsize=TITLE_SIZE)
 
-    axes[0][1].set_xlabel(LABEL_STD, fontsize=LABEL_SIZE)
-    axes[1][1].set_xlabel(LABEL_LENH, fontsize=LABEL_SIZE)
-    axes[2][1].set_xlabel(LABEL_LENV, fontsize=LABEL_SIZE)
-
     for i in range(3):
         axes[i][0].set_ylabel("Density", fontsize=LABEL_SIZE)
+        axes[i][1].set_xlabel(labels[i], fontsize=LABEL_SIZE)
         
         for j in range(1, 4):
             axes[i][j].spines["left"].set_visible(False)
@@ -292,7 +289,7 @@ def plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x,
 
 def plot_colourbar(cmap, vmin, vmax, label, fname):
     
-    fig, ax = plt.subplots(figsize=(3, 3))
+    _, ax = plt.subplots(figsize=(3, 3))
     m = ax.pcolormesh(np.zeros((10, 10)), cmap=cmap, vmin=vmin, vmax=vmax)
     cbar = plt.colorbar(m, ax=ax)
     cbar.set_label(label, fontsize=LABEL_SIZE)
@@ -491,7 +488,7 @@ def plot_mesh_3d(fem_mesh: pv.UnstructuredGrid, wells, feedzone_depths, fname):
 
 def plot_grid_layer_3d(mesh, wells, fname):
 
-    _, ax = plt.subplots(figsize=(4, 4))
+    _, ax = plt.subplots(figsize=(0.5 * FULL_WIDTH, 0.5 * FULL_WIDTH))
 
     mesh.m.layer_plot(axes=ax, linewidth=0.75, linecolour=COL_GRID)
 

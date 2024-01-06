@@ -171,13 +171,13 @@ Truth generation
 
 noise_level = 0.05
 
-def generate_truth():
+truth_dist = FaultPrior(
+    mesh_fine, clay_cap_fine, fault_fine, 
+    perm_field_ext_fine, perm_field_flt_fine, perm_field_cap_fine, 
+    upflow_field_fine, ls_upflows
+)
 
-    truth_dist = FaultPrior(
-        mesh_fine, clay_cap_fine, fault_fine, 
-        perm_field_ext_fine, perm_field_flt_fine, perm_field_cap_fine, 
-        upflow_field_fine, ls_upflows
-    )
+def generate_truth():
 
     w_t = truth_dist.sample()
     p_t = truth_dist.transform(w_t)

@@ -46,6 +46,12 @@ class SlicePrior(Prior):
             "grf_deep" : np.arange(*self.param_inds[3:5])
         }
 
+    def get_hyperparams(self, ws):
+        hps_shal = self.grf_shal.get_hyperparams(ws[self.inds["grf_shal"]])
+        hps_clay = self.grf_clay.get_hyperparams(ws[self.inds["grf_clay"]])
+        hps_deep = self.grf_deep.get_hyperparams(ws[self.inds["grf_deep"]])
+        return hps_shal, hps_clay, hps_deep
+
     def combine_perms(self, boundary, perms_shal, perms_clay, perms_deep):
 
         perms = np.zeros((perms_shal.shape))
@@ -91,12 +97,6 @@ class SlicePrior(Prior):
     def sample(self, n=1):
         return np.random.normal(size=(self.n_params, n))
 
-    def get_hyperparams(self, ws):
-        hps_shal = self.grf_shal.get_hyperparams(ws[self.inds["grf_shal"]])
-        hps_clay = self.grf_clay.get_hyperparams(ws[self.inds["grf_clay"]])
-        hps_deep = self.grf_deep.get_hyperparams(ws[self.inds["grf_deep"]])
-        return hps_shal, hps_clay, hps_deep
-
 class FaultPrior(Prior):
 
     def __init__(self, mesh: IrregularMesh, cap: ClayCap, 
@@ -130,6 +130,12 @@ class FaultPrior(Prior):
             "grf_cap"    : np.arange(*self.param_inds[4:6]),
             "grf_upflow" : np.arange(*self.param_inds[5:7])
         }
+
+    def get_hyperparams(self, ws):
+        hps_ext = self.grf_ext.get_hyperparams(ws[self.inds["grf_ext"]])
+        hps_flt = self.grf_flt.get_hyperparams(ws[self.inds["grf_flt"]])
+        hps_cap = self.grf_cap.get_hyperparams(ws[self.inds["grf_cap"]])
+        return hps_ext, hps_flt, hps_cap
 
     def compute_upflow_weightings(self, lengthscale):
 
