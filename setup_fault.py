@@ -161,61 +161,6 @@ prior = ChannelPrior(
     perm_field_ext_crse, perm_field_flt_crse, perm_field_cap_crse, 
     upflow_field_crse, ls_upflows)
 
-# """
-# Plotting functions (TODO: remove)
-# """
-
-# import colorcet
-
-# def plot_vals_on_mesh(mesh: IrregularMesh, vals):
-
-#     cell_centres = mesh.fem_mesh.cell_centers().points
-#     cell_vals = [vals[mesh.m.find(c, indices=True)] for c in cell_centres]
-    
-#     mesh.fem_mesh["values"] = cell_vals
-#     slices = mesh.fem_mesh.slice_along_axis(n=5, axis="y")
-#     slices.plot(scalars="values", cmap="cet_bgy")
-
-# def plot_upflows_alt(mesh, upflows):
-
-#     values = np.zeros((mesh.m.num_cells, ))
-#     for upflow in upflows:
-#         values[upflow.cell.index] = upflow.rate
-
-#     mesh.m.layer_plot(value=values, colourmap="cet_fire")
-
-# def plot_wells(mesh, perms, wells):
-
-#     def get_well_tubes(wells: list[Well]):
-        
-#         lines = pv.MultiBlock()
-#         for well in wells:
-#             line = pv.Line(*well.coords)
-#             lines.append(line)
-#         bodies = lines.combine().extract_geometry().clean().split_bodies()
-
-#         tubes = pv.MultiBlock()
-#         for body in bodies:
-#             tubes.append(body.extract_geometry().tube(radius=10))
-#         return tubes
-
-#     cell_centres = mesh.fem_mesh.cell_centers().points
-#     cell_vals = [perms[mesh.m.find(c, indices=True)] for c in cell_centres]
-#     mesh.fem_mesh["perms"] = cell_vals
-#     mesh.fem_mesh.set_active_scalars("perms")
-
-#     import pyvista as pv
-
-#     tubes = get_well_tubes(wells)
-
-#     p = pv.Plotter()
-#     p.add_mesh(mesh.fem_mesh.threshold([-20.0, -15.75]), cmap="cet_bgy")
-#     p.add_mesh(mesh.fem_mesh.threshold([-15.75, -10.0]),  opacity=0.5, cmap="cet_bgy")
-#     p.add_mesh(tubes, color="k")
-#     # for well in wells:
-#     #     p.add_lines(well.coords, color="black", width=5)
-#     p.show()
-
 """
 Truth generation
 """
@@ -239,10 +184,6 @@ def generate_truth():
         MODEL_PATH_FINE, mesh_fine, 
         logks_t, wells_fine, upflows_t, dt, tmax
     )
-
-    # plot_wells(mesh_fine, logks_t, wells_fine)
-    # plot_vals_on_mesh(mesh_fine, logks_t)
-    # plot_upflows_alt(mesh_fine, upflows_t)
     
     if model_t.run() != ExitFlag.SUCCESS:
         raise Exception("Truth failed to run.")
@@ -255,8 +196,6 @@ def generate_truth():
     np.save(F_TRUE_PATH, F_t)
     np.save(G_TRUE_PATH, G_t)
 
-    temps = data_handler_fine.get_full_temperatures(F_t)
-    # plot_vals_on_mesh(mesh_fine, temps)
     return w_t, p_t, F_t, G_t
 
 def read_truth():
