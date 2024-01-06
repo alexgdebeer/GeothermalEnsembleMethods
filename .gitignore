@@ -2,8 +2,8 @@ __pycache__
 .DS_Store
 .git
 
-venv
-
 .cid
 .idcheck
 *.sl
+
+plots/
