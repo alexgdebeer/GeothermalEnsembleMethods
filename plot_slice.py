@@ -21,15 +21,17 @@ PLOT_DATA = False
 
 PLOT_PRIOR_PARTICLES = False
 
-PLOT_MEAN_PRI = False
-PLOT_MEAN_EKI = False
-PLOT_STDS = False
+PLOT_MEAN_PRI = True
+PLOT_MEAN_EKI = True
+PLOT_STDS = True
 PLOT_POST_PARTICLES = False
-PLOT_UPFLOWS = False
+PLOT_UPFLOWS = True
 PLOT_PREDICTIONS = False
 
-PLOT_INTERVALS = False
-PLOT_HYPERPARAMS = True
+PLOT_INTERVALS = True
+PLOT_HYPERPARAMS = False
+
+PLOT_CBARS = True
 
 DATA_WELL = 1
 WELL_TO_PLOT = 2
@@ -287,6 +289,18 @@ if PLOT_HYPERPARAMS:
     lenv_lims_x = bounds_deep[2]
     lenv_lims_y = (0, 0.01)
 
+    labels = ["Standard Deviation", "Horizontal Lengthscale [m]", "Vertical Lengthscale [m]"]
+
     fname = f"{PLOTS_FOLDER}/hyperparams.pdf"
     plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x, 
-                     lenh_lims_y, lenv_lims_x, lenv_lims_y, fname) 
+                     lenh_lims_y, lenv_lims_x, lenv_lims_y, labels, fname) 
+    
+if PLOT_CBARS:
+
+    temp_fname = f"{PLOTS_FOLDER}/cbar_temps.pdf"
+    perm_fname = f"{PLOTS_FOLDER}/cbar_perms.pdf"
+    stds_fname = f"{PLOTS_FOLDER}/cbar_stds.pdf"
+
+    plot_colourbar(CMAP_TEMP, MIN_TEMP_2D, MAX_TEMP_2D, LABEL_TEMP, temp_fname)
+    plot_colourbar(CMAP_PERM, MIN_PERM_2D, MAX_PERM_2D, LABEL_PERM, perm_fname)
+    plot_colourbar(CMAP_PERM, MIN_STDS_2D, MAX_STDS_2D, LABEL_PERM, stds_fname)

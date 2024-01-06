@@ -15,7 +15,7 @@ RESULTS_FNAMES = [
 
 ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
-PLOT_MESH = True
+PLOT_MESH = False
 PLOT_TRUTH = False
 PLOT_DATA = False
 
@@ -32,7 +32,7 @@ PLOT_PREDICTIONS = False
 PLOT_INTERVALS = False
 PLOT_HYPERPARAMS = False
 
-PLOT_CBARS = False
+PLOT_CBARS = True
 
 DATA_WELL = 3
 WELL_TO_PLOT = 2
@@ -287,7 +287,9 @@ if PLOT_CBARS:
     temp_fname = f"{PLOTS_FOLDER}/cbar_temps.pdf"
     perm_fname = f"{PLOTS_FOLDER}/cbar_perms.pdf"
     stds_fname = f"{PLOTS_FOLDER}/cbar_stds.pdf"
+    upfl_fname = f"{PLOTS_FOLDER}/cbar_upflows.pdf"
 
     plot_colourbar(CMAP_TEMP, MIN_TEMP_3D, MAX_TEMP_3D, LABEL_TEMP, temp_fname)
     plot_colourbar(CMAP_PERM, MIN_PERM_3D, MAX_PERM_3D, LABEL_PERM, perm_fname)
     plot_colourbar(CMAP_PERM, MIN_STDS_3D, MAX_STDS_3D, LABEL_PERM, stds_fname)
+    plot_colourbar(CMAP_UPFL, MIN_UPFL_3D, MAX_UPFL_3D, LABEL_UPFL_3D, upfl_fname, power=True)

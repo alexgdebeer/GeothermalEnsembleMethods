@@ -39,9 +39,12 @@ MAX_STDS_2D = 1.5
 MIN_STDS_3D = 0.0
 MAX_STDS_3D = 1.5
 
+MIN_UPFL_3D = 0.0
+MAX_UPFL_3D = 2.75e-4
+
 CMAP_PERM = "cet_bgy"
 CMAP_TEMP = "coolwarm"
-CMAP_UPFLOW = "cet_fire"
+CMAP_UPFL = "cet_fire"
 CMAP_INTERVALS = "coolwarm"
 
 COL_WELLS = "royalblue"
@@ -72,7 +75,8 @@ LABEL_ELEV = "Elevation [m]"
 LABEL_TIME = "Time [Years]"
 
 LABEL_PERM = "log$_{10}$(Permeability) [log$_{10}$(m$^2$)]"
-LABEL_UPFL = "Upflow [kg/s]"
+LABEL_UPFL_2D = "Upflow [kg/s]"
+LABEL_UPFL_3D = "Upflow [kg s$^{-1}$ m$^{-2}$]"
 
 LABEL_TEMP = "Temperature [$^{\circ}$C]"
 LABEL_PRES = "Pressure [MPa]"
@@ -287,12 +291,16 @@ def plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x,
     plt.tight_layout()
     plt.savefig(fname)
 
-def plot_colourbar(cmap, vmin, vmax, label, fname):
+def plot_colourbar(cmap, vmin, vmax, label, fname, power=False):
     
-    _, ax = plt.subplots(figsize=(3, 3))
+    _, ax = plt.subplots(figsize=(0.35*FULL_WIDTH, 0.35*FULL_WIDTH))
     m = ax.pcolormesh(np.zeros((10, 10)), cmap=cmap, vmin=vmin, vmax=vmax)
     cbar = plt.colorbar(m, ax=ax)
     cbar.set_label(label, fontsize=LABEL_SIZE)
+
+    if power:
+        cbar.formatter.set_powerlimits((0, 0))
+
     plt.tight_layout()
     plt.savefig(fname)
 
@@ -440,13 +448,13 @@ def plot_upflows_2d(upflow_t, upflows, bnds_x, bnds_y, fname):
             ax.spines["left"].set_visible(False)
             ax.set_yticks([])
 
-    axes[0].set_title(ALG_LABELS[0], fontsize=LABEL_SIZE)
-    axes[1].set_title(ALG_LABELS[1], fontsize=LABEL_SIZE)
-    axes[2].set_title(ALG_LABELS[2], fontsize=LABEL_SIZE)
-    axes[3].set_title(ALG_LABELS[3], fontsize=LABEL_SIZE)
+    axes[0].set_title(ALG_LABELS[0], fontsize=TITLE_SIZE)
+    axes[1].set_title(ALG_LABELS[1], fontsize=TITLE_SIZE)
+    axes[2].set_title(ALG_LABELS[2], fontsize=TITLE_SIZE)
+    axes[3].set_title(ALG_LABELS[3], fontsize=TITLE_SIZE)
 
     axes[0].set_ylabel("Density", fontsize=LABEL_SIZE)
-    axes[1].set_xlabel(LABEL_UPFL, fontsize=LABEL_SIZE)
+    axes[1].set_xlabel(LABEL_UPFL_2D, fontsize=LABEL_SIZE)
 
     plt.tight_layout()
     plt.savefig(fname)
@@ -461,7 +469,7 @@ def plot_grid_2d(vals, meshes, labels, fname, vmin=MIN_PERM_2D,
     for i, (v, m, l) in enumerate(zip(vals, meshes, labels)):
         
         axes[i].pcolormesh(m.xs, m.zs, v, vmin=vmin, vmax=vmax, cmap=cmap)
-        axes[i].set_title(l, fontsize=LABEL_SIZE)
+        axes[i].set_title(l, fontsize=TITLE_SIZE)
 
     for ax in axes.flat:
         ax.set_box_aspect(1)
@@ -518,16 +526,16 @@ def plot_fault_true_3d(mesh, vals, fname):
     total_upflow = sum([c.area * u for u, c in zip(vals, mesh.column)])
     # print(total_upflow)
 
-    fig, ax = plt.subplots(figsize=(0.5 * FULL_WIDTH, 0.4 * FULL_WIDTH))
+    _, ax = plt.subplots(figsize=(0.5 * FULL_WIDTH, 0.4 * FULL_WIDTH))
 
-    polys = get_layer_polys(mesh, CMAP_UPFLOW)
+    polys = get_layer_polys(mesh, CMAP_UPFL)
     polys.set_array(vals)
-    polys.set_clim(0, 2.75e-4)
+    polys.set_clim(MIN_UPFL_3D, MAX_UPFL_3D)
 
     ax.add_collection(polys)
     cbar = plt.colorbar(polys, ax=ax)
     cbar.formatter.set_powerlimits((0, 0))
-    cbar.set_label("Upflow [kg s$^{-1}$ m$^{-2}$]", fontsize=LABEL_SIZE)
+    cbar.set_label(LABEL_UPFL_3D, fontsize=LABEL_SIZE)
 
     ax.set_xlim(0, 6000)
     ax.set_ylim(0, 6000)
@@ -540,20 +548,8 @@ def plot_fault_true_3d(mesh, vals, fname):
 
 def plot_faults_3d(mesh: lm.mesh, upflows, fname):
 
-    # def plot_fault(ax):
-
-    #     polys.set_clim(0, 2e-4)
-        
-    #     ax.add_collection(polys)
-    #     indices = [c.index for c in mesh.layer[-1].cell]
-    #     layer_vals = vals[indices]
-    #     polys.set_array(layer_vals)
-    #     cbar = plt.colorbar(polys, ax=ax)
-    #     # cbar.formatter.set_powerlimits((0, 0))
-    #     # cbar.set_label("Upflow [kg s$^{-1}$ m$^{-2}$]", fontsize=LABEL_SIZE)
-
     _, axes = plt.subplots(2, 4, figsize=(FULL_WIDTH, 5.2))
-    polys = get_layer_polys(mesh, CMAP_UPFLOW)
+    polys = get_layer_polys(mesh, CMAP_UPFL)
     polys.set_clim(0, 2.75e-4)
 
     for i, ax in enumerate(axes.flat):
