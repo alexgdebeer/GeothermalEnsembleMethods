@@ -2,10 +2,12 @@ __pycache__
 .DS_Store
 .git
 
+# Docker / Slurm
 .cid
 .idcheck
 *.sl
 
+# Folders containing large files
 data/*/matern/*
 data/*/results/*
 plots
