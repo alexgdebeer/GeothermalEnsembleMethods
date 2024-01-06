@@ -97,7 +97,7 @@ class SlicePrior(Prior):
         hps_deep = self.grf_deep.get_hyperparams(ws[self.inds["grf_deep"]])
         return hps_shal, hps_clay, hps_deep
 
-class ChannelPrior(Prior):
+class FaultPrior(Prior):
 
     def __init__(self, mesh: IrregularMesh, cap: ClayCap, 
                  fault: Fault, grf_ext: PermField, 

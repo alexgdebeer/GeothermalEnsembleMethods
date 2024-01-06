@@ -4,7 +4,7 @@ from src.consts import SECS_PER_WEEK
 from src.data_handlers import DataHandler3D
 from src.grfs import *
 from src.models import *
-from src.priors import ChannelPrior
+from src.priors import FaultPrior
 
 np.random.seed(256)
 
@@ -160,7 +160,7 @@ def get_result(particle: Model3D):
 Prior
 """
 
-prior = ChannelPrior(
+prior = FaultPrior(
     mesh_crse, clay_cap_crse, fault_crse, 
     perm_field_ext_crse, perm_field_flt_crse, perm_field_cap_crse, 
     upflow_field_crse, ls_upflows)
@@ -173,7 +173,7 @@ noise_level = 0.05
 
 def generate_truth():
 
-    truth_dist = ChannelPrior(
+    truth_dist = FaultPrior(
         mesh_fine, clay_cap_fine, fault_fine, 
         perm_field_ext_fine, perm_field_flt_fine, perm_field_cap_fine, 
         upflow_field_fine, ls_upflows
