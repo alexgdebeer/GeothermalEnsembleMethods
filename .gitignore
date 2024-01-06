@@ -6,4 +6,6 @@ __pycache__
 .idcheck
 *.sl
 
-plots/
+data/*/matern/*
+data/*/results/*
+plots
