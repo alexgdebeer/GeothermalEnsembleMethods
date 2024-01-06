@@ -169,13 +169,15 @@ class MaternField2D(MaternField):
 
 class MaternField3D(MaternField):
 
-    def __init__(self, mesh):
+    def __init__(self, mesh, folder=""):
 
         self.dim = 3
         self.nu = 2 - self.dim / 2
 
         self.m = mesh.m
         self.fem_mesh = mesh.fem_mesh 
+
+        self.folder = folder
 
         self.get_mesh_data()
         self.load_fem_matrices()
@@ -203,21 +205,21 @@ class MaternField3D(MaternField):
     def load_fem_matrices(self):
         
         try:
-            self.M = sparse.load_npz("M.npz")
-            self.Kx = sparse.load_npz("Kx.npz")
-            self.Ky = sparse.load_npz("Ky.npz")
-            self.Kz = sparse.load_npz("Kz.npz")
-            self.N = sparse.load_npz("N.npz")
-            self.L = np.load("L.npy")
+            self.M = sparse.load_npz(f"{self.folder}/M.npz")
+            self.Kx = sparse.load_npz(f"{self.folder}/Kx.npz")
+            self.Ky = sparse.load_npz(f"{self.folder}/Ky.npz")
+            self.Kz = sparse.load_npz(f"{self.folder}/Kz.npz")
+            self.N = sparse.load_npz(f"{self.folder}/N.npz")
+            self.L = np.load(f"{self.folder}/L.npy")
         except FileNotFoundError:
             utils.info("FEM matrices not found. Constructing...")
             self.build_fem_matrices()
-            sparse.save_npz("M", self.M)
-            sparse.save_npz("Kx", self.Kx)
-            sparse.save_npz("Ky", self.Ky)
-            sparse.save_npz("Kz", self.Kz)
-            sparse.save_npz("N", self.N)
-            np.save("L", self.L)
+            sparse.save_npz(f"{self.folder}/M", self.M)
+            sparse.save_npz(f"{self.folder}/Kx", self.Kx)
+            sparse.save_npz(f"{self.folder}/Ky", self.Ky)
+            sparse.save_npz(f"{self.folder}/Kz", self.Kz)
+            sparse.save_npz(f"{self.folder}/N", self.N)
+            np.save(f"{self.folder}/L", self.L)
 
     @utils.timer
     def build_fem_matrices(self):
