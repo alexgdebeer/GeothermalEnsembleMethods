@@ -120,7 +120,7 @@ class DataHandler2D(DataHandler):
 
     def get_full_temperatures(self, F_i):
         temp = F_i[self.inds_full_temp]
-        temp = np.reshape(temp, (self.mesh.nz, self.mesh.nx)) # TODO: check
+        temp = np.reshape(temp, (self.mesh.nz, self.mesh.nx))
         return temp
 
     def get_obs_temperatures(self, temp_full):
@@ -129,7 +129,7 @@ class DataHandler2D(DataHandler):
         temp_full = np.reshape(temp_full, (self.mesh.nz, self.mesh.nx)) 
         mesh_coords = (self.mesh.xs, self.mesh.zs)
         interpolator = RegularGridInterpolator(mesh_coords, temp_full.T)
-        temp_obs = interpolator(self.temp_obs_cs) # TODO: check this
+        temp_obs = interpolator(self.temp_obs_cs)
         return self.reshape_to_wells(temp_obs)
     
     def downhole_temps(self, temps):
