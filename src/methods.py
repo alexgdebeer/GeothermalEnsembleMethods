@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from copy import copy, deepcopy
 
 import h5py
 import numpy as np
@@ -29,7 +30,7 @@ class GaussianImputer(Imputer):
         cov = np.cov(ws[:, inds_succ]) + EPS_IMPUTERS * np.eye(len(mu))
         
         ws[:, inds_fail] = default_rng(0).multivariate_normal(
-            mu, cov, method="chol", size=n_fail
+            mu, cov, method="cholesky", size=n_fail
         ).T
 
         return ws
@@ -100,17 +101,22 @@ class BootstrapLocaliser(Localiser):
     """Carries out the localisation procedure described by Zhang and 
     Oliver (2010)."""
     
-    def __init__(self, n_boot=100, sigalpha=0.60, tol=1e-8):
+    def __init__(self, n_boot=100, sigalpha=0.60, regularised=False):
 
         self.n_boot = n_boot
         self.sigalpha = sigalpha
-        self.tol=tol
+        self.regularised = regularised
 
     def compute_P(self, K, Ks_boot):
 
         var_Kis = np.mean((Ks_boot - K[:, :, np.newaxis]) ** 2, axis=2)
-        Rsq = var_Kis / np.maximum(K ** 2, self.tol)
-        P = 1 / (1 + Rsq * (1 + 1 / self.sigalpha ** 2))
+        Rsq = var_Kis / (K ** 2)
+
+        if self.regularised:
+            P = 1 / (1 + Rsq * (1 + 1 / self.sigalpha ** 2))
+        else: 
+            P = (1 - Rsq / (self.n_boot - 1)) / (Rsq + 1)
+            P = np.maximum(P, 0.0)
 
         return P
 
@@ -157,19 +163,11 @@ class BootstrapLocaliser(Localiser):
         return P * K
 
 class ShuffleLocaliser(Localiser):
-    """Carries out the localisation procedure described by Luo and 
-    Bhakta (2020)."""
+    """Carries out a variant of correlation-based localisation 
+    (see, e.g., Luo and Bhakta 2017)."""
 
-    def __init__(self, n_shuffle=50):
+    def __init__(self, n_shuffle=100):
         self.n_shuffle = n_shuffle
-        self.P = None
-
-    def gaspari_cohn(self, z):
-        if 0 <= z <= 1:
-            return -(1/4)*z**5 + (1/2)*z**4 + (5/8)*z**3 - (5/3)*z**2 + 1
-        elif 1 < z <= 2:
-            return (1/12)*z**5 - (1/2)*z**4 + (5/8)*z**3 + (5/3)*z**2 - 5*z + 4 - (2/3)*z**-1
-        return 0.0
     
     def shuffle_inds(self, Ne):
         
@@ -183,9 +181,6 @@ class ShuffleLocaliser(Localiser):
         return inds
     
     def compute_gain(self, K, ws, Gs):
-
-        if self.P is not None:
-            return self.P * K
         
         Nw, Ne = ws.shape
         NG, Ne = Gs.shape 
@@ -200,14 +195,13 @@ class ShuffleLocaliser(Localiser):
             ws_shuffled = ws[:, inds_shuffled]
             R_wGs[:, :, i] = compute_cors(ws_shuffled, Gs)[0]
 
-        error_sds = np.median(np.abs(R_wGs), axis=2) / 0.6745
+        error_sds = np.std(R_wGs, axis=2)
 
         for i in range(Nw):
             for j in range(NG):
-                z = (1-np.abs(R_wG[i, j])) / (1-error_sds[i, j])
-                P[i, j] = self.gaspari_cohn(z)
+                if np.abs(R_wG[i, j]) > error_sds[i, j]:
+                    P[i, j] = 1
 
-        self.P = P
         return P * K
 
     def compute_gain_eki(self, ws, Gs, a_i, C_e):
@@ -245,9 +239,9 @@ class Inflator(ABC):
 
         if (n_fail := len(inds_fail)) > 0:
             utils.info(f"Imputing {n_fail} failed ensemble members...")
-            ws_up = imputer.impute(ws_up, inds_succ, inds_fail)
+            ws = imputer.impute(ws, inds_succ, inds_fail)
         
-        return ws_up
+        return ws
     
     def _update_enrml(self, ws, Gs, ys, C_e_invsqrt, ws_pr, Uw_pr, Sw_pr, lam, 
                      inds_succ, inds_fail,
@@ -259,7 +253,7 @@ class Inflator(ABC):
         UG, SG, VG = compute_tsvd(C_e_invsqrt @ dG)
 
         K = localiser.compute_gain_enrml(ws[:, inds_succ], Gs[:, inds_succ], 
-                                        dw, UG, SG, VG, C_e_invsqrt, lam) 
+                                         dw, UG, SG, VG, C_e_invsqrt, lam) 
         
         psi = np.diag((lam + 1 + SG**2)**-1)
 
@@ -289,7 +283,7 @@ class AdaptiveInflator(Inflator):
     """Updates the current ensemble using the adaptive inflation 
     method described by Evensen (2009)."""
 
-    def __init__(self, n_dummy_params=50):
+    def __init__(self, n_dummy_params=100):
         self.n_dummy_params = n_dummy_params
 
     def generate_dummy_params(self, n_succ):
@@ -319,13 +313,13 @@ class AdaptiveInflator(Inflator):
             alpha, y, C_e, localiser, imputer
         )
 
-        ws_new = ws_aug[1:Nw, :]
-        dummy_params = ws_new[(Nw+1):, inds_succ]
+        ws_new = ws_aug[:Nw, :]
+        dummy_params = ws_aug[(Nw+1):, inds_succ]
         fac = 1 / np.mean(np.std(dummy_params, axis=1))
 
         utils.info(f"Inflation factor: {fac}")
 
-        mu_w = np.mean(ws, axis=1)[:, np.newaxis]
+        mu_w = np.mean(ws_new, axis=1)[:, np.newaxis]
         return fac * (ws_new - mu_w) + mu_w
 
     def update_enrml(self, ws, Gs, ys, C_e_invsqrt, 
@@ -406,11 +400,11 @@ def run_eki_dmc(ensemble: Ensemble, prior, y, C_e,
 
     ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i, nesi)
     
-    ws = [ws_i]
-    ps = [ps_i]
-    Fs = [Fs_i]
-    Gs = [Gs_i]
-    inds = [inds_succ]
+    ws = [deepcopy(ws_i)]
+    ps = [deepcopy(ps_i)]
+    Fs = [deepcopy(Fs_i)]
+    Gs = [deepcopy(Gs_i)]
+    inds = [copy(inds_succ)]
 
     i = 0
     t = 0
@@ -431,11 +425,11 @@ def run_eki_dmc(ensemble: Ensemble, prior, y, C_e,
         
         ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i, nesi)
         
-        ws.append(ws_i)
-        ps.append(ps_i)
-        Fs.append(Fs_i)
-        Gs.append(Gs_i)
-        inds.append(inds_succ)
+        ws.append(deepcopy(ws_i))
+        ps.append(deepcopy(ps_i))
+        Fs.append(deepcopy(Fs_i))
+        Gs.append(deepcopy(Gs_i))
+        inds.append(copy(inds_succ))
 
         i += 1
         utils.info(f"Iteration {i} complete. t = {t:.4f}.")
@@ -483,13 +477,13 @@ def run_enrml(ensemble: Ensemble, prior, y, C_e,
     S_pr = compute_S(Gs_pr[:, inds_succ], ys[:, inds_succ], C_e_invsqrt)
     lam = 10**np.floor(np.log10(S_pr / 2*NG))
     
-    ws = [ws_pr]
-    ps = [ps_pr]
-    Fs = [Fs_pr]
-    Gs = [Gs_pr]
+    ws = [deepcopy(ws_pr)]
+    ps = [deepcopy(ps_pr)]
+    Fs = [deepcopy(Fs_pr)]
+    Gs = [deepcopy(Gs_pr)]
     Ss = [S_pr]
     lams = [lam]
-    inds = [inds_succ]
+    inds = [copy(inds_succ)]
 
     dw_pr = compute_deltas(ws_pr)
     Uw_pr, Sw_pr, _ = compute_tsvd(dw_pr)
@@ -507,13 +501,13 @@ def run_enrml(ensemble: Ensemble, prior, y, C_e,
         ps_i, Fs_i, Gs_i, inds_succ, inds_fail = ensemble.run(ws_i, nesi)
         S_i = compute_S(Gs_i[:, inds_succ], ys[:, inds_succ], C_e_invsqrt)
         
-        ws.append(ws_i)
-        ps.append(ps_i)
-        Fs.append(Fs_i)
-        Gs.append(Gs_i)
+        ws.append(deepcopy(ws_i))
+        ps.append(deepcopy(ps_i))
+        Fs.append(deepcopy(Fs_i))
+        Gs.append(deepcopy(Gs_i))
         Ss.append(S_i)
         lams.append(lam)
-        inds.append(inds_succ)
+        inds.append(copy(inds_succ))
         i += 1
 
         if S_i <= Ss[en_ind]:
@@ -547,16 +541,15 @@ def run_enrml(ensemble: Ensemble, prior, y, C_e,
 
 def save_results_eki(fname: str, results: dict):
 
-    post_ind = len(results["ws"]-1)
-
     with h5py.File(fname, "w") as f:
         
         for key, vals in results.items():
             for i, val in enumerate(vals):
                 f.create_dataset(f"{key}_{i}", data=val)
 
-        f.create_dataset("algorithm", "eki")
-        f.create_dataset("post_ind", data=post_ind)
+        post_ind = len(results["ws"])-1
+        f.create_dataset("algorithm", data=["eki"])
+        f.create_dataset("post_ind", data=[post_ind])
 
 def save_results_enrml(fname: str, results: dict, post_ind: int):
 
@@ -566,5 +559,5 @@ def save_results_enrml(fname: str, results: dict, post_ind: int):
             for i, val in enumerate(vals):
                 f.create_dataset(f"{key}_{i}", data=val)
 
-        f.create_dataset("algorithm", data="enrml")
-        f.create_dataset("post_ind", data=post_ind)
+        f.create_dataset("algorithm", data=["enrml"])
+        f.create_dataset("post_ind", data=[post_ind])
