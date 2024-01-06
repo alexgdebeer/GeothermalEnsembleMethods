@@ -217,22 +217,17 @@ class Fault():
         self.x0 = self.mesh.m.bounds[0][0]
         self.x1 = self.mesh.m.bounds[1][0]
         self.bounds = bounds
-        self.n_params = 3
+        self.n_params = 2
 
     def get_cells_in_fault(self, pars):
         """Returns the cells and columns contained within the fault 
         specified by a given set of parameters."""
-        
-        def in_fault(x, y, y0, y1, w):
-            dx = (x - self.x0) / (self.x1 - self.x0)
-            cy = y0 + (y1 - y0) * dx
-            return cy - (w/2) <= y <= cy + (w/2)
 
         pars = transform_pars(pars, self.bounds)
 
-        cols = [
-            col for col in self.mesh.m.column 
-            if in_fault(*col.centre, *pars)]
+        fault_line = [[self.x0, pars[0]], [self.x1, pars[1]]]
+        cols = self.mesh.m.column_track(fault_line)
+        cols = [c[0] for c in cols]
         
         cells = [cell for col in cols for cell in col.cell]
         return cells, cols
@@ -307,7 +302,7 @@ class ClayCap():
         cap_radii = self.compute_cap_radii(cell_phis, cell_thetas,
                                            width_h, width_v, coefs)
         
-        return (cell_radii < cap_radii).nonzero()
+        return (cell_radii < cap_radii).nonzero()[0]
 
 class Model(ABC):
     """Base class for models, with a set of default methods."""
@@ -622,7 +617,6 @@ class Ensemble():
         self.Ne = Ne
 
     def transform_params(self, ws):
-        # TODO: parallelise for NeSI?
         ps = np.empty((self.Np, self.Ne))
         for i, w_i in enumerate(ws.T):
             ps[:, i] = self.prior.transform(w_i)
