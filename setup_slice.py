@@ -218,3 +218,7 @@ if READ_TRUTH:
 else:
     w_t, p_t, F_t, G_t = generate_truth()
     y, C_e = generate_data(G_t)
+
+Np = n_blocks_crse + 1
+NF = n_blocks_crse + 2 * n_wells * (nt + 1)
+NG = len(y)
