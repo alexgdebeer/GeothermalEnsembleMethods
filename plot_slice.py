@@ -15,21 +15,21 @@ FNAMES = [
 
 ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
-PLOT_MESH = True 
-PLOT_TRUTH = True 
-PLOT_DATA = True
+PLOT_MESH = False 
+PLOT_TRUTH = False 
+PLOT_DATA = False
 
-PLOT_PRIOR_PARTICLES = True
+PLOT_PRIOR_PARTICLES = False
 
-PLOT_MEAN_PRI = True
-PLOT_MEAN_EKI = True
-PLOT_STDS = True
-PLOT_POST_PARTICLES = True
-PLOT_UPFLOWS = True
-PLOT_PREDICTIONS = True
+PLOT_MEAN_PRI = False
+PLOT_MEAN_EKI = False
+PLOT_STDS = False
+PLOT_POST_PARTICLES = False
+PLOT_UPFLOWS = False
+PLOT_PREDICTIONS = False
 
-PLOT_INTERVALS = True
-PLOT_HYPERPARAMS = False
+PLOT_INTERVALS = False
+PLOT_HYPERPARAMS = True
 
 DATA_WELL = 1
 WELL_TO_PLOT = 2
@@ -266,27 +266,27 @@ if PLOT_INTERVALS:
 
 if PLOT_HYPERPARAMS:
 
-    hps = np.array([prior.get_hyperparams(w_i)[2] for w_i in results["EKI-BOOT"]["ws_post"].T])
+    ind = 2 # Deep
 
-    hps_t = truth_dist.get_hyperparams(w_t)[2]
+    def get_hyperparams(ws):
+        return np.array([prior.get_hyperparams(w_i)[ind] for w_i in ws.T])
 
-    fig, axes = plt.subplots(1, 3, figsize=(9, 3.0))
-    axes[0].hist(hps[:, 0], label="Ensemble")
-    axes[1].hist(hps[:, 1], label="Ensemble")
-    axes[2].hist(hps[:, 2], label="Ensemble")
+    hps = [
+        get_hyperparams(results["EKI"]["ws_pri"]),
+        get_hyperparams(results["EKI"]["ws_post"]),
+        get_hyperparams(results["EKI-BOOT"]["ws_post"]),
+        get_hyperparams(results["EKI-INF"]["ws_post"]),
+    ]
 
-    axes[0].axvline(hps_t[0], label="Truth", color="k")
-    axes[1].axvline(hps_t[1], label="Truth", color="k")
-    axes[2].axvline(hps_t[2], label="Truth", color="k")
+    hps_t = truth_dist.get_hyperparams(w_t)[ind]
 
-    axes[0].set_title("Standard Deviation")
-    axes[1].set_title("Lengthscale ($x$)")
-    axes[2].set_title("Lengthscale ($z$)")
+    std_lims_x = bounds_deep[0]
+    std_lims_y = (0, 7) 
+    lenh_lims_x = bounds_deep[1]
+    lenh_lims_y = (0, 0.003)
+    lenv_lims_x = bounds_deep[2]
+    lenv_lims_y = (0, 0.01)
 
-    for i, ax in enumerate(axes):
-        ax.set_xlim(bounds_deep[i])
-        ax.legend()
-
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    fname = f"{PLOTS_FOLDER}/hyperparams.pdf"
+    plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x, 
+                     lenh_lims_y, lenv_lims_x, lenv_lims_y, fname) 

@@ -57,6 +57,10 @@ COL_TEMP = "darkorange"
 COL_PRES = "limegreen"
 COL_ENTH = "deepskyblue"
 
+COL_STD = "darkorange"
+COL_LENH = "limegreen"
+COL_LENV = "deepskyblue"
+
 COL_DATA_END = "darkgrey"
 
 FULL_WIDTH = 10.0
@@ -73,6 +77,10 @@ LABEL_UPFL = "Upflow [kg/s]"
 LABEL_TEMP = "Temperature [$^{\circ}$C]"
 LABEL_PRES = "Pressure [MPa]"
 LABEL_ENTH = "Enthalpy [kJ/kg]"
+
+LABEL_STD = "Standard Deviation"
+LABEL_LENH = "Horizontal Lengthscale [m]"
+LABEL_LENV = "Vertical Lengthscale [m]"
 
 LABEL_X1 = "$x_{1}$ [m]"
 LABEL_X2 = "$x_{2}$ [m]"
@@ -230,6 +238,53 @@ def plot_predictions(Fs, data_handler,
     axes[0][1].set_xlabel(LABEL_TEMP, fontsize=LABEL_SIZE)
     axes[1][1].set_xlabel(LABEL_TIME, fontsize=LABEL_SIZE)
     axes[2][1].set_xlabel(LABEL_TIME, fontsize=LABEL_SIZE)
+
+    fig.align_ylabels()
+    plt.tight_layout()
+    plt.savefig(fname)
+
+def plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x, 
+                     lenh_lims_y, lenv_lims_x, lenv_lims_y, fname):
+
+    fig, axes = plt.subplots(3, 4, figsize=(FULL_WIDTH, 0.9 * FULL_WIDTH))
+
+    bins_std = np.linspace(std_lims_x[0], std_lims_x[1], 11)
+    bins_lenh = np.linspace(lenh_lims_x[0], lenh_lims_x[1], 11)
+    bins_lenv = np.linspace(lenv_lims_x[0], lenv_lims_x[1], 11)
+
+    for j in range(4):
+
+        tufte_axis(axes[0][j], std_lims_x, std_lims_y, gap=0.05)
+        tufte_axis(axes[1][j], lenh_lims_x, lenh_lims_y, gap=0.05)
+        tufte_axis(axes[2][j], lenv_lims_x, lenv_lims_y, gap=0.05)
+
+        axes[0][j].hist(hps[j][:, 0], density=True, color=COL_STD, bins=bins_std, zorder=1)
+        axes[1][j].hist(hps[j][:, 1], density=True, color=COL_LENH, bins=bins_lenh, zorder=1)
+        axes[2][j].hist(hps[j][:, 2], density=True, color=COL_LENV, bins=bins_lenv, zorder=1)
+        
+        axes[0][j].axvline(hps_t[0], c="k", ymin=1/20, ymax=19/20, zorder=2)
+        axes[1][j].axvline(hps_t[1], c="k", ymin=1/20, ymax=19/20, zorder=2)
+        axes[2][j].axvline(hps_t[2], c="k", ymin=1/20, ymax=19/20, zorder=2)
+
+    axes[0][0].set_title(ALG_LABELS[0], fontsize=TITLE_SIZE)
+    axes[0][1].set_title(ALG_LABELS[1], fontsize=TITLE_SIZE)
+    axes[0][2].set_title(ALG_LABELS[2], fontsize=TITLE_SIZE)
+    axes[0][3].set_title(ALG_LABELS[3], fontsize=TITLE_SIZE)
+
+    axes[0][1].set_xlabel(LABEL_STD, fontsize=LABEL_SIZE)
+    axes[1][1].set_xlabel(LABEL_LENH, fontsize=LABEL_SIZE)
+    axes[2][1].set_xlabel(LABEL_LENV, fontsize=LABEL_SIZE)
+
+    for i in range(3):
+        axes[i][0].set_ylabel("Density", fontsize=LABEL_SIZE)
+        
+        for j in range(1, 4):
+            axes[i][j].spines["left"].set_visible(False)
+            axes[i][j].set_yticks([])
+
+    for ax in axes.flat:
+        ax.set_box_aspect(1)
+        ax.tick_params(labelsize=TICK_SIZE)
 
     fig.align_ylabels()
     plt.tight_layout()
