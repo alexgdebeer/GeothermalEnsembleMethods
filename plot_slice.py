@@ -1,140 +1,292 @@
-import colorcet as cc
-from matplotlib import pyplot as plt
+import h5py
+from scipy.interpolate import NearestNDInterpolator
 
+from plotting import *
 from setup_slice import *
 
-plt.rc("text", usetex=True)
-plt.rc("font", family="serif")
+RESULTS_FOLDER = "data/slice/results"
+PLOTS_FOLDER = "plots/slice"
 
-perm_min = -17.0
-perm_max = -13.0
-perm_cmap = cc.cm.bgy
-temp_cmap = "coolwarm"
+FNAMES = [
+    f"{RESULTS_FOLDER}/eki_dmc.h5",
+    f"{RESULTS_FOLDER}/eki_dmc_boot.h5",
+    f"{RESULTS_FOLDER}/eki_dmc_inf.h5"
+]
 
-TICK_SIZE = 8
-LABEL_SIZE = 12
+ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
-temp_full, pres_full, enth_full = data_handler_fine.get_full_states(F_t)
-downhole_temps = data_handler_fine.downhole_temps(temp_full)
+PLOT_MESH = True 
+PLOT_TRUTH = True 
+PLOT_DATA = True
 
-temp_obs, pres_obs, enth_obs = data_handler_fine.split_obs(y)
+PLOT_PRIOR_PARTICLES = True
 
-logperms = np.reshape(p_t[:-1], (mesh_fine.nx, mesh_fine.nz))
+PLOT_MEAN_PRI = True
+PLOT_MEAN_EKI = True
+PLOT_STDS = True
+PLOT_POST_PARTICLES = True
+PLOT_UPFLOWS = True
+PLOT_PREDICTIONS = True
 
-plot_truth = False
-plot_prior_samples = False
-plot_data = True
+PLOT_INTERVALS = True
+PLOT_HYPERPARAMS = False
 
-well_num = 1
+DATA_WELL = 1
+WELL_TO_PLOT = 2
 
-if plot_truth:
+def read_data(fname):
 
-    fig, axes = plt.subplots(1, 2, figsize=(8, 3), layout="constrained")
+    with h5py.File(fname, "r") as f:
 
-    perm_mesh = axes[0].pcolormesh(mesh_fine.xs, mesh_fine.zs, logperms, 
-                                   vmin=perm_min, vmax=perm_max, cmap=perm_cmap)
-    temp_mesh = axes[1].pcolormesh(mesh_fine.xs, mesh_fine.zs, temp_full, 
-                                   vmax=340, cmap=temp_cmap)
+        post_ind = f["post_ind"][0]
 
-    perm_cbar = fig.colorbar(perm_mesh, ax=axes[0])
-    temp_cbar = fig.colorbar(temp_mesh, ax=axes[1])
+        inds_succ_pri = f[f"inds_succ_0"][:]
+        inds_succ_post = f[f"inds_succ_{post_ind}"][:]
+
+        results = {
+            "ws_pri" : f[f"ws_0"][:, inds_succ_pri],
+            "ps_pri" : f[f"ps_0"][:, inds_succ_pri],
+            "Fs_pri" : f[f"Fs_0"][:, inds_succ_pri],
+            "Gs_pri" : f[f"Gs_0"][:, inds_succ_pri],
+            "ws_post" : f[f"ws_{post_ind}"][:, inds_succ_post],
+            "ps_post" : f[f"ps_{post_ind}"][:, inds_succ_post],
+            "Fs_post" : f[f"Fs_{post_ind}"][:, inds_succ_post],
+            "Gs_post" : f[f"Gs_{post_ind}"][:, inds_succ_post],
+        }
+
+    return results
+
+def get_mean(ws):
+    """Returns the mean (in the transformed space) of an ensemble of 
+    whitened particles."""
+    mu_w = np.mean(ws, axis=1)
+    mu = prior.transform(mu_w)[:-1]
+    mu = np.reshape(mu, (mesh_crse.nx, mesh_crse.nz))
+    return mu
+
+def get_stds(ps):
+    """Returns the standard deviations of each component of a set of 
+    whitened particles."""
+    stds = np.std(ps[:-1, :], axis=1)
+    stds = np.reshape(stds, (mesh_crse.nx, mesh_crse.nz))
+    return stds
+
+results = {
+    algname: read_data(fname) 
+    for algname, fname in zip(ALGNAMES, FNAMES)
+}
+
+
+if PLOT_MESH:
+
+    fname = f"{PLOTS_FOLDER}/mesh.pdf"
+    plot_mesh_2d(mesh_crse, prior, wells_crse, fname)
+
+if PLOT_DATA: 
+
+    temp_t, pres_t, enth_t = data_handler_fine.get_full_states(F_t)
+    temp_t = data_handler_fine.downhole_temps(temp_t)
+    temp_obs, pres_obs, enth_obs = data_handler_fine.split_obs(y)
+
+    ts = data_handler_fine.ts / (52 * SECS_PER_WEEK)
+    ts_obs = data_handler_crse.prod_obs_ts / (52 * SECS_PER_WEEK)
+    zs = mesh_fine.zs
+    zs_obs = temp_obs_zs
+
+    temp_lims_x = (0, 300)
+    temp_lims_y = (-1500, 0)
+    pres_lims_x = (0, 2)
+    pres_lims_y = (4, 14)
+    enth_lims_x = (0, 2)
+    enth_lims_y = (1000, 1600)
+
+    data_end = 1
+
+    fname = f"{PLOTS_FOLDER}/data.pdf"
+    plot_data(temp_t[:, DATA_WELL], pres_t, enth_t, zs, ts, 
+              temp_obs, pres_obs, enth_obs, zs_obs, ts_obs, 
+              temp_lims_x, temp_lims_y, pres_lims_x, pres_lims_y, 
+              enth_lims_x, enth_lims_y, data_end, 
+              DATA_WELL, fname)
+
+if PLOT_TRUTH:
     
-    perm_cbar.set_label("log$_{10}$(Permeability) [log$_{10}$(m$^2$)]", fontsize=14)
-    temp_cbar.set_label("Temperature [$^{\circ}$C]", fontsize=14)
+    perm_t = np.reshape(p_t[:-1], (mesh_fine.nx, mesh_fine.nz))
+    temp_t = data_handler_fine.get_full_temperatures(F_t)
 
-    for ax in axes:
-        ax.set_box_aspect(1)
-        ax.set_xticks([])
-        ax.set_yticks([])
+    fname = f"{PLOTS_FOLDER}/truth.pdf"
+    plot_truth_2d(mesh_fine, perm_t, temp_t, fname)
 
-    plt.savefig("plots/slice/truth.pdf")
+if PLOT_PRIOR_PARTICLES:
+    
+    perms = results["EKI"]["ps_pri"][:-1, :8]
+    
+    fname = f"{PLOTS_FOLDER}/particles_pri.pdf"
+    plot_particles_2d(mesh_crse, perms, fname)
 
-if plot_prior_samples:
+if PLOT_MEAN_PRI:
 
-    fig, axes = plt.subplots(2, 4, figsize=(8, 4.2))
+    perm_t = np.reshape(p_t[:-1], (mesh_fine.nx, mesh_fine.nz))
+    mean_pri = prior.transform(np.zeros(prior.n_params))[:-1]
+    mean_pri = np.reshape(mean_pri, (mesh_crse.nx, mesh_crse.nz))
 
-    for ax in axes.flat: 
+    vals = [perm_t, mean_pri]
+    meshes = [mesh_fine, mesh_crse]
+    labels = ["Truth", "Prior Mean"]
 
-        w_i = prior.sample().squeeze()
-        ks_t = prior.transform(w_i)[:-1]
-        ks_t = np.reshape(ks_t, (mesh_crse.nx, mesh_crse.nz))
+    fname = f"{PLOTS_FOLDER}/means_pri.pdf"
+    plot_grid_2d(vals, meshes, labels, fname)
 
-        ax.pcolormesh(mesh_crse.xs, mesh_crse.zs, ks_t, 
-                      vmin=perm_min, vmax=perm_max, cmap=perm_cmap)
-        
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_box_aspect(1)
+if PLOT_MEAN_EKI:
 
+    vals = [
+        get_mean(results["EKI"]["ws_post"]),
+        get_mean(results["EKI-BOOT"]["ws_post"]),
+        get_mean(results["EKI-INF"]["ws_post"])]
+    
+    meshes = [mesh_crse] * 3
+    labels = ["EKI", "EKI (Localisation)", "EKI (Inflation)"]
+
+    fname = f"{PLOTS_FOLDER}/means_eki.pdf"
+    plot_grid_2d(vals, meshes, labels, fname)
+
+if PLOT_STDS:
+
+    vals = [
+        get_stds(results["EKI"]["ps_pri"]),
+        get_stds(results["EKI"]["ps_post"]),
+        get_stds(results["EKI-BOOT"]["ps_post"]),
+        get_stds(results["EKI-INF"]["ps_post"])]
+    
+    meshes = [mesh_crse] * 4
+    labels = ["Prior", "EKI", "EKI (Localisation)", "EKI (Inflation)"]
+    
+    fname = f"{PLOTS_FOLDER}/stds.pdf"
+    plot_grid_2d(vals, meshes, labels, fname, 
+                 vmin=MIN_STDS_2D, vmax=MAX_STDS_2D)
+
+if PLOT_PREDICTIONS:
+
+    Fs = [
+        results["EKI"]["Fs_pri"], 
+        results["EKI"]["Fs_post"], 
+        results["EKI-BOOT"]["Fs_post"], 
+        results["EKI-INF"]["Fs_post"]
+    ]
+
+    temp_t, pres_t, enth_t = data_handler_fine.get_full_states(F_t)
+    temp_t = data_handler_fine.downhole_temps(temp_t)
+    temp_obs, pres_obs, enth_obs = data_handler_fine.split_obs(y)
+
+    ts = data_handler_fine.ts / (52 * SECS_PER_WEEK)
+    ts_obs = data_handler_crse.prod_obs_ts / (52 * SECS_PER_WEEK)
+    zs_obs = temp_obs_zs
+
+    temp_lims_x = (0, 340)
+    temp_lims_y = (-1500, 0)
+    pres_lims_x = (0, 2)
+    pres_lims_y = (4, 14)
+    enth_lims_x = (0, 2)
+    enth_lims_y = (1100, 2300)
+
+    data_end = 1
+
+    fname = f"{PLOTS_FOLDER}/predictions.pdf"
+    plot_predictions(Fs, data_handler_crse, temp_t[:, WELL_TO_PLOT], 
+                     pres_t[:, WELL_TO_PLOT], enth_t[:, WELL_TO_PLOT], 
+                     ts, zs, temp_obs, pres_obs, enth_obs, ts_obs, zs_obs, 
+                     temp_lims_x, temp_lims_y, pres_lims_x, pres_lims_y,
+                     enth_lims_x, enth_lims_y, data_end, 
+                     WELL_TO_PLOT, fname, dim=2)
+
+if PLOT_POST_PARTICLES:
+
+    perms = results["EKI"]["ps_post"][:-1, :8]
+    
+    fname = f"{PLOTS_FOLDER}/particles_post.pdf"
+    plot_particles_2d(mesh_crse, perms, fname)
+
+if PLOT_UPFLOWS:
+
+    upflow_t = p_t[-1] * upflow_cell_fine.column.area
+    bnds_x = (0.1, 0.2)
+    bnds_y = (0, 80)
+
+    upflows = [
+        results["EKI"]["ps_pri"][-1, :],
+        results["EKI"]["ps_post"][-1, :],
+        results["EKI-BOOT"]["ps_post"][-1, :],
+        results["EKI-INF"]["ps_post"][-1, :]
+    ]
+
+    upflows = [u * upflow_cell_crse.column.area for u in upflows]
+
+    fname = f"{PLOTS_FOLDER}/upflows.pdf"
+    plot_upflows_2d(upflow_t, upflows, bnds_x, bnds_y, fname)
+
+if PLOT_INTERVALS:
+
+    def get_cells_in_interval(ps):
+
+        perms_post = ps[:mesh_crse.m.num_cells, :]
+
+        bnds = np.quantile(perms_post, [0.05, 0.95], axis=1)
+
+        cells_in_interval = np.zeros((mesh_crse.m.num_cells))
+        for j, perm in enumerate(perms_interp):
+            if not (bnds[0][j] - 1e-4 <= perm <= bnds[1][j] + 1e-4):
+                cells_in_interval[j] = 1.0
+
+        return np.reshape(cells_in_interval, (mesh_crse.nx, mesh_crse.nz))
+
+    perms_t = p_t[:mesh_fine.m.num_cells]
+
+    centres_crse = [c.centre for c in mesh_crse.m.cell]
+    centres_fine = [c.centre for c in mesh_fine.m.cell]
+
+    interp = NearestNDInterpolator(centres_fine, perms_t)
+    perms_interp = interp(centres_crse)
+
+    fig, axes = plt.subplots(1, 4, figsize=(10, 2.7))
+
+    results_list = [
+        results["EKI"]["ps_pri"],
+        results["EKI"]["ps_post"],
+        results["EKI-BOOT"]["ps_post"],
+        results["EKI-INF"]["ps_post"]
+    ]
+
+    vals = [get_cells_in_interval(ps) for ps in results_list]
+    meshes = [mesh_crse] * 4
+    labels = ["Prior", "EKI", "EKI (Localisation)", "EKI (Inflation)"]
+
+    fname = f"{PLOTS_FOLDER}/intervals.pdf"
+    plot_grid_2d(vals, meshes, labels, fname, 
+                 vmin=0, vmax=1, cmap=CMAP_INTERVALS)
+
+if PLOT_HYPERPARAMS:
+
+    hps = np.array([prior.get_hyperparams(w_i)[2] for w_i in results["EKI-BOOT"]["ws_post"].T])
+
+    hps_t = truth_dist.get_hyperparams(w_t)[2]
+
+    fig, axes = plt.subplots(1, 3, figsize=(9, 3.0))
+    axes[0].hist(hps[:, 0], label="Ensemble")
+    axes[1].hist(hps[:, 1], label="Ensemble")
+    axes[2].hist(hps[:, 2], label="Ensemble")
+
+    axes[0].axvline(hps_t[0], label="Truth", color="k")
+    axes[1].axvline(hps_t[1], label="Truth", color="k")
+    axes[2].axvline(hps_t[2], label="Truth", color="k")
+
+    axes[0].set_title("Standard Deviation")
+    axes[1].set_title("Lengthscale ($x$)")
+    axes[2].set_title("Lengthscale ($z$)")
+
+    for i, ax in enumerate(axes):
+        ax.set_xlim(bounds_deep[i])
+        ax.legend()
+
+    plt.legend()
     plt.tight_layout()
-    plt.savefig("plots/slice/prior_samples.pdf")
-
-def tufte_axis(ax, bnds_x, bnds_y):
-    
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-
-    ax.spines["bottom"].set_bounds(*bnds_x)
-    ax.spines["left"].set_bounds(*bnds_y)
-
-    dx = bnds_x[1] - bnds_x[0]
-    dy = bnds_y[1] - bnds_y[0]
-
-    ax.set_xlim(bnds_x[0] - 0.1*dx, bnds_x[1] + 0.1*dx)
-    ax.set_ylim(bnds_y[0] - 0.1*dy, bnds_y[1] + 0.1*dy)
-
-if plot_data:
-
-    ts = data_handler_fine.ts / SECS_PER_WEEK
-    ts_obs = data_handler_fine.prod_obs_ts / SECS_PER_WEEK
-
-    fig, axes = plt.subplots(1, 3, figsize=(10, 3.2))
-
-    axes[0].plot(downhole_temps[:, well_num], mesh_fine.zs, c="k", ls="--")
-    axes[0].scatter(temp_obs[:, well_num], temp_obs_zs, c="k", s=25)
-
-    axes[1].plot(ts, pres_full[:, well_num], c="k", ls="--")
-    axes[1].scatter(ts_obs, pres_obs[:, well_num], c="k", s=25)
-
-    axes[2].plot(ts, enth_full[:, well_num], c="k", ls="--")
-    axes[2].scatter(ts_obs, enth_obs[:, well_num], c="k", s=25)
-    
-    for ax in axes.flat:
-
-        ax.tick_params(axis="both", which="both", labelsize=TICK_SIZE)
-        ax.set_box_aspect(1)
-    
-    temp_bounds_x = [0, 300]
-    pres_bounds_x = [0, tmax / SECS_PER_WEEK]
-    enth_bounds_x = [0, tmax / SECS_PER_WEEK]
-
-    temp_bounds_y = [-1500, 0]
-    pres_bounds_y = [4, 14]
-    enth_bounds_y = [1200, 1500]
-
-    tufte_axis(axes[0], temp_bounds_x, temp_bounds_y)
-    tufte_axis(axes[1], pres_bounds_x, pres_bounds_y)
-    tufte_axis(axes[2], enth_bounds_x, enth_bounds_y)
-
-    axes[0].set_ylabel("Elevation [m]", fontsize=LABEL_SIZE)
-    axes[1].set_ylabel("Pressure [MPa]", fontsize=LABEL_SIZE)
-    axes[2].set_ylabel("Enthalpy [kJ/kg]", fontsize=LABEL_SIZE)
-
-    axes[0].set_xlabel("Temperature [$^\circ$C]", fontsize=LABEL_SIZE)
-    axes[1].set_xlabel("Time [Weeks]", fontsize=LABEL_SIZE)
-    axes[2].set_xlabel("Time [Weeks]", fontsize=LABEL_SIZE)
-
-    axes[1].set_xticks([0, 52, 104])
-    axes[2].set_xticks([0, 52, 104])
-
-    axes[0].set_yticks([-1500, -750, 0])
-    axes[2].set_yticks([1200, 1300, 1400, 1500])
-
-    plt.tight_layout()
-    plt.savefig("plots/slice/data.pdf")
-
-# plot_logperms(logperms)
-# plot_temps_full(temp_full)
-# plot_pressures(pres_full, pres_obs)
-# plot_enthalpies(enth_full, enth_obs)
-# plot_downhole_temps(downhole_temps, temp_obs)
+    plt.show()

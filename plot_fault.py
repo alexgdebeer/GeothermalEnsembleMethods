@@ -4,8 +4,8 @@ from scipy.interpolate import NearestNDInterpolator
 from plotting import *
 from setup_fault import *
 
-RESULTS_FOLDER = "data/channel/results"
-PLOTS_FOLDER = "plots/channel"
+RESULTS_FOLDER = "data/faults/results"
+PLOTS_FOLDER = "plots/fault"
 
 RESULTS_FNAMES = [
     f"{RESULTS_FOLDER}/eki_dmc.h5",
@@ -30,6 +30,7 @@ PLOT_POST_FAULTS = False
 PLOT_PREDICTIONS = False
 
 PLOT_INTERVALS = False
+PLOT_HYPERPARAMS = False
 
 PLOT_CBARS = False
 
@@ -72,13 +73,13 @@ results = read_results(ALGNAMES, RESULTS_FNAMES)
 if PLOT_MESH:
 
     fname = f"{PLOTS_FOLDER}/mesh.png"
-    plot_mesh(fem_mesh_crse, wells_crse, feedzone_depths, fname)
+    plot_mesh_3d(fem_mesh_crse, wells_crse, feedzone_depths, fname)
 
     fname = f"{PLOTS_FOLDER}/mesh_coarse.pdf"
-    plot_grid_layer(mesh_crse, wells_crse, fname)
+    plot_grid_layer_3d(mesh_crse, wells_crse, fname)
 
     fname = f"{PLOTS_FOLDER}/mesh_fine.pdf"
-    plot_grid_layer(mesh_fine, wells_fine, fname)
+    plot_grid_layer_3d(mesh_fine, wells_fine, fname)
 
 if PLOT_TRUTH:
 
@@ -88,7 +89,8 @@ if PLOT_TRUTH:
 
     temps_t = F_t[:mesh_fine.m.num_cells]
     fname = f"{PLOTS_FOLDER}/temps_true.png"
-    plot_slice(mesh_fine.m, fem_mesh_fine, temps_t, fname, cmap=CMAP_TEMP, vmin=MIN_TEMP, vmax=MAX_TEMP)
+    plot_slice(mesh_fine.m, fem_mesh_fine, temps_t, fname, 
+               cmap=CMAP_TEMP, vmin=MIN_TEMP_3D, vmax=MAX_TEMP_3D)
 
     upflows_t = p_t[-mesh_fine.m.num_columns:]
     fname = f"{PLOTS_FOLDER}/upflows_true.pdf"
@@ -262,6 +264,6 @@ if PLOT_CBARS:
     perm_fname = f"{PLOTS_FOLDER}/cbar_perms.pdf"
     stds_fname = f"{PLOTS_FOLDER}/cbar_stds.pdf"
 
-    plot_colourbar(CMAP_TEMP, MIN_TEMP, MAX_TEMP, temp_label, temp_fname)
-    plot_colourbar(CMAP_PERM, MIN_PERM, MAX_PERM, perm_label, perm_fname)
-    plot_colourbar(CMAP_PERM, MIN_STDS, MAX_STDS, perm_label, perm_fname)
+    plot_colourbar(CMAP_TEMP, MIN_TEMP_3D, MAX_TEMP_3D, temp_label, temp_fname)
+    plot_colourbar(CMAP_PERM, MIN_PERM_3D, MAX_PERM_3D, perm_label, perm_fname)
+    plot_colourbar(CMAP_PERM, MIN_STDS_3D, MAX_STDS_3D, perm_label, perm_fname)
