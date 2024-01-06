@@ -11,19 +11,3 @@ Then, install the project dependencies by running the following at the command l
 python3.{VERSION} -m pip install -r requirements.txt
 ```
 where ```{VERSION}``` is replaced with your version of Python.
-
-## TODO:
-### Slice
- - N/A
-### Channel
- - Generate and visualise data.
- - Tune Robin parameter on Matern fields.
- - Think about inverse crimes (i.e. consider making a finer model)
-### Both Models
- - Check everything carefully!
-### Ensemble Methods
- - Fix EnRML code.
- - Fix up random number generation.
-### Misc
- - Update NZGW code and slides.
- - Finish writing README (add some notes on the various algorithms, other implementations, etc).
