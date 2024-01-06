@@ -14,12 +14,14 @@ np.random.seed(24)
 DATA_FOLDER = "data/slice"
 MODEL_FOLDER = "models/slice"
 
-W_TRUE_PATH = f"{DATA_FOLDER}/w_true.npy"
-P_TRUE_PATH = f"{DATA_FOLDER}/p_true.npy"
-F_TRUE_PATH = f"{DATA_FOLDER}/F_true.npy"
-G_TRUE_PATH = f"{DATA_FOLDER}/G_true.npy"
-OBS_PATH = f"{DATA_FOLDER}/obs.npy"
-COV_PATH = f"{DATA_FOLDER}/C_e.npy"
+TRUTH_FOLDER = f"{DATA_FOLDER}/truth"
+
+W_TRUE_PATH = f"{TRUTH_FOLDER}/w_true.npy"
+P_TRUE_PATH = f"{TRUTH_FOLDER}/p_true.npy"
+F_TRUE_PATH = f"{TRUTH_FOLDER}/F_true.npy"
+G_TRUE_PATH = f"{TRUTH_FOLDER}/G_true.npy"
+OBS_PATH = f"{TRUTH_FOLDER}/obs.npy"
+COV_PATH = f"{TRUTH_FOLDER}/C_e.npy"
 
 READ_TRUTH = True
 

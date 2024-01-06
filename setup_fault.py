@@ -8,14 +8,18 @@ from src.priors import ChannelPrior
 
 np.random.seed(256)
 
-DATA_FOLDER = "data/channel"
-MODEL_FOLDER = "models/channel"
-W_TRUE_PATH = f"{DATA_FOLDER}/w_true.npy"
-P_TRUE_PATH = f"{DATA_FOLDER}/p_true.npy"
-F_TRUE_PATH = f"{DATA_FOLDER}/F_true.npy"
-G_TRUE_PATH = f"{DATA_FOLDER}/G_true.npy"
-OBS_PATH = f"{DATA_FOLDER}/obs.npy"
-COV_PATH = f"{DATA_FOLDER}/C_e.npy"
+MODEL_FOLDER = "models/fault"
+DATA_FOLDER = "data/fault"
+
+TRUTH_FOLDER = f"{DATA_FOLDER}/truth"
+MATERN_FOLDER = f"{DATA_FOLDER}/matern"
+
+W_TRUE_PATH = f"{TRUTH_FOLDER}/w_true.npy"
+P_TRUE_PATH = f"{TRUTH_FOLDER}/p_true.npy"
+F_TRUE_PATH = f"{TRUTH_FOLDER}/F_true.npy"
+G_TRUE_PATH = f"{TRUTH_FOLDER}/G_true.npy"
+OBS_PATH = f"{TRUTH_FOLDER}/obs.npy"
+COV_PATH = f"{TRUTH_FOLDER}/C_e.npy"
 
 READ_TRUTH = True
 
@@ -25,8 +29,8 @@ MESH_PATH_FINE = f"{MODEL_FOLDER}/gCH13383"
 MODEL_PATH_CRSE = f"{MODEL_FOLDER}/CH8788"
 MODEL_PATH_FINE = f"{MODEL_FOLDER}/CH13383"
 
-MATERN_PATH_CRSE = f"{DATA_FOLDER}/matern/CH8788"
-MATERN_PATH_FINE = f"{DATA_FOLDER}/matern/CH13383"
+MATERN_PATH_CRSE = f"{MATERN_FOLDER}/CH8788"
+MATERN_PATH_FINE = f"{MATERN_FOLDER}/CH13383"
 
 """
 Model parameters
