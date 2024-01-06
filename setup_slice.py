@@ -9,7 +9,7 @@ from src.grfs import *
 from src.models import *
 from src.priors import SlicePrior
 
-np.random.seed(24) # 9, 11, 24 not bad
+np.random.seed(24)
 
 DATA_FOLDER = "data/slice"
 MODEL_FOLDER = "models/slice"
@@ -51,8 +51,6 @@ mesh_crse = SliceMesh(mesh_name_crse, xmax, ymax, zmax, nx_crse, nz_crse)
 """
 Wells and feedzones
 """
-
-# TODO: this section can surely be made simpler
 
 well_xs = [200, 475, 750, 1025, 1300]
 n_wells = len(well_xs)
