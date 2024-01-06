@@ -7,23 +7,30 @@ NG = len(y)
 Ne = 100
 
 ensemble = Ensemble(prior, generate_particle, get_result, Np, NF, NG, Ne)
-localiser = IdentityLocaliser()
-inflator = IdentityInflator()
-imputer = GaussianImputer()
 
-ws, ps, Fs, Gs, Ss, lams, en_ind, inds_succ = run_enrml(
-    ensemble, prior, y, C_e,
-    localiser=localiser, inflator=inflator, imputer=imputer, nesi=False)
+settings = [
+    (IdentityLocaliser(), IdentityInflator(), GaussianImputer()),
+    (BootstrapLocaliser(), IdentityInflator(), GaussianImputer())
+]
 
-fname = "enrml.h5"
-results = {
-    "ws": ws, 
-    "ps": ps, 
-    "Fs": Fs, 
-    "Gs": Gs, 
-    "inds_succ": inds_succ, 
-    "Ss": Ss, 
-    "lams": lams
-}
+fnames = [
+    "data/enrml/enrml.h5",
+    "data/enrml/enrml_boot.h5"
+]
 
-save_results_enrml(fname, results, en_ind)
+for (localiser, inflator, imputer), fname in zip(settings, fnames):
+
+    ws, ps, Fs, Gs, Ss, lams, en_ind, inds_succ = run_enrml(
+        ensemble, prior, y, C_e,
+        localiser=localiser, inflator=inflator, imputer=imputer, nesi=True)
+
+    results = {
+        "ws": ws, 
+        "ps": ps, 
+        "Fs": Fs, 
+        "Gs": Gs, 
+        "inds_succ": inds_succ, 
+        "Ss": Ss, 
+        "lams": lams
+    }
+    save_results_enrml(fname, results, en_ind)
