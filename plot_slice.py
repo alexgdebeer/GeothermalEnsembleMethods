@@ -7,7 +7,7 @@ from setup_slice import *
 RESULTS_FOLDER = "data/slice/results"
 PLOTS_FOLDER = "plots/slice"
 
-FNAMES = [
+RESULTS_FNAMES = [
     f"{RESULTS_FOLDER}/eki_dmc.h5",
     f"{RESULTS_FOLDER}/eki_dmc_boot.h5",
     f"{RESULTS_FOLDER}/eki_dmc_inf.h5"
@@ -15,21 +15,21 @@ FNAMES = [
 
 ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
-PLOT_MESH = False 
-PLOT_TRUTH = False 
-PLOT_DATA = False
+PLOT_MESH = True 
+PLOT_TRUTH = True 
+PLOT_DATA = True
 
-PLOT_PRIOR_PARTICLES = False
+PLOT_PRIOR_PARTICLES = True
 
 PLOT_MEAN_PRI = True
 PLOT_MEAN_EKI = True
 PLOT_STDS = True
-PLOT_POST_PARTICLES = False
+PLOT_POST_PARTICLES = True
 PLOT_UPFLOWS = True
-PLOT_PREDICTIONS = False
+PLOT_PREDICTIONS = True
 
 PLOT_INTERVALS = True
-PLOT_HYPERPARAMS = False
+PLOT_HYPERPARAMS = True
 
 PLOT_CBARS = True
 
@@ -75,7 +75,7 @@ def get_stds(ps):
 
 results = {
     algname: read_data(fname) 
-    for algname, fname in zip(ALGNAMES, FNAMES)
+    for algname, fname in zip(ALGNAMES, RESULTS_FNAMES)
 }
 
 

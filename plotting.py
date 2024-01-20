@@ -54,15 +54,15 @@ COL_SHAL = "silver"
 COL_CLAY = "gainsboro"
 COL_DEEP = "whitesmoke"
 
-COL_UPFL = "mediumorchid"
+COL_UPFL = "orange"
 
-COL_TEMP = "darkorange"
-COL_PRES = "limegreen"
-COL_ENTH = "deepskyblue"
+COL_TEMP = "#df4a18" # "darkorange"
+COL_PRES = "#577be7" # "limegreen"
+COL_ENTH = "#8cdc79" # "deepskyblue"
 
-COL_STD = "darkorange"
-COL_LENH = "limegreen"
-COL_LENV = "deepskyblue"
+COL_STD = "#df4a18" # "darkorange""
+COL_LENH = "#577be7" # "limegreen""
+COL_LENV = "#8cdc79" # "deepskyblue""
 
 COL_DATA_END = "darkgrey"
 
@@ -409,6 +409,7 @@ def plot_truth_2d(mesh, perm_t, temp_t, fname):
         ax.set_box_aspect(1)
         ax.set_xticks([])
         ax.set_yticks([])
+        ax.axis("off")
 
     plt.savefig(fname)
 
@@ -426,6 +427,7 @@ def plot_particles_2d(mesh, vals, fname, vmin=MIN_PERM_2D,
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_box_aspect(1)
+        ax.axis("off")
 
     plt.tight_layout()
     plt.savefig(fname)
@@ -475,6 +477,7 @@ def plot_grid_2d(vals, meshes, labels, fname, vmin=MIN_PERM_2D,
         ax.set_box_aspect(1)
         ax.set_xticks([])
         ax.set_yticks([])
+        ax.axis("off")
 
     plt.tight_layout()
     plt.savefig(fname)
