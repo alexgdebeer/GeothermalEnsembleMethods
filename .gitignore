@@ -10,4 +10,7 @@ __pycache__
 # Folders containing large files
 data/*/matern/*
 data/*/results/*
+
+# Plotting code
 plots
+plot*
