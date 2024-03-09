@@ -7,7 +7,7 @@ Both EKI and EnRML are derivative-free algorithms that iteratively update a set 
 They differ in terms of the dynamic under which the particles evolve.
 
 This repository contains a two-dimensional vertical slice model and a three-dimensional model with a vertical fault running through the centre of the reservoir. 
-The image at the top of this file shows the model mesh and well locations *(left)*, permeability structure *(centre)* and natural state convective plume *(right)* of the three-dimensional model.
+The image at the top of this file shows the model mesh and well locations *(left)*, permeability structure *(centre)*, and natural state convective plume *(right)* of the three-dimensional model.
 Both models are run using the [Waiwera](https://waiwera.github.io/) geothermal simulator.
 
 ## Getting Started
