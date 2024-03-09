@@ -1,21 +1,22 @@
 # Geothermal Ensemble Methods
 
 This repository contains code for running ensemble Kalman inversion (EKI; [[1](#1), [2](#2)]) and ensemble randomised maximum likelihood (EnRML; [[3](#3)]) for approximate Bayesian inference of the subsurface permeability structure and hot mass upflow of two simple geothermal reservoir models.
-Both EKI and EnRML are derivative-free algorithms that iteratively update a set of interacting particles to approximate the posterior. 
+Both EKI and EnRML are derivative-free algorithms that iteratively update a set of interacting particles to produce an approximation of the posterior. 
 They differ in terms of the dynamic the particles evolve according to.
 
-This repository contains a two-dimensional vertical slice model and a three-dimensional model with a vertical fault running through the centre of the reservoir. 
-Both models are run using the [Waiwera](https://waiwera.github.io/) geothermal simulator.
+This repository contains a two-dimensional vertical slice model and a three-dimensional model with a vertical fault running through the centre of the reservoir. Both models are run using the [Waiwera](https://waiwera.github.io/) geothermal simulator.
 
 ## Getting Started
 
-To run the code in this repository on a local machine, first install Python >= 3.8. Then, install the project dependencies by running the following at the command line:
+To run the code in this repository on a local machine, first install Python >= 3.8. Then, clone the repository and install the project dependencies by running the following at the command line:
 
 ```
 python3.8 -m pip install -r requirements.txt
 ```
 
-You can then use the appropriate scripts in the top level of the repository to run EKI and EnRML on each model (adjusting the algorithm parameters where appropriate).
+You will also need to install Waiwera. For information on getting started with Waiwera, consult the Waiwera [website](https://waiwera.github.io/install/).
+
+To run EKI and EnRML on each model, use the scripts in the top level of the repository (adjusting the algorithm parameters where appropriate).
 
 ## References
 
