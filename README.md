@@ -2,7 +2,7 @@
 
 This repository contains code for running ensemble Kalman inversion (EKI; [[1](#1), [2](#2)]) and ensemble randomised maximum likelihood (EnRML; [[3](#3)]) for approximate Bayesian inference of the subsurface permeability structure and hot mass upflow of two simple geothermal reservoir models.
 Both EKI and EnRML are derivative-free algorithms that iteratively update a set of interacting particles to produce an approximation of the posterior. 
-They differ in terms of the dynamic the particles evolve according to.
+They differ in terms of the dynamic under which the particles evolve.
 
 This repository contains a two-dimensional vertical slice model and a three-dimensional model with a vertical fault running through the centre of the reservoir. Both models are run using the [Waiwera](https://waiwera.github.io/) geothermal simulator.
 
