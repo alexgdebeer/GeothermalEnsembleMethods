@@ -174,8 +174,7 @@ noise_level = 0.05
 truth_dist = FaultPrior(
     mesh_fine, clay_cap_fine, fault_fine, 
     perm_field_ext_fine, perm_field_flt_fine, perm_field_cap_fine, 
-    upflow_field_fine, ls_upflows
-)
+    upflow_field_fine, ls_upflows)
 
 def generate_truth():
 

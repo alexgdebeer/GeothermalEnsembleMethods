@@ -9,18 +9,19 @@ localiser = IdentityLocaliser()
 inflator = IdentityInflator()
 imputer = GaussianImputer()
 
-fname = "data/fault/eki_dmc.h5"
+fname = "data/fault/enrml.h5"
 
-ws, ps, Fs, Gs, inds_succ = run_eki_dmc(
+ws, ps, Fs, Gs, Ss, lams, en_ind, inds_succ = run_enrml(
     ensemble, prior, y, C_e,
-    localiser=localiser, inflator=inflator,
-    imputer=imputer, nesi=False)
+    localiser=localiser, inflator=inflator, imputer=imputer, nesi=False)
 
 results = {
     "ws": ws, 
     "ps": ps, 
     "Fs": Fs, 
     "Gs": Gs, 
-    "inds_succ": inds_succ
+    "inds_succ": inds_succ, 
+    "Ss": Ss, 
+    "lams": lams
 }
-save_results_eki(fname, results)
+save_results_enrml(fname, results, en_ind)

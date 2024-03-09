@@ -14,7 +14,7 @@ fname = "data/slice/eki_dmc.h5"
 ws, ps, Fs, Gs, inds_succ = run_eki_dmc(
     ensemble, prior, y, C_e,
     localiser=localiser, inflator=inflator, 
-    imputer=imputer, nesi=True)
+    imputer=imputer, nesi=False)
 
 results = {
     "ws": ws, 

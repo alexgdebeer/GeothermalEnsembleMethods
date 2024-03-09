@@ -163,9 +163,6 @@ def generate_truth():
     w_t = truth_dist.sample()
     p_t = truth_dist.transform(w_t)
 
-    # TEMP: sanity check
-    mesh_fine.m.slice_plot(value=p_t[:-1], colourmap="viridis")
-
     *logks_t, upflow_rate_t = p_t
     upflows = [MassUpflow(upflow_cell_fine, upflow_rate_t)]
     
