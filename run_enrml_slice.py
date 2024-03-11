@@ -1,11 +1,11 @@
 from src.methods import *
 from setup_slice import *
 
-Ne = 100
+Ne = 10
 
 ensemble = Ensemble(prior, generate_particle, get_result, Np, NF, NG, Ne)
 
-localiser = IdentityLocaliser()
+localiser = ShuffleLocaliser()
 inflator = IdentityInflator()
 imputer = GaussianImputer()
 

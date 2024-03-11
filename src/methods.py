@@ -28,7 +28,7 @@ class GaussianImputer(Imputer):
 
         mu = np.mean(ws[:, inds_succ], axis=1)
         cov = np.cov(ws[:, inds_succ]) + EPS_IMPUTERS * np.eye(len(mu))
-        
+
         ws[:, inds_fail] = default_rng(0).multivariate_normal(
             mu, cov, method="cholesky", size=n_fail
         ).T
@@ -72,30 +72,6 @@ class IdentityLocaliser(Localiser):
 
     def compute_gain_enrml(self, ws, Gs, dw, UG, SG, VG, C_e_invsqrt, lam):
         return self._compute_gain_enrml(dw, UG, SG, VG, C_e_invsqrt, lam)
-
-class FisherLocaliser(Localiser):
-    """Carries out the localisation procedure described by Flowerdew 
-    (2015)."""
-
-    def compute_gain_eki(self, ws, Gs, a_i, C_e):
-        
-        Nw, Ne = ws.shape
-        NG, Ne = Gs.shape
-
-        K = self._compute_gain_eki(ws, Gs, a_i, C_e)
-
-        R_wG = compute_cors(ws, Gs)[0]
-        P = np.zeros(K.shape)
-
-        for i in range(Nw):
-            for j in range(NG):
-                cor_ij = R_wG[i, j]
-                s = np.log((1+cor_ij) / (1-cor_ij)) / 2
-                sig_s = (np.tanh(s + np.sqrt(Ne-3)**-1) - \
-                         np.tanh(s - np.sqrt(Ne-3)**-1)) / 2
-                P[i, j] = cor_ij**2 / (cor_ij**2 + sig_s**2)
-
-        return P * K
 
 class BootstrapLocaliser(Localiser):
     """Carries out the localisation procedure described by Zhang and 
@@ -252,14 +228,14 @@ class Inflator(ABC):
 
         UG, SG, VG = compute_tsvd(C_e_invsqrt @ dG)
 
-        K = localiser.compute_gain_enrml(ws[:, inds_succ], Gs[:, inds_succ], 
-                                         dw, UG, SG, VG, C_e_invsqrt, lam) 
-        
         psi = np.diag((lam + 1 + SG**2)**-1)
 
         dw_pr = dw @ VG @ psi @ VG.T @ dw.T @ \
             Uw_pr @ np.diag(Sw_pr**-2) @ Uw_pr.T @ \
                 (ws[:, inds_succ] - ws_pr[:, inds_succ])
+
+        K = localiser.compute_gain_enrml(ws[:, inds_succ], Gs[:, inds_succ], 
+                                         dw, UG, SG, VG, C_e_invsqrt, lam) 
         
         dw_obs = K @ (Gs[:, inds_succ] - ys[:, inds_succ])
         ws[:, inds_succ] -= (dw_pr + dw_obs) 
@@ -314,7 +290,7 @@ class AdaptiveInflator(Inflator):
         )
 
         ws_new = ws_aug[:Nw, :]
-        dummy_params = ws_aug[(Nw+1):, inds_succ]
+        dummy_params = ws_aug[Nw:, inds_succ]
         fac = 1 / np.mean(np.std(dummy_params, axis=1))
 
         utils.info(f"Inflation factor: {fac}")
@@ -324,26 +300,46 @@ class AdaptiveInflator(Inflator):
 
     def update_enrml(self, ws, Gs, ys, C_e_invsqrt, 
                      ws_pr, Uw_pr, Sw_pr, lam, 
-                     inds_succ, inds_fail, localiser, imputer):
+                     inds_succ, inds_fail, 
+                     localiser: Localiser, 
+                     imputer: Imputer):
 
         Nw, Ne = ws.shape 
-        dummy_params = self.generate_dummy_params(Ne)
+        n_succ = len(inds_succ)
+        
+        dummy_params = np.zeros((self.n_dummy_params, Ne))
+        dummy_params[:, inds_succ] = self.generate_dummy_params(n_succ)
+
         ws_aug = np.vstack((ws, dummy_params))
 
-        ws_aug = self._update_enrml(
-            ws, Gs, ys, C_e_invsqrt,  
-            ws_pr, Uw_pr, Sw_pr, lam, 
-            inds_succ, inds_fail, localiser, imputer
-        )
+        dw = compute_deltas(ws[:, inds_succ])
+        dG = compute_deltas(Gs[:, inds_succ])
+        dw_aug = compute_deltas(ws_aug[:, inds_succ])
 
-        ws_new = ws_aug[1:Nw, :]
-        dummy_params = ws_new[(Nw+1):, inds_succ]
+        UG, SG, VG = compute_tsvd(C_e_invsqrt @ dG)
+
+        psi = np.diag((lam + 1 + SG**2)**-1)
+        dw_pr = dw @ VG @ psi @ VG.T @ dw.T @ \
+            Uw_pr @ np.diag(Sw_pr**-2) @ Uw_pr.T @ \
+                (ws[:, inds_succ] - ws_pr[:, inds_succ])
+
+        K = localiser.compute_gain_enrml(ws_aug[:, inds_succ], Gs[:, inds_succ], 
+                                         dw_aug, UG, SG, VG, C_e_invsqrt, lam) 
+        
+        dw_obs = K @ (Gs[:, inds_succ] - ys[:, inds_succ])
+        
+        ws[:, inds_succ] -= (dw_pr + dw_obs[:Nw, :])
+
+        dummy_params = ws_aug[Nw:, inds_succ] - dw_obs[Nw:, :]
         fac = 1 / np.mean(np.std(dummy_params, axis=1))
-
         utils.info(f"Inflation factor: {fac}")
 
+        if (n_fail := len(inds_fail)) > 0:
+            utils.info(f"Imputing {n_fail} failed ensemble members...")
+            ws = imputer.impute(ws, inds_succ, inds_fail)
+
         mu_w = np.mean(ws, axis=1)[:, np.newaxis]
-        return fac * (ws_new - mu_w) + mu_w
+        return fac * (ws - mu_w) + mu_w
 
 def compute_deltas(xs):
     N = xs.shape[1]
