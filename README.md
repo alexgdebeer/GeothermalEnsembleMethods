@@ -1,4 +1,4 @@
-# Geothermal Ensemble Methods
+# Ensemble Methods for Geothermal Reservoir Modelling
 
 ![Fault Model](fault_model.png)
 
