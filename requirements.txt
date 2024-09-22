@@ -1,6 +1,6 @@
-layermesh>=0.3.2
-pip>=23.3.1
-pyvista>=0.42.3
+layermesh>=0.3.0
+pip>=24.0.0
+pyvista>=0.42.0
 pywaiwera>=1.4.0
-PyYAML>=6.0.1
-setuptools>=65.5.1
+PyYAML>=6.0.0
+setuptools>=65.0.0
