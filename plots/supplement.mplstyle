@@ -1,0 +1,35 @@
+lines.linewidth: 2.0
+lines.markersize: 8
+
+font.family: serif
+font.size: 18
+
+text.usetex: True
+text.latex.preamble: \usepackage{bm}
+
+axes.titlesize: 20
+axes.labelsize: 20
+axes.linewidth: 1.6
+axes.autolimit_mode: round_numbers
+
+xtick.major.size: 8.0
+xtick.minor.size: 8.0
+xtick.major.width: 1.6
+xtick.minor.width: 1.6   
+xtick.labelsize: 16
+
+ytick.major.size: 8.0
+ytick.minor.size: 8.0
+ytick.major.width: 1.6
+ytick.minor.width: 1.6
+ytick.labelsize: 16
+
+legend.frameon: False
+legend.fontsize: 16
+
+figure.figsize: 10.0, 6.8
+figure.constrained_layout.use: True
+figure.constrained_layout.w_pad: 0.10
+figure.constrained_layout.h_pad: 0.10
+
+savefig.format: pdf

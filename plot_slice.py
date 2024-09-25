@@ -4,6 +4,8 @@ from scipy.interpolate import NearestNDInterpolator
 from plotting import *
 from setup_slice import *
 
+plt.style.use("plots/paper.mplstyle")
+
 RESULTS_FOLDER = "data/slice/results"
 PLOTS_FOLDER = "plots/slice"
 
@@ -15,21 +17,21 @@ RESULTS_FNAMES = [
 
 ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
-PLOT_MESH = False 
-PLOT_TRUTH = False 
+PLOT_MESH = False
+PLOT_TRUTH = False
 PLOT_DATA = False
 
-PLOT_PRIOR_PARTICLES = False
+PLOT_PRIOR_PARTICLES = True
 
 PLOT_MEAN_PRI = False
 PLOT_MEAN_EKI = False
 PLOT_STDS = False
-PLOT_POST_PARTICLES = False
-PLOT_UPFLOWS = True
+PLOT_POST_PARTICLES = True
+PLOT_UPFLOWS = False
 PLOT_PREDICTIONS = False
 
 PLOT_INTERVALS = False
-PLOT_HYPERPARAMS = True
+PLOT_HYPERPARAMS = False
 
 PLOT_CBARS = False
 
@@ -41,6 +43,12 @@ def read_data(fname):
     with h5py.File(fname, "r") as f:
 
         post_ind = f["post_ind"][0]
+        # print(post_ind)
+
+        # success_rate = np.mean([
+        #     len(f[f"inds_succ_{i}"]) for i in range(post_ind+1)
+        # ]) / 100
+        # print(success_rate)
 
         inds_succ_pri = f[f"inds_succ_0"][:]
         inds_succ_post = f[f"inds_succ_{post_ind}"][:]
@@ -121,7 +129,7 @@ if PLOT_TRUTH:
 
 if PLOT_PRIOR_PARTICLES:
     
-    perms = results["EKI"]["ps_pri"][:-1, :8]
+    perms = results["EKI"]["ps_pri"][:-1, :4]
     
     fname = f"{PLOTS_FOLDER}/particles_pri.pdf"
     plot_particles_2d(mesh_crse, perms, fname)
@@ -141,13 +149,15 @@ if PLOT_MEAN_PRI:
 
 if PLOT_MEAN_EKI:
 
-    vals = [
-        get_mean(results["EKI"]["ws_post"]),
-        get_mean(results["EKI-BOOT"]["ws_post"]),
-        get_mean(results["EKI-INF"]["ws_post"])]
+    perm_t = np.reshape(p_t[:-1], (mesh_fine.nx, mesh_fine.nz))
+    mean_pri = prior.transform(np.zeros(prior.n_params))[:-1]
+    mean_pri = np.reshape(mean_pri, (mesh_crse.nx, mesh_crse.nz))
+    mean_eki = get_mean(results["EKI"]["ws_post"])
+
+    vals = [perm_t, mean_pri, mean_eki]
     
-    meshes = [mesh_crse] * 3
-    labels = ["EKI", "EKI (Localisation)", "EKI (Inflation)"]
+    meshes = [mesh_fine, mesh_crse, mesh_crse]
+    labels = ["Truth", "Prior Mean", "EKI"]
 
     fname = f"{PLOTS_FOLDER}/means_eki.pdf"
     plot_grid_2d(vals, meshes, labels, fname)
@@ -156,12 +166,10 @@ if PLOT_STDS:
 
     vals = [
         get_stds(results["EKI"]["ps_pri"]),
-        get_stds(results["EKI"]["ps_post"]),
-        get_stds(results["EKI-BOOT"]["ps_post"]),
-        get_stds(results["EKI-INF"]["ps_post"])]
+        get_stds(results["EKI"]["ps_post"])]
     
-    meshes = [mesh_crse] * 4
-    labels = ["Prior", "EKI", "EKI (Localisation)", "EKI (Inflation)"]
+    meshes = [mesh_crse] * 2
+    labels = ["Prior", "EKI"]
     
     fname = f"{PLOTS_FOLDER}/stds.pdf"
     plot_grid_2d(vals, meshes, labels, fname, 
@@ -171,9 +179,7 @@ if PLOT_PREDICTIONS:
 
     Fs = [
         results["EKI"]["Fs_pri"], 
-        results["EKI"]["Fs_post"], 
-        results["EKI-BOOT"]["Fs_post"], 
-        results["EKI-INF"]["Fs_post"]
+        results["EKI"]["Fs_post"]
     ]
 
     temp_t, pres_t, enth_t = data_handler_fine.get_full_states(F_t)
@@ -189,9 +195,9 @@ if PLOT_PREDICTIONS:
     temp_lims_x = (0, 340)
     temp_lims_y = (-1500, 0)
     pres_lims_x = (0, 2)
-    pres_lims_y = (4, 14)
+    pres_lims_y = (2, 14)
     enth_lims_x = (0, 2)
-    enth_lims_y = (1100, 2300)
+    enth_lims_y = (800, 2600)
 
     data_end = 1
 
@@ -205,7 +211,7 @@ if PLOT_PREDICTIONS:
 
 if PLOT_POST_PARTICLES:
 
-    perms = results["EKI"]["ps_post"][:-1, :8]
+    perms = results["EKI"]["ps_post"][:-1, :4]
     
     fname = f"{PLOTS_FOLDER}/particles_post.pdf"
     plot_particles_2d(mesh_crse, perms, fname)
@@ -218,9 +224,7 @@ if PLOT_UPFLOWS:
 
     upflows = [
         results["EKI"]["ps_pri"][-1, :],
-        results["EKI"]["ps_post"][-1, :],
-        results["EKI-BOOT"]["ps_post"][-1, :],
-        results["EKI-INF"]["ps_post"][-1, :]
+        results["EKI"]["ps_post"][-1, :]
     ]
 
     upflows = [u * upflow_cell_crse.column.area for u in upflows]
@@ -234,7 +238,7 @@ if PLOT_INTERVALS:
 
         perms_post = ps[:mesh_crse.m.num_cells, :]
 
-        bnds = np.quantile(perms_post, [0.05, 0.95], axis=1)
+        bnds = np.quantile(perms_post, [0.025, 0.975], axis=1)
 
         cells_in_interval = np.zeros((mesh_crse.m.num_cells))
         for j, perm in enumerate(perms_interp):
@@ -251,22 +255,18 @@ if PLOT_INTERVALS:
     interp = NearestNDInterpolator(centres_fine, perms_t)
     perms_interp = interp(centres_crse)
 
-    fig, axes = plt.subplots(1, 4, figsize=(10, 2.7))
-
     results_list = [
         results["EKI"]["ps_pri"],
-        results["EKI"]["ps_post"],
-        results["EKI-BOOT"]["ps_post"],
-        results["EKI-INF"]["ps_post"]
+        results["EKI"]["ps_post"]
     ]
 
     vals = [get_cells_in_interval(ps) for ps in results_list]
-    meshes = [mesh_crse] * 4
-    labels = ["Prior", "EKI", "EKI (Localisation)", "EKI (Inflation)"]
+    meshes = [mesh_crse] * 2
+    labels = ["Prior", "EKI"]
 
     fname = f"{PLOTS_FOLDER}/intervals.pdf"
     plot_grid_2d(vals, meshes, labels, fname, 
-                 vmin=0, vmax=1, cmap=CMAP_INTERVALS)
+                 vmin=0, vmax=1, cmap=CMAP_INTERVALS, cbar=False)
 
 if PLOT_HYPERPARAMS:
 
@@ -296,13 +296,3 @@ if PLOT_HYPERPARAMS:
     fname = f"{PLOTS_FOLDER}/hyperparams.pdf"
     plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x, 
                      lenh_lims_y, lenv_lims_x, lenv_lims_y, labels, fname) 
-    
-if PLOT_CBARS:
-
-    temp_fname = f"{PLOTS_FOLDER}/cbar_temps.pdf"
-    perm_fname = f"{PLOTS_FOLDER}/cbar_perms.pdf"
-    stds_fname = f"{PLOTS_FOLDER}/cbar_stds.pdf"
-
-    plot_colourbar(CMAP_TEMP, MIN_TEMP_2D, MAX_TEMP_2D, LABEL_TEMP, temp_fname)
-    plot_colourbar(CMAP_PERM, MIN_PERM_2D, MAX_PERM_2D, LABEL_PERM, perm_fname)
-    plot_colourbar(CMAP_PERM, MIN_STDS_2D, MAX_STDS_2D, LABEL_PERM, stds_fname)

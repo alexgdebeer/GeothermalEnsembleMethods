@@ -1,4 +1,4 @@
-import colorcet as cc
+import cmocean
 from matplotlib import pyplot as plt 
 import numpy as np 
 import pyvista as pv
@@ -59,8 +59,8 @@ for i in range(3):
     print(np.min(phi))
     print(np.max(phi))
 
-    axes[0][i].pcolormesh(phi.T, cmap="turbo", vmin=-3.5, vmax=3.0, rasterized=True)
-    axes[1][i].pcolormesh(perms.T, cmap=cc.cm.bgy, vmin=-17, vmax=-13, rasterized=True)
+    axes[0][i].pcolormesh(phi.T, cmap=cmocean.cm.thermal, vmin=-3.5, vmax=3.0, rasterized=True)
+    axes[1][i].pcolormesh(perms.T, cmap=cmocean.cm.turbid.reversed(), vmin=-17, vmax=-13, rasterized=True)
 
     W = np.random.normal(size=ncs)
 

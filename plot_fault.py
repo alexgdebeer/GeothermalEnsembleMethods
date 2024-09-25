@@ -4,6 +4,8 @@ from scipy.interpolate import NearestNDInterpolator
 from plotting import *
 from setup_fault import *
 
+plt.style.use("plots/paper.mplstyle")
+
 RESULTS_FOLDER = "data/fault/results"
 PLOTS_FOLDER = "plots/fault"
 
@@ -15,7 +17,7 @@ RESULTS_FNAMES = [
 
 ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
-PLOT_MESH = True
+PLOT_MESH = False
 PLOT_TRUTH = False
 PLOT_DATA = False
 
@@ -29,7 +31,7 @@ PLOT_POST_PARTICLES = False
 PLOT_POST_FAULTS = False
 PLOT_PREDICTIONS = False
 
-PLOT_INTERVALS = False
+PLOT_INTERVALS = True
 PLOT_HYPERPARAMS = False
 
 PLOT_CBARS = False
@@ -46,6 +48,13 @@ def read_results(algnames, fnames):
         with h5py.File(fname, "r") as f:
 
             post_ind = f["post_ind"][0]
+
+            print(post_ind)
+
+            success_rate = np.mean([
+                len(f[f"inds_succ_{i}"]) for i in range(post_ind+1)
+            ]) / 100
+            print(success_rate)
 
             inds_succ_pri = f[f"inds_succ_0"][:]
             inds_succ_post = f[f"inds_succ_{post_ind}"][:]
@@ -127,7 +136,7 @@ if PLOT_PRIOR_PARTICLES:
 
 if PLOT_PRIOR_FAULTS:
 
-    upflows = results["EKI"]["ps_pri"][-mesh_crse.m.num_columns:, :8].T
+    upflows = results["EKI"]["ps_pri"][-mesh_crse.m.num_columns:, :4].T
     fname = f"{PLOTS_FOLDER}/upflows_pri.pdf"
     plot_faults_3d(mesh_crse.m, upflows, fname)
 
@@ -149,8 +158,8 @@ if PLOT_MEANS:
         p_t[:mesh_fine.m.num_cells],
         prior.transform(np.zeros(prior.n_params))[:mesh_crse.m.num_cells],
         get_mean(results["EKI"]["ws_post"]),
-        get_mean(results["EKI-BOOT"]["ws_post"]),
-        get_mean(results["EKI-INF"]["ws_post"])
+        # get_mean(results["EKI-BOOT"]["ws_post"]),
+        # get_mean(results["EKI-INF"]["ws_post"])
     ]
 
     fname = f"{PLOTS_FOLDER}/means.png"
@@ -165,8 +174,8 @@ if PLOT_STDS:
     stds = [
         get_stds(results["EKI"]["ps_pri"]),
         get_stds(results["EKI"]["ps_post"]),
-        get_stds(results["EKI-BOOT"]["ps_post"]),
-        get_stds(results["EKI-INF"]["ps_post"])
+        # get_stds(results["EKI-BOOT"]["ps_post"]),
+        # get_stds(results["EKI-INF"]["ps_post"])
     ]
 
     fname = f"{PLOTS_FOLDER}/stds.png"
@@ -241,9 +250,7 @@ if PLOT_INTERVALS:
 
     perms_list = [
         results["EKI"]["ps_pri"][:mesh_crse.m.num_cells, :],
-        results["EKI"]["ps_post"][:mesh_crse.m.num_cells, :],
-        results["EKI-BOOT"]["ps_post"][:mesh_crse.m.num_cells, :],
-        results["EKI-INF"]["ps_post"][:mesh_crse.m.num_cells, :]
+        results["EKI"]["ps_post"][:mesh_crse.m.num_cells, :]
     ]
 
     intervals = [get_interval(perms, perms_interp) 
@@ -263,7 +270,7 @@ if PLOT_HYPERPARAMS:
         get_hyperparams(results["EKI"]["ws_pri"])[:, [0, 1, 3]],
         get_hyperparams(results["EKI"]["ws_post"])[:, [0, 1, 3]],
         get_hyperparams(results["EKI-BOOT"]["ws_post"])[:, [0, 1, 3]],
-        get_hyperparams(results["EKI-INF"]["ws_post"])[:, [0, 1, 3]],
+        get_hyperparams(results["EKI-LOC"]["ws_post"])[:, [0, 1, 3]],
     ]
 
     hps_t = np.array(truth_dist.get_hyperparams(w_t)[ind])[[0, 1, 3]]
