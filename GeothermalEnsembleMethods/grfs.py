@@ -7,8 +7,8 @@ from scipy import sparse
 from scipy.sparse import linalg
 from scipy.special import gamma
 
-from GeothermalEnsembleMethods.models import ModelType
-from GeothermalEnsembleMethods import utils
+from .models import IrregularMesh, ModelType
+import utils
 
 GRAD_2D = np.array([[-1.0, 1.0, 0.0], 
                     [-1.0, 0.0, 1.0]])
@@ -21,10 +21,12 @@ class BC(Enum):
     NEUMANN = 1
     ROBIN = 2
 
+
 class MaternField(ABC):
     @abstractmethod
     def generate_field():
         pass
+
 
 class MaternField2D(MaternField):
 
@@ -131,9 +133,18 @@ class MaternField2D(MaternField):
 
         self.L = np.linalg.cholesky(self.M.toarray())
 
-    def generate_field(self, W, sigma, lx, ly, bcs=BC.ROBIN, lam=None):
+    def generate_field(
+        self, 
+        W: np.ndarray, 
+        sigma: float, 
+        lx: float, 
+        ly: float, 
+        bcs: BC=BC.ROBIN, 
+        lam: float=None
+    ) -> np.ndarray:
         """Given a set of white noise and a set of hyperparameters,
-        generates the corresponding Matern field."""
+        generates the corresponding Matern field.
+        """
 
         alpha = sigma**2 * (2**self.dim * np.pi**(self.dim/2) * \
                             gamma(self.nu + self.dim/2)) / gamma(self.nu)
@@ -162,9 +173,14 @@ class MaternField2D(MaternField):
         col_values = [values[c.column.index] for c in self.m.cell]
         self.m.layer_plot(value=col_values, **kwargs)
 
+
 class MaternField3D(MaternField):
 
-    def __init__(self, mesh, folder=""):
+    def __init__(
+        self, 
+        mesh: IrregularMesh, 
+        folder: str=""
+    ):
 
         self.dim = 3
         self.nu = 2 - self.dim / 2
@@ -181,7 +197,8 @@ class MaternField3D(MaternField):
         
     def get_mesh_data(self):
         """Extracts information on the points, elements and facets of the 
-        mesh."""
+        mesh.
+        """
 
         self.fem_mesh["inds"] = np.arange(self.fem_mesh.n_points, dtype=np.int64)
 
@@ -219,7 +236,8 @@ class MaternField3D(MaternField):
     @utils.timer
     def build_fem_matrices(self):
         """Builds the FEM matrices required to generate Matern fields in three 
-        dimensions."""
+        dimensions.
+        """
 
         M_i = np.zeros((16 * self.n_elements, ))
         M_j = np.zeros((16 * self.n_elements, ))
@@ -289,7 +307,8 @@ class MaternField3D(MaternField):
 
     def build_geo_to_mesh_mapping(self):
         """Generates an operator that maps the result from the FEM mesh back to 
-        the cells in the model geometry."""
+        the cells in the model geometry.
+        """
 
         cell_centres = [c.centre for c in self.m.cell]
         elements = self.fem_mesh.find_containing_cell(cell_centres)
@@ -317,7 +336,8 @@ class MaternField3D(MaternField):
 
     def build_point_to_cell_mapping(self):
         """Generates an operator that maps the value at the points on the mesh 
-        to the corresponding values at the cell centres."""
+        to the corresponding values at the cell centres.
+        """
 
         P_i = np.array([[n] * 4 for n in range(self.n_elements)]).flatten()
         P_j = np.array(self.elements).flatten()

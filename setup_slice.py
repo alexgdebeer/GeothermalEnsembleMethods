@@ -1,13 +1,8 @@
-"""Setup script for 2D vertical slice model."""
-
 import numpy as np
 from scipy import sparse
 
-from GeothermalEnsembleMethods.consts import SECS_PER_WEEK
-from GeothermalEnsembleMethods.data_handlers import *
-from GeothermalEnsembleMethods.grfs import *
-from GeothermalEnsembleMethods.models import *
-from GeothermalEnsembleMethods.priors import SlicePrior
+from GeothermalEnsembleMethods import *
+
 
 np.random.seed(24)
 
@@ -146,7 +141,6 @@ def generate_prior(mesh, upflow_cell):
     grf_deep = PermField(mesh, grf, bounds_deep, levels_exterior, model_type=ModelType.MODEL2D)
 
     prior = SlicePrior(mesh, depth_shal, gp_boundary, grf_shal, grf_clay, grf_deep, mass_rate_bounds)
-    
     return prior
 
 prior = generate_prior(mesh_crse, upflow_cell_crse)

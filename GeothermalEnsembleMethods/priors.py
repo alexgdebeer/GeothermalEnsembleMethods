@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy import stats
 
-from GeothermalEnsembleMethods.models import *
+from .models import *
 
 
 class Prior(ABC):

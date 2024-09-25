@@ -1,10 +1,7 @@
 import numpy as np
 
-from GeothermalEnsembleMethods.consts import SECS_PER_WEEK
-from GeothermalEnsembleMethods.data_handlers import DataHandler3D
-from GeothermalEnsembleMethods.grfs import *
-from GeothermalEnsembleMethods.models import *
-from GeothermalEnsembleMethods.priors import FaultPrior
+from GeothermalEnsembleMethods import *
+
 
 np.random.seed(256)
 

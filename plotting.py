@@ -10,11 +10,13 @@ from matplotlib.patches import Patch, Polygon
 import numpy as np
 import pyvista as pv
 
-from GeothermalEnsembleMethods import DataHandler, Well
-from plotting_consts import *
+from GeothermalEnsembleMethods import DataHandler, Prior, Well
 
 
 np.random.seed(1)
+
+FULL_PAGE = 14.0
+HALF_PAGE = 7.0
 
 MIN_PERM_3D = -17.0
 MAX_PERM_3D = -12.5
@@ -90,11 +92,12 @@ CAMERA_POSITION = (13_000, 15_000, 6_000)
 
 
 def tufte_axis(
-    ax: plt.axis, 
+    ax, 
     bnds_x: tuple, 
     bnds_y: tuple, 
     gap: int=0.1
-):
+) -> None:
+    """Restyles an axis."""
     
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -113,10 +116,13 @@ def tufte_axis(
 
 
 def get_well_name(i: int):
+    """Returns a string containing the name of a given well."""
     return r"\texttt{WELL " + f"{i+1}" + r"}"
 
 
 def map_to_fem_mesh(mesh, fem_mesh, vals):
+    """Maps a set of values from a layermesh mesh onto a PyVista mesh.
+    """
     return [vals[mesh.find(c.center, indices=True)] for c in fem_mesh.cell]
 
 
@@ -256,7 +262,7 @@ def plot_predictions(
     well_num: int, 
     fname: str, 
     dim: int=3
-):
+) -> None:
     """Plots the temperature, pressure and enthalpy predictions 
     corresponding to a given well, alongside the truth and the 
     observations.
@@ -326,9 +332,11 @@ def plot_hyperparams(
     lenv_lims_y: tuple, 
     labels: tuple, 
     fname: str
-):
+) -> None:
     """Generates plots of the hyperparameters of a Whittle-Matern field
-    (i.e., standard deviation, lengthscale, )"""
+    (i.e., standard deviation, a horizontal lengthscale and the vertical 
+    lengthscale.)
+    """
 
     figsize = (FULL_PAGE, 0.9 * FULL_PAGE)
     fig, axes = plt.subplots(3, 4, figsize=figsize, sharey="row")
@@ -358,13 +366,8 @@ def plot_hyperparams(
 
     for i in range(3):
         axes[i][0].set_ylabel("Density")
-
         for j in range(4):
             axes[i][j].set_xlabel(labels[i])
-        
-        # for j in range(1, 4):
-        #     axes[i][j].spines["left"].set_visible(False)
-        #     axes[i][j].set_yticks([])
 
     for ax in axes.flat:
         ax.set_box_aspect(1)
@@ -373,20 +376,32 @@ def plot_hyperparams(
     plt.savefig(fname)
 
 
-def plot_colourbar(cmap, vmin, vmax, label, fname, power=False):
+def plot_colourbar(
+    cmap: str, 
+    vmin: float, 
+    vmax: float, 
+    label: str, 
+    fname: str, 
+    power: bool=False
+) -> None:
+    """Plots a colourbar for use as part of another plot."""
     
     _, ax = plt.subplots(figsize=(HALF_PAGE, 0.4*HALF_PAGE))
     m = ax.pcolormesh(np.zeros((10, 10)), cmap=cmap, vmin=vmin, vmax=vmax)
     cbar = plt.colorbar(m, ax=ax)
     cbar.set_label(label)
-
     if power:
         cbar.formatter.set_powerlimits((0, 0))
-
     plt.savefig(fname)
 
 
-def plot_mesh_2d(mesh, prior, wells, fname):
+def plot_mesh_2d(
+    mesh: lm.mesh, 
+    prior: Prior, 
+    wells: list[Well], 
+    fname: str 
+) -> None:
+    """Plots the mesh of the vertical slice model."""
 
     grid_xticks = [0, 500, 1000, 1500]
     grid_zticks = [-1500, -1000, -500, 0]
@@ -470,6 +485,9 @@ def plot_mesh_2d(mesh, prior, wells, fname):
 
 
 def set_lims_2d(ax):
+    """Sets the limits of an axis object as the boundaries of domain of 
+    the vertical slice model.
+    """
 
     ax.set_box_aspect(1)
     ax.set_xlim([0, 1500])
