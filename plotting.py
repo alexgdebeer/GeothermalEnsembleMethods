@@ -10,9 +10,9 @@ from matplotlib.patches import Patch, Polygon
 import numpy as np
 import pyvista as pv
 
-from src.consts import *
-
+from GeothermalEnsembleMethods import DataHandler, Well
 from plotting_consts import *
+
 
 np.random.seed(1)
 
@@ -40,7 +40,10 @@ MAX_UPFL_3D = 2.75e-4
 CMAP_PERM = cmocean.cm.turbid.reversed()
 CMAP_UPFL = cmocean.cm.thermal
 CMAP_TEMP = cmocean.cm.balance
-CMAP_INTERVALS = LinearSegmentedColormap.from_list(name="intervals", colors=["silver", "red"])
+CMAP_INTERVALS = LinearSegmentedColormap.from_list(
+    name="intervals", 
+    colors=["silver", "red"]
+)
 
 COL_WELLS = "royalblue"
 COL_GRID = "darkgrey"
@@ -86,7 +89,12 @@ LABEL_X2 = r"$x_{2}$ [km]"
 CAMERA_POSITION = (13_000, 15_000, 6_000)
 
 
-def tufte_axis(ax, bnds_x, bnds_y, gap=0.1):
+def tufte_axis(
+    ax: plt.axis, 
+    bnds_x: tuple, 
+    bnds_y: tuple, 
+    gap: int=0.1
+):
     
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -104,7 +112,7 @@ def tufte_axis(ax, bnds_x, bnds_y, gap=0.1):
     ax.set_yticks(bnds_y)
 
 
-def get_well_name(i):
+def get_well_name(i: int):
     return r"\texttt{WELL " + f"{i+1}" + r"}"
 
 
@@ -112,49 +120,96 @@ def map_to_fem_mesh(mesh, fem_mesh, vals):
     return [vals[mesh.find(c.center, indices=True)] for c in fem_mesh.cell]
 
 
-def get_well_tubes(wells, feedzone_depths):
+def get_well_tubes(
+    wells: list[Well],
+    feedzone_depths: list[float]
+) -> list:
+    """Returns a set of tubes and well feedzones to be plotted using 
+    PyVista.
+    """
         
     lines = pv.MultiBlock()
     for well in wells:
         line = pv.Line(*well.coords)
         lines.append(line)
-    bodies = lines.combine().extract_geometry().clean().split_bodies()
+    
+    bodies = (
+        lines
+        .combine()
+        .extract_geometry()
+        .clean()
+        .split_bodies()
+    )
 
     tubes = pv.MultiBlock()
     for body in bodies:
         tubes.append(body.extract_geometry().tube(radius=35))
 
     for i, well in enumerate(wells):
-        feedzone = (well.x, well.y, feedzone_depths[i])
-        tubes.append(pv.SolidSphere(outer_radius=70, center=feedzone))
+        centre = (well.x, well.y, feedzone_depths[i])
+        feedzone = pv.SolidSphere(outer_radius=70, center=centre)
+        tubes.append(feedzone)
 
     return tubes
 
 
-def get_layer_polys(mesh: lm.mesh, cmap):
+def get_layer_polys(
+    mesh: lm.mesh, 
+    cmap: str
+) -> PolyCollection:
+    """Returns a collection of polygons correpsonding to the bottom
+    layer of a mesh.
+    """
 
-    verts = [[n.pos for n in c.column.node] 
-             for c in mesh.layer[-1].cell]
+    verts = [
+        [n.pos for n in c.column.node] 
+        for c in mesh.layer[-1].cell
+    ]
 
-    polys = PolyCollection(verts, cmap=cmap, linewidth=0.01, edgecolor="face")
+    polys = PolyCollection(
+        verts, 
+        cmap=cmap, 
+        linewidth=0.01, 
+        edgecolor="face"
+    )
+
     return polys
 
 
-def plot_data(temp_t, pres_t, enth_t, zs, ts, 
-              temp_obs, pres_obs, enth_obs, zs_obs, ts_obs, 
-              temp_lims_x, temp_lims_y, pres_lims_x, pres_lims_y,
-              enth_lims_x, enth_lims_y, data_end, 
-              well_to_plot, fname):
+def plot_data(
+    temp_t: np.ndarray, 
+    pres_t: np.ndarray, 
+    enth_t: np.ndarray, 
+    zs: np.ndarray, 
+    ts: np.ndarray, 
+    temp_obs: np.ndarray, 
+    pres_obs: np.ndarray, 
+    enth_obs: np.ndarray, 
+    zs_obs: np.ndarray, 
+    ts_obs: np.ndarray, 
+    temp_lims_x: tuple, 
+    temp_lims_y: tuple, 
+    pres_lims_x: tuple, 
+    pres_lims_y: tuple,
+    enth_lims_x: tuple, 
+    enth_lims_y: tuple, 
+    data_end: float, 
+    well_to_plot: int, 
+    fname: str
+) -> None:
+    """Plots the temperature, pressure and enthalpy data corresponding 
+    to a given well, as well as the true values of each quantity.
+    """
     
-    _, axes = plt.subplots(1, 3, figsize=(0.75*FULL_PAGE, 0.25*FULL_PAGE))
+    figsize = (0.75*FULL_PAGE, 0.25*FULL_PAGE)
+    _, axes = plt.subplots(1, 3, figsize=figsize)
 
     axes[0].plot(temp_t, zs, c="k", zorder=3)
-    axes[0].scatter(temp_obs[:, well_to_plot], zs_obs, c="k", s=15, zorder=3)
-
     axes[1].plot(ts, pres_t[:, well_to_plot], c="k", zorder=3)
-    axes[1].scatter(ts_obs, pres_obs[:, well_to_plot], c="k", s=15, zorder=3)
-
     axes[2].plot(ts, enth_t[:, well_to_plot], c="k", zorder=3)
+
+    axes[0].scatter(temp_obs[:, well_to_plot], zs_obs, c="k", s=15, zorder=3)
+    axes[1].scatter(ts_obs, pres_obs[:, well_to_plot], c="k", s=15, zorder=3)
     axes[2].scatter(ts_obs, enth_obs[:, well_to_plot], c="k", s=15, zorder=3)
 
     axes[1].axvline(data_end, c=COL_DATA_END, ls="--", ymin=1/12, ymax=11/12, zorder=1)
@@ -178,12 +233,34 @@ def plot_data(temp_t, pres_t, enth_t, zs, ts,
     plt.savefig(fname)
 
 
-def plot_predictions(Fs, data_handler, 
-                     temp_t, pres_t, enth_t, ts, zs,
-                     temp_obs, pres_obs, enth_obs, ts_obs, zs_obs,
-                     temp_lims_x, temp_lims_y, pres_lims_x, pres_lims_y,
-                     enth_lims_x, enth_lims_y, data_end, 
-                     well_num, fname, dim=3):
+def plot_predictions(
+    Fs: list[np.ndarray], 
+    data_handler: DataHandler, 
+    temp_t: np.ndarray, 
+    pres_t: np.ndarray, 
+    enth_t: np.ndarray, 
+    ts: np.ndarray, 
+    zs: np.ndarray,
+    temp_obs: np.ndarray, 
+    pres_obs: np.ndarray, 
+    enth_obs: np.ndarray, 
+    ts_obs: np.ndarray, 
+    zs_obs: np.ndarray,
+    temp_lims_x: tuple, 
+    temp_lims_y: tuple, 
+    pres_lims_x: tuple, 
+    pres_lims_y: tuple,
+    enth_lims_x: tuple, 
+    enth_lims_y: tuple, 
+    data_end: float, 
+    well_num: int, 
+    fname: str, 
+    dim: int=3
+):
+    """Plots the temperature, pressure and enthalpy predictions 
+    corresponding to a given well, alongside the truth and the 
+    observations.
+    """
 
     num_cols = len(Fs)
 
@@ -197,12 +274,11 @@ def plot_predictions(Fs, data_handler,
         tufte_axis(axes[2][j], enth_lims_x, enth_lims_y)
 
         axes[0][j].plot(temp_t, zs, c="k", zorder=3)
-        axes[0][j].scatter(temp_obs[:, well_num], zs_obs, c="k", s=10, zorder=3)
-
         axes[1][j].plot(ts, pres_t, c="k", zorder=3)
-        axes[1][j].scatter(ts_obs, pres_obs[:, well_num], c="k", s=10, zorder=3)
-
         axes[2][j].plot(ts, enth_t, c="k", zorder=3)
+
+        axes[0][j].scatter(temp_obs[:, well_num], zs_obs, c="k", s=10, zorder=3)
+        axes[1][j].scatter(ts_obs, pres_obs[:, well_num], c="k", s=10, zorder=3)
         axes[2][j].scatter(ts_obs, enth_obs[:, well_num], c="k", s=10, zorder=3)
 
         axes[1][j].axvline(data_end, c=COL_DATA_END, ls="--", ymin=1/12, ymax=11/12, zorder=1)
@@ -211,7 +287,7 @@ def plot_predictions(Fs, data_handler,
         for F_j in Fs[j].T:
 
             temp_j, pres_j, enth_j = data_handler.get_full_states(F_j)
-            
+
             if dim == 3:
                 zs_j, temp_j = data_handler.downhole_temps(temp_j, well_num)
             else: 
@@ -239,10 +315,23 @@ def plot_predictions(Fs, data_handler,
     plt.savefig(fname)
 
 
-def plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x, 
-                     lenh_lims_y, lenv_lims_x, lenv_lims_y, labels, fname):
+def plot_hyperparams(
+    hps: list[np.ndarray], 
+    hps_t: list[float], 
+    std_lims_x: tuple, 
+    std_lims_y: tuple, 
+    lenh_lims_x: tuple, 
+    lenh_lims_y: tuple, 
+    lenv_lims_x: tuple, 
+    lenv_lims_y: tuple, 
+    labels: tuple, 
+    fname: str
+):
+    """Generates plots of the hyperparameters of a Whittle-Matern field
+    (i.e., standard deviation, lengthscale, )"""
 
-    fig, axes = plt.subplots(3, 4, figsize=(FULL_PAGE, 0.9 * FULL_PAGE), sharey="row")
+    figsize = (FULL_PAGE, 0.9 * FULL_PAGE)
+    fig, axes = plt.subplots(3, 4, figsize=figsize, sharey="row")
 
     bins_std = np.linspace(std_lims_x[0], std_lims_x[1], 11)
     bins_lenh = np.linspace(lenh_lims_x[0], lenh_lims_x[1], 11)

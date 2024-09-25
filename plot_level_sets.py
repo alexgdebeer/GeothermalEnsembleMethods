@@ -3,8 +3,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pyvista as pv
 
-from src.grfs import MaternField2D
-from src.models import ModelType
+from GeothermalEnsembleMethods.grfs import MaternField2D
+from GeothermalEnsembleMethods.models import ModelType
 
 np.random.seed(22) # 22 good
 

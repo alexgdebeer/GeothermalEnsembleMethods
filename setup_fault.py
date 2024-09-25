@@ -1,10 +1,10 @@
 import numpy as np
 
-from src.consts import SECS_PER_WEEK
-from src.data_handlers import DataHandler3D
-from src.grfs import *
-from src.models import *
-from src.priors import FaultPrior
+from GeothermalEnsembleMethods.consts import SECS_PER_WEEK
+from GeothermalEnsembleMethods.data_handlers import DataHandler3D
+from GeothermalEnsembleMethods.grfs import *
+from GeothermalEnsembleMethods.models import *
+from GeothermalEnsembleMethods.priors import FaultPrior
 
 np.random.seed(256)
 

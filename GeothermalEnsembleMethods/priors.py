@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy import stats
 
-from src.models import *
+from GeothermalEnsembleMethods.models import *
+
 
 class Prior(ABC):
 
@@ -14,6 +15,7 @@ class Prior(ABC):
     @abstractmethod
     def transform():
         pass
+
 
 class SlicePrior(Prior):
 
@@ -96,6 +98,7 @@ class SlicePrior(Prior):
 
     def sample(self, n=1):
         return np.random.normal(size=(self.n_params, n))
+
 
 class FaultPrior(Prior):
 

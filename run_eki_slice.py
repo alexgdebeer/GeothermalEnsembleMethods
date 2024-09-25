@@ -1,4 +1,4 @@
-from src.methods import *
+from GeothermalEnsembleMethods.methods import *
 from setup_slice import *
 
 Ne = 100

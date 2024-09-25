@@ -1,4 +1,4 @@
-from src.methods import *
+from GeothermalEnsembleMethods.methods import *
 from setup_fault import *
 
 Ne = 100

@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator, RegularGridInterpolator
 
-from src.consts import *
-from src.models import *
+from .consts import *
+from .models import *
 
 class DataHandler(ABC):
 

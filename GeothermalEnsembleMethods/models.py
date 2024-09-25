@@ -14,8 +14,8 @@ from scipy import stats
 from scipy.spatial import Delaunay
 import yaml
 
-from src import utils
-from src.consts import *
+from GeothermalEnsembleMethods import utils
+from GeothermalEnsembleMethods.consts import *
 
 EPS = 1e-8
 

@@ -3,11 +3,11 @@
 import numpy as np
 from scipy import sparse
 
-from src.consts import SECS_PER_WEEK
-from src.data_handlers import *
-from src.grfs import *
-from src.models import *
-from src.priors import SlicePrior
+from GeothermalEnsembleMethods.consts import SECS_PER_WEEK
+from GeothermalEnsembleMethods.data_handlers import *
+from GeothermalEnsembleMethods.grfs import *
+from GeothermalEnsembleMethods.models import *
+from GeothermalEnsembleMethods.priors import SlicePrior
 
 np.random.seed(24)
 

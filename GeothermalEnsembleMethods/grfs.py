@@ -7,8 +7,8 @@ from scipy import sparse
 from scipy.sparse import linalg
 from scipy.special import gamma
 
-from src.models import ModelType
-from src import utils
+from GeothermalEnsembleMethods.models import ModelType
+from GeothermalEnsembleMethods import utils
 
 GRAD_2D = np.array([[-1.0, 1.0, 0.0], 
                     [-1.0, 0.0, 1.0]])
