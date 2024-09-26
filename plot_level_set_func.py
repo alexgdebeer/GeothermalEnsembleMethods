@@ -3,10 +3,11 @@ from matplotlib import pyplot as plt
 import numpy as np 
 import pyvista as pv
 
-from GeothermalEnsembleMethods.grfs import MaternField2D
-from GeothermalEnsembleMethods.models import ModelType
+from GeothermalEnsembleMethods import *
+
 
 np.random.seed(16)
+
 
 class RegularMaternField2D(MaternField2D):
 
@@ -23,6 +24,7 @@ class RegularMaternField2D(MaternField2D):
         self.get_mesh_data()
         self.build_fem_matrices()
 
+
 def levels(p):
     if   p < -1.5: return -15.0
     elif p < -0.5: return -14.5
@@ -30,9 +32,11 @@ def levels(p):
     elif p <  1.5: return -13.5
     else: return -13.0
 
+
 def apply_level_sets(phi):
     perms = np.array([levels(p) for p in phi])
     return perms
+
 
 xs = np.linspace(0, 1000, 80)
 nx = len(xs)
@@ -55,9 +59,6 @@ for i in range(3):
 
     phi = np.reshape(phi, (nx, nx))
     perms = np.reshape(perms, (nx, nx))
-
-    print(np.min(phi))
-    print(np.max(phi))
 
     axes[0][i].pcolormesh(phi.T, cmap=cmocean.cm.thermal, vmin=-3.5, vmax=3.0, rasterized=True)
     axes[1][i].pcolormesh(perms.T, cmap=cmocean.cm.turbid.reversed(), vmin=-17, vmax=-13, rasterized=True)
