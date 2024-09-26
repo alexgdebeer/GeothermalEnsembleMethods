@@ -1,4 +1,4 @@
-# Ensemble Methods for Geothermal Reservoir Modelling
+# Ensemble Kalman Inversion for Geothermal Reservoir Modelling
 
 ![Fault Model](fault_model.png)
 
@@ -23,7 +23,7 @@ You will need to install Waiwera to simuate each model. For information on getti
 
 To run EKI on each model, use the scripts in the top level of the repository (adjusting the algorithm parameters where appropriate).
 
-### Reproducing Plots
+### Plotting
 
 To reproduce the plots in the main body of the paper, run the `plot_slice.py` (vertical slice model) or `plot_fault.py` (three-dimensional model) scripts in the top level of the repository. 
 To reproduce the plots in the supplementary material, run `plot_slice_supplement.py` or `plot_fault_supplement.py`.
