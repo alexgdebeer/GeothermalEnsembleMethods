@@ -7,7 +7,7 @@ from numpy.random import default_rng
 from scipy.linalg import inv, sqrtm
 
 from GeothermalEnsembleMethods import utils
-from GeothermalEnsembleMethods.models import *
+from .models import *
 
 EPS_IMPUTERS = 1e-4
 TOL = 1e-8
