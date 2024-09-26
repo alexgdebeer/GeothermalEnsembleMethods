@@ -1,5 +1,7 @@
 # Ensemble Kalman Inversion for Geothermal Reservoir Modelling
 
+[![DOI](https://zenodo.org/badge/665821488.svg)](https://zenodo.org/doi/10.5281/zenodo.13841175)
+
 ![Fault Model](fault_model.png)
 
 This repository contains code for the synthetic case studies used as part of the paper "Ensemble Kalman Inversion for Geothermal Reservoir Modelling", by Alex de Beer, Elvar K. Bjarkason, Michael Gravatt, Ruanui Nicholson, John P. O'Sullivan, Michael J. O'Sullivan, and Oliver J. Maclaren. 
