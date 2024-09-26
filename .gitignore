@@ -10,3 +10,5 @@ __pycache__
 # Folders containing large files
 data/*/matern/*
 data/*/results/*
+
+plots/*.pptx
