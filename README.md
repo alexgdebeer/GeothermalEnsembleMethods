@@ -5,11 +5,20 @@
 ![Fault Model](fault_model.png)
 
 This repository contains code for the synthetic case studies used as part of the paper "Ensemble Kalman Inversion for Geothermal Reservoir Modelling", by Alex de Beer, Elvar K. Bjarkason, Michael Gravatt, Ruanui Nicholson, John P. O'Sullivan, Michael J. O'Sullivan, and Oliver J. Maclaren. 
-Ensemble Kalman inversion (EKI; [[1](#1), [2](#2)]) is a derivative-free algorithm that iteratively update a set of interacting particles to produce an approximation to the posterior distribution of the model parameters. 
+Ensemble Kalman inversion (EKI; [[1](#1), [2](#2)]) is a derivative-free algorithm that iteratively updates a set of interacting particles to produce an approximation to the posterior distribution of the model parameters. 
 
 ## Citation
 
-*Coming soon.*
+```
+@misc{deBeer2024,
+    title={Ensemble Kalman Inversion for Geothermal Reservoir Modelling}, 
+    author={Alex de Beer and Elvar K Bjarkason and Michael Gravatt and Ruanui Nicholson and John P O'Sullivan and Michael J O'Sullivan and Oliver J Maclaren},
+    year={2024},
+    eprint={2410.09017},
+    archivePrefix={arXiv},
+    url={https://arxiv.org/abs/2410.09017}
+}
+```
 
 ## Getting Started
 
