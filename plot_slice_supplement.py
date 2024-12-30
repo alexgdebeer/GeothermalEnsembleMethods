@@ -18,15 +18,16 @@ RESULTS_FNAMES = [
 
 ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
-PLOT_MEAN_EKI = False
-PLOT_STDS = False
+PLOT_MEAN_EKI = True
+PLOT_STDS = True
 PLOT_UPFLOWS = True
-PLOT_PREDICTIONS = False
-PLOT_INTERVALS = False
-PLOT_HYPERPARAMS = False
+PLOT_PREDICTIONS = True
+PLOT_INTERVALS = True
+PLOT_HYPERPARAMS = True
 
 DATA_WELL = 1
 WELL_TO_PLOT = 2
+WELL_DEPTH = -1300
 
 
 def read_data(fname):
@@ -120,17 +121,15 @@ if PLOT_PREDICTIONS:
     ]
 
     temp_t, pres_t, enth_t = data_handler_fine.get_full_states(F_t)
-    temp_t = data_handler_fine.downhole_temps(temp_t)
-    temp_obs, pres_obs, enth_obs = data_handler_fine.split_obs(y)
-
+    zs, temp_t = data_handler_fine.downhole_temps(temp_t)
     ts = data_handler_fine.ts / (52 * SECS_PER_WEEK)
-    ts_obs = data_handler_crse.prod_obs_ts / (52 * SECS_PER_WEEK)
 
-    zs = mesh_fine.zs
+    temp_obs, pres_obs, enth_obs = data_handler_fine.split_obs(y)
+    ts_obs = data_handler_crse.prod_obs_ts / (52 * SECS_PER_WEEK)
     zs_obs = temp_obs_zs
 
     temp_lims_x = (0, 340)
-    temp_lims_y = (-1500, 0)
+    temp_lims_y = (WELL_DEPTH, 0)
     pres_lims_x = (0, 2)
     pres_lims_y = (2, 14)
     enth_lims_x = (0, 2)
@@ -228,7 +227,7 @@ if PLOT_HYPERPARAMS:
     lenv_lims_x = bounds_deep[2]
     lenv_lims_y = (0, 0.01)
 
-    labels = ["Standard Deviation", "$x_{1}$ Lengthscale [m]", "$x_{2}$ Lengthscale [m]"]
+    labels = ["Standard Deviation", "$x_{1}$ Lengthscale [m]", "$x_{3}$ Lengthscale [m]"]
 
     fname = f"{PLOTS_FOLDER}/hyperparams.pdf"
     plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x, 

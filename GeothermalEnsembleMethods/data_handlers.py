@@ -132,18 +132,21 @@ class DataHandler2D(DataHandler):
         temp_obs = interpolator(self.temp_obs_cs)
         return self.reshape_to_wells(temp_obs)
     
-    def downhole_temps(self, temps):
-        """Generates the downhole temperatures for a given well.
-        TODO: cut off at well depths?"""
+    def downhole_temps(self, temps, well_depth=-1300):
+        """Generates the downhole temperatures for a given well."""
         mesh_coords = (self.mesh.xs, self.mesh.zs)
         interpolator = RegularGridInterpolator(mesh_coords, temps.T)
 
+        zs = self.mesh.zs[self.mesh.zs >= well_depth]
+        if abs(zs[-1] - well_depth) > 1e-8:
+            zs = np.append(zs, well_depth)
+        
         downhole_coords = np.array([[w.x, z] 
-                                    for z in self.mesh.zs
+                                    for z in zs
                                     for w in self.wells])
         
         temp_well = interpolator(downhole_coords)
-        return self.reshape_to_wells(temp_well)
+        return zs, self.reshape_to_wells(temp_well)
 
 class DataHandler3D(DataHandler):
 

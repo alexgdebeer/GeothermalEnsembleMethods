@@ -87,6 +87,7 @@ LABEL_LENV = "Vertical Lengthscale [m]"
 
 LABEL_X1 = r"$x_{1}$ [km]"
 LABEL_X2 = r"$x_{2}$ [km]"
+LABEL_X3 = r"$x_{3}$ [km]"
 
 CAMERA_POSITION = (13_000, 15_000, 6_000)
 
@@ -297,8 +298,8 @@ def plot_predictions(
             if dim == 3:
                 zs_j, temp_j = data_handler.downhole_temps(temp_j, well_num)
             else: 
-                zs_j = data_handler.mesh.zs
-                temp_j = data_handler.downhole_temps(temp_j)[:, well_num]
+                zs_j, temp_j = data_handler.downhole_temps(temp_j)
+                temp_j = temp_j[:, well_num]
             
             axes[0][j].plot(temp_j, zs_j, c=COL_TEMP, zorder=2, alpha=0.4)
             axes[1][j].plot(ts, pres_j[:, well_num], c=COL_PRES, zorder=2, alpha=0.4)
@@ -403,9 +404,6 @@ def plot_mesh_2d(
 ) -> None:
     """Plots the mesh of the vertical slice model."""
 
-    grid_xticks = [0, 500, 1000, 1500]
-    grid_zticks = [-1500, -1000, -500, 0]
-
     _, ax = plt.subplots(figsize=(HALF_PAGE, 0.7*HALF_PAGE))
 
     ws = prior.sample().squeeze()
@@ -456,13 +454,9 @@ def plot_mesh_2d(
         plt.text(x-110, 40, s=get_well_name(i), color=COL_WELLS)
 
     ax.set_xlabel(LABEL_X1)
-    ax.set_ylabel(LABEL_X2)
+    ax.set_ylabel(LABEL_X3)
     ax.set_box_aspect(1)
-    ax.set_xlim((0, 1500))
-    ax.set_ylim((-1500, 0))
-
-    ax.set_xticks(grid_xticks)
-    ax.set_yticks(grid_zticks)
+    set_lims_2d(ax, remove_spines=False)
     ax.tick_params(length=0)
 
     legend_elements = [
@@ -478,13 +472,12 @@ def plot_mesh_2d(
     ax.legend(handles=legend_elements, bbox_to_anchor=(1.05, 0.75), frameon=False)
 
     for s in ax.spines.values():
-        s.set_edgecolor(COL_GRID)
-        s.set_linewidth(1.5)
+        s.set(edgecolor=COL_GRID, lw=1.5)
 
     plt.savefig(fname)
 
 
-def set_lims_2d(ax):
+def set_lims_2d(ax, remove_spines=True):
     """Sets the limits of an axis object as the boundaries of domain of 
     the vertical slice model.
     """
@@ -498,8 +491,9 @@ def set_lims_2d(ax):
     ax.set_yticklabels([r"$-1.5$", r"$0$"])
     ax.tick_params(length=0)
 
-    for s in ax.spines:
-        ax.spines[s].set_visible(False)
+    if remove_spines:
+        for s in ax.spines:
+            ax.spines[s].set_visible(False)
 
 
 def plot_truth_2d(mesh, perm_t, temp_t, fname):
@@ -526,7 +520,7 @@ def plot_truth_2d(mesh, perm_t, temp_t, fname):
     temp_cbar.set_label(LABEL_TEMP)
 
     for ax in axes:
-        ax.set_ylabel(LABEL_X2)
+        ax.set_ylabel(LABEL_X3)
         set_lims_2d(ax)
     
     axes[1].set_xlabel(LABEL_X1)
@@ -553,7 +547,7 @@ def plot_particles_2d(mesh, vals, fname, vmin=MIN_PERM_2D,
     for ax in axes[-1]:
         ax.set_xlabel(LABEL_X1)
     for ax in axes.T[0]:
-        ax.set_ylabel(LABEL_X2)
+        ax.set_ylabel(LABEL_X3)
 
     cbar = fig.colorbar(im, ax=axes, shrink=0.5)
     cbar.set_label(LABEL_PERM)
@@ -610,7 +604,7 @@ def plot_grid_2d(vals, meshes, labels, fname, vmin=MIN_PERM_2D,
         set_lims_2d(ax)
         ax.set_xlabel(LABEL_X1)
 
-    axes[0].set_ylabel(LABEL_X2)
+    axes[0].set_ylabel(LABEL_X3)
 
     if cbar:
         cbar = fig.colorbar(mesh, ax=axes[-1])

@@ -8,7 +8,7 @@ from scipy.sparse import linalg
 from scipy.special import gamma
 
 from .models import IrregularMesh, ModelType
-import utils
+from . import utils
 
 GRAD_2D = np.array([[-1.0, 1.0, 0.0], 
                     [-1.0, 0.0, 1.0]])

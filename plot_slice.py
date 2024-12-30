@@ -17,26 +17,26 @@ RESULTS_FNAMES = [
 
 ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
-PLOT_MESH = False
-PLOT_TRUTH = False
-PLOT_DATA = False
+PLOT_MESH = True
+PLOT_TRUTH = True
+PLOT_DATA = True
 
 PLOT_PRIOR_PARTICLES = True
 
-PLOT_MEAN_PRI = False
-PLOT_MEAN_EKI = False
-PLOT_STDS = False
+PLOT_MEAN_PRI = True
+PLOT_MEAN_EKI = True
+PLOT_STDS = True
 PLOT_POST_PARTICLES = True
-PLOT_UPFLOWS = False
-PLOT_PREDICTIONS = False
-
-PLOT_INTERVALS = False
-PLOT_HYPERPARAMS = False
+PLOT_UPFLOWS = True
+PLOT_PREDICTIONS = True
+PLOT_INTERVALS = True
 
 PLOT_CBARS = False
 
 DATA_WELL = 1
 WELL_TO_PLOT = 2
+
+WELL_DEPTH = -1300
 
 def read_data(fname):
 
@@ -95,16 +95,15 @@ if PLOT_MESH:
 if PLOT_DATA: 
 
     temp_t, pres_t, enth_t = data_handler_fine.get_full_states(F_t)
-    temp_t = data_handler_fine.downhole_temps(temp_t)
+    zs, temp_t = data_handler_fine.downhole_temps(temp_t)
     temp_obs, pres_obs, enth_obs = data_handler_fine.split_obs(y)
 
     ts = data_handler_fine.ts / (52 * SECS_PER_WEEK)
     ts_obs = data_handler_crse.prod_obs_ts / (52 * SECS_PER_WEEK)
-    zs = mesh_fine.zs
     zs_obs = temp_obs_zs
 
     temp_lims_x = (0, 300)
-    temp_lims_y = (-1500, 0)
+    temp_lims_y = (WELL_DEPTH, 0)
     pres_lims_x = (0, 2)
     pres_lims_y = (4, 14)
     enth_lims_x = (0, 2)
@@ -166,7 +165,8 @@ if PLOT_STDS:
 
     vals = [
         get_stds(results["EKI"]["ps_pri"]),
-        get_stds(results["EKI"]["ps_post"])]
+        get_stds(results["EKI"]["ps_post"])
+    ]
     
     meshes = [mesh_crse] * 2
     labels = ["Prior", "EKI"]
@@ -183,17 +183,15 @@ if PLOT_PREDICTIONS:
     ]
 
     temp_t, pres_t, enth_t = data_handler_fine.get_full_states(F_t)
-    temp_t = data_handler_fine.downhole_temps(temp_t)
+    zs, temp_t = data_handler_fine.downhole_temps(temp_t)
     temp_obs, pres_obs, enth_obs = data_handler_fine.split_obs(y)
 
     ts = data_handler_fine.ts / (52 * SECS_PER_WEEK)
     ts_obs = data_handler_crse.prod_obs_ts / (52 * SECS_PER_WEEK)
-
-    zs = mesh_fine.zs
     zs_obs = temp_obs_zs
 
     temp_lims_x = (0, 340)
-    temp_lims_y = (-1500, 0)
+    temp_lims_y = (WELL_DEPTH, 0)
     pres_lims_x = (0, 2)
     pres_lims_y = (2, 14)
     enth_lims_x = (0, 2)
@@ -219,6 +217,8 @@ if PLOT_POST_PARTICLES:
 if PLOT_UPFLOWS:
 
     upflow_t = p_t[-1] * upflow_cell_fine.column.area
+    print(upflow_t)
+    print(p_t[-1])
     bnds_x = (0.1, 0.2)
     bnds_y = (0, 80)
 
@@ -267,32 +267,3 @@ if PLOT_INTERVALS:
     fname = f"{PLOTS_FOLDER}/intervals.pdf"
     plot_grid_2d(vals, meshes, labels, fname, 
                  vmin=0, vmax=1, cmap=CMAP_INTERVALS, cbar=False)
-
-if PLOT_HYPERPARAMS:
-
-    ind = 2 # Deep
-
-    def get_hyperparams(ws):
-        return np.array([prior.get_hyperparams(w_i)[ind] for w_i in ws.T])
-
-    hps = [
-        get_hyperparams(results["EKI"]["ws_pri"]),
-        get_hyperparams(results["EKI"]["ws_post"]),
-        get_hyperparams(results["EKI-BOOT"]["ws_post"]),
-        get_hyperparams(results["EKI-INF"]["ws_post"]),
-    ]
-
-    hps_t = truth_dist.get_hyperparams(w_t)[ind]
-
-    std_lims_x = bounds_deep[0]
-    std_lims_y = (0, 7) 
-    lenh_lims_x = bounds_deep[1]
-    lenh_lims_y = (0, 0.003)
-    lenv_lims_x = bounds_deep[2]
-    lenv_lims_y = (0, 0.01)
-
-    labels = ["Standard Deviation", "$x_{1}$ Lengthscale [m]", "$x_{2}$ Lengthscale [m]"]
-
-    fname = f"{PLOTS_FOLDER}/hyperparams.pdf"
-    plot_hyperparams(hps, hps_t, std_lims_x, std_lims_y, lenh_lims_x, 
-                     lenh_lims_y, lenv_lims_x, lenv_lims_y, labels, fname) 
