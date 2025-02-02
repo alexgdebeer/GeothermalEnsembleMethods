@@ -41,7 +41,7 @@ To reproduce the plots in the supplementary material, run `plot_slice_supplement
 
 ## Issues
 
-If you have any questions about the code or the content of the paper, please email [adeb970@aucklanduni.ac.nz](mailto:adeb970@aucklanduni.ac.nz), or open an [issue](https://github.com/alexgdebeer/GeothermalEnsembleMethods/issues).
+If you have any questions about the code or the content of the paper, please email [adeb0907@uni.sydney.edu.au](mailto:adeb0907@uni.sydney.edu.au), or open an [issue](https://github.com/alexgdebeer/GeothermalEnsembleMethods/issues).
 
 ## References
 
