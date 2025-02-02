@@ -66,6 +66,8 @@ COL_LENV = "tab:green"
 
 COL_DATA_END = "darkgrey"
 
+COL_CAPS = "#b48d3e"
+
 SLICE_HEIGHT = 1200
 
 ALG_LABELS = ["Prior", "EKI", "EKI (Localisation)", "EKI (Inflation)"]
@@ -92,13 +94,12 @@ LABEL_X3 = r"$x_{3}$ [km]"
 CAMERA_POSITION = (13_000, 15_000, 6_000)
 
 
-def tufte_axis(
-    ax, 
-    bnds_x: tuple, 
-    bnds_y: tuple, 
-    gap: int=0.1
-) -> None:
-    """Restyles an axis."""
+def tufte_axis(ax, bnds_x, bnds_y, gap=0.1, xticks=None, yticks=None, hide_ticklabels=False):
+
+    if xticks is None:
+        xticks = bnds_x
+    if yticks is None:
+        yticks = bnds_y
     
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -112,8 +113,14 @@ def tufte_axis(
     ax.set_xlim(bnds_x[0] - gap*dx, bnds_x[1] + gap*dx)
     ax.set_ylim(bnds_y[0] - gap*dy, bnds_y[1] + gap*dy)
 
-    ax.set_xticks(bnds_x)
-    ax.set_yticks(bnds_y)
+    ax.set_xticks(xticks)
+    ax.set_yticks(yticks)
+
+    if hide_ticklabels in ("x", True):
+        ax.set_xticklabels((" ", " "))
+
+    if hide_ticklabels in ("y", True):
+        ax.set_yticklabels((" ", " "))
 
 
 def get_well_name(i: int):
@@ -782,7 +789,12 @@ def plot_stds_3d(mesh, fem_mesh, stds, fname):
     p.screenshot(fname)
 
 
-def plot_intervals_3d(mesh, fem_mesh, intervals, fname):
+def plot_intervals_3d(
+    mesh, 
+    fem_mesh: pv.UnstructuredGrid, 
+    intervals, 
+    fname
+):
     
     num_intervals = len(intervals)
     wsize = (num_intervals * SLICE_HEIGHT, SLICE_HEIGHT)
@@ -794,14 +806,21 @@ def plot_intervals_3d(mesh, fem_mesh, intervals, fname):
     for i, interval in enumerate(intervals):
 
         fem_mesh["vals"] = map_to_fem_mesh(mesh, fem_mesh, interval)
-        slice = fem_mesh.clip(normal="x")
+        # slice = fem_mesh.clip(normal="x")
+        # print(fem_mesh["vals"])
+        # cells = [c for c in fem_mesh.cell]
+        # print([c for c in fem_mesh.cell])
+        cells = fem_mesh.extract_cells((fem_mesh["vals"] >= 0.5).nonzero())
 
         p.subplot(0, i)
         p.add_mesh(outline, line_width=6, color=COL_GRID)
-        p.add_mesh(slice, cmap=CMAP_INTERVALS, show_scalar_bar=False)
+        p.add_mesh(fem_mesh, opacity=0.5, color="silver", show_scalar_bar=False)
+        p.add_mesh(cells, color="red")
         p.camera.position = CAMERA_POSITION
 
+    # p.show()
     p.screenshot(fname)
+    return
 
 
 def plot_slice(mesh, fem_mesh, vals, fname, cmap=CMAP_PERM, vmin=MIN_PERM_3D, vmax=MAX_PERM_3D):
@@ -846,20 +865,20 @@ def convert_inds(mesh, fem_mesh, inds):
             for c in fem_mesh.cell]
 
 
-def plot_caps_3d(mesh, fem_mesh, cap_cell_inds, fname):
+def plot_caps_3d(mesh, fem_mesh, cap_cell_inds, fname, n_cols=4):
 
     camera_position_top = (6000, 7000, 3000)
     camera_position_bottom = (6000, 7000, -4000)# (1000, 2000, 6000)
 
     caps = [convert_inds(mesh, fem_mesh, cap_cell_inds[i]) 
-            for i in range(2)]
+            for i in range(n_cols)]
 
-    p = pv.Plotter(shape=(2, 2), window_size=(2400, 2000), border=False, off_screen=True)
+    p = pv.Plotter(shape=(2, n_cols), window_size=(1200 * n_cols, 2000), border=False, off_screen=True)
 
     light = pv.Light(position=(0, 0, -2000), intensity=0.35)
     p.add_light(light)
 
-    for j in range(2):
+    for j in range(n_cols):
 
         fem_mesh["cap"] = caps[j]
 
@@ -870,12 +889,12 @@ def plot_caps_3d(mesh, fem_mesh, cap_cell_inds, fname):
         outline_r = cap_r.extract_surface().extract_feature_edges()
 
         p.subplot(0, j)
-        p.add_mesh(cap, color="#b48d3e", lighting=True)
+        p.add_mesh(cap, color=COL_CAPS, lighting=True)
         p.add_mesh(outline, line_width=3, color="k")
         p.camera.position = camera_position_top
 
         p.subplot(1, j)
-        p.add_mesh(cap_r, color="#b48d3e", lighting=True)
+        p.add_mesh(cap_r, color=COL_CAPS, lighting=True)
         p.add_mesh(outline_r, line_width=3, color="k")
         p.camera.position = camera_position_bottom
 

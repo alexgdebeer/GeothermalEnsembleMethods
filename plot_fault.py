@@ -17,9 +17,12 @@ RESULTS_FNAMES = [
 
 ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
+COMPUTE_MISFIT = False
+
 PLOT_MESH = False
 PLOT_TRUTH = False
 PLOT_DATA = False
+PLOT_TRUE_CAP = False
 
 PLOT_PRIOR_PARTICLES = False
 PLOT_PRIOR_FAULTS = False
@@ -29,9 +32,11 @@ PLOT_MEANS = False
 PLOT_STDS = False
 PLOT_POST_PARTICLES = False
 PLOT_POST_FAULTS = False
+PLOT_POST_CAPS = False
+PLOT_POST_CAP_GEOM = True
 PLOT_PREDICTIONS = False
 
-PLOT_INTERVALS = True
+PLOT_INTERVALS = False
 PLOT_HYPERPARAMS = False
 
 PLOT_CBARS = False
@@ -49,12 +54,12 @@ def read_results(algnames, fnames):
 
             post_ind = f["post_ind"][0]
 
-            print(post_ind)
+            # print(post_ind)
 
             success_rate = np.mean([
                 len(f[f"inds_succ_{i}"]) for i in range(post_ind+1)
             ]) / 100
-            print(success_rate)
+            # print(success_rate)
 
             inds_succ_pri = f[f"inds_succ_0"][:]
             inds_succ_post = f[f"inds_succ_{post_ind}"][:]
@@ -75,6 +80,24 @@ def read_results(algnames, fnames):
 fem_mesh_crse = pv.UnstructuredGrid(f"{mesh_crse.name}.vtu")
 fem_mesh_fine = pv.UnstructuredGrid(f"{mesh_fine.name}.vtu")
 results = read_results(ALGNAMES, RESULTS_FNAMES)
+
+
+if COMPUTE_MISFIT:
+    
+    L_e = np.linalg.cholesky(np.linalg.inv(C_e)).T
+    misfits = np.mean((L_e @ (results["EKI"]["Gs_pri"] - y[:, None])) ** 2, axis=0)
+
+    print(np.max(misfits))
+    print(np.mean(misfits))
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(misfits, bins=np.linspace(0, 13, 53))
+    ax.set_title("Synthetic 3D Model")
+    ax.set_xlabel(r"$\frac{1}{d}||\bm{y}_{\mathrm{obs}} - \mathcal{G}(\bm{\theta})||_{\bm{C}_{\epsilon}}^{2}$")
+    ax.set_ylabel("Count")
+    ax.axvline(x=1.0, ymin=1/22, ymax=21/22, c="grey", ls="--")
+    tufte_axis(ax, bnds_x=(0, 13), bnds_y=(0, 25), xticks=np.arange(14), gap=0.05)
+    plt.savefig("plots/misfit_fault.pdf")
+
 
 if PLOT_MESH:
 
@@ -128,6 +151,14 @@ if PLOT_DATA:
               enth_lims_x, enth_lims_y, data_end, 
               DATA_WELL, fname)
 
+if PLOT_TRUE_CAP:
+    
+    ws_cap_true = w_t[truth_dist.inds["cap"]].flatten()
+    cap_cell_inds = np.atleast_2d(truth_dist.cap.get_cells_in_cap(ws_cap_true))
+    fname = f"{PLOTS_FOLDER}/cap_true.png"
+    plot_caps_3d(mesh_fine.m, fem_mesh_fine, cap_cell_inds, fname, n_cols=1)
+
+
 if PLOT_PRIOR_PARTICLES:
 
     logks = results["EKI"]["ps_pri"][:mesh_crse.m.num_cells, :6].T
@@ -142,7 +173,7 @@ if PLOT_PRIOR_FAULTS:
 
 if PLOT_PRIOR_CAPS:
 
-    ws_cap = results["EKI"]["ws_pri"][prior.inds["cap"], 10:13]
+    ws_cap = results["EKI"]["ws_pri"][prior.inds["cap"], 10:14]
     cap_cell_inds = [prior.cap.get_cells_in_cap(w) for w in ws_cap.T]
     fname = f"{PLOTS_FOLDER}/caps_pri.png"
     plot_caps_3d(mesh_crse.m, fem_mesh_crse, cap_cell_inds, fname)
@@ -192,6 +223,52 @@ if PLOT_POST_FAULTS:
     upflows = results["EKI"]["ps_post"][-mesh_crse.m.num_columns:, :8].T
     fname = f"{PLOTS_FOLDER}/upflows_post.pdf"
     plot_faults_3d(mesh_crse.m, upflows, fname)
+
+if PLOT_POST_CAPS:
+
+    ws_cap = results["EKI"]["ws_post"][prior.inds["cap"], 10:14]
+    cap_cell_inds = [prior.cap.get_cells_in_cap(w) for w in ws_cap.T]
+    fname = f"{PLOTS_FOLDER}/caps_post.png"
+    plot_caps_3d(mesh_crse.m, fem_mesh_crse, cap_cell_inds, fname)
+
+if PLOT_POST_CAP_GEOM:
+
+    param_inds = [0, 3]
+    bnds_y = [(0, 0.03), (0.0, 0.01)]
+
+    cap_geom_params_true = np.array(truth_dist.cap.get_geom_params(w_t))
+
+    ws_cap_pri = results["EKI"]["ws_pri"][prior.inds["cap"]]
+    cap_geom_params_pri = [prior.cap.get_geom_params(w) for w in ws_cap_pri.T]
+    cap_geom_params_pri = np.array(cap_geom_params_pri).T
+
+    ws_cap_post = results["EKI"]["ws_post"][prior.inds["cap"]]
+    cap_geom_params_post = [prior.cap.get_geom_params(w) for w in ws_cap_post.T]
+    cap_geom_params_post = np.array(cap_geom_params_post).T
+
+    fig, axes = plt.subplots(2, 2, figsize=(HALF_PAGE, HALF_PAGE))
+
+    for i, ind in enumerate(param_inds):
+
+        bins = np.linspace(*prior.cap.bounds[ind], 11)
+        
+        axes[i][0].hist(cap_geom_params_pri[ind], color=COL_CAPS, density=True, bins=bins, zorder=1)
+        axes[i][1].hist(cap_geom_params_post[ind], color=COL_CAPS, density=True, bins=bins, zorder=1)
+        
+        for j in range(2):
+            axes[i][j].axvline(cap_geom_params_true[ind], c="k", ymin=1/12, ymax=11/12, zorder=2)
+            axes[i][j].set_box_aspect(1)
+            tufte_axis(axes[i][j], bnds_x=prior.cap.bounds[ind], bnds_y=bnds_y[i])
+
+        axes[i][0].set_ylabel("Density")
+
+        axes[0][i].set_xlabel("$s_{3}$ [m]")
+        axes[1][i].set_xlabel("$d$ [m]")
+
+    axes[0][0].set_title("Prior")
+    axes[0][1].set_title("EKI")
+
+    plt.savefig(f"{PLOTS_FOLDER}/cap_params.pdf")
 
 if PLOT_PREDICTIONS:
 

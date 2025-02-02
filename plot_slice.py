@@ -17,19 +17,21 @@ RESULTS_FNAMES = [
 
 ALGNAMES = ["EKI", "EKI-BOOT", "EKI-INF"]
 
-PLOT_MESH = True
-PLOT_TRUTH = True
-PLOT_DATA = True
+COMPUTE_MISFIT = True
 
-PLOT_PRIOR_PARTICLES = True
+PLOT_MESH = False
+PLOT_TRUTH = False
+PLOT_DATA = False
 
-PLOT_MEAN_PRI = True
-PLOT_MEAN_EKI = True
-PLOT_STDS = True
-PLOT_POST_PARTICLES = True
-PLOT_UPFLOWS = True
+PLOT_PRIOR_PARTICLES = False
+
+PLOT_MEAN_PRI = False
+PLOT_MEAN_EKI = False
+PLOT_STDS = False
+PLOT_POST_PARTICLES = False
+PLOT_UPFLOWS = False
 PLOT_PREDICTIONS = True
-PLOT_INTERVALS = True
+PLOT_INTERVALS = False
 
 PLOT_CBARS = False
 
@@ -87,6 +89,22 @@ results = {
 }
 
 
+if COMPUTE_MISFIT:
+    
+    L_e = np.sqrt(np.linalg.inv(C_e))
+    misfits = np.mean((L_e @ (results["EKI"]["Gs_post"] - y[:, None])) ** 2, axis=0)
+    
+    print(np.max(misfits))
+    print(np.mean(misfits))
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(misfits, bins=np.linspace(0, 13, 53))
+    ax.set_title("Synthetic 2D Model")
+    ax.set_xlabel(r"$\frac{1}{d}||\bm{y}_{\mathrm{obs}} - \mathcal{G}(\bm{\theta})||_{\bm{C}_{\epsilon}}^{2}$")
+    ax.set_ylabel("Count")
+    ax.axvline(x=1.0, ymin=1/22, ymax=21/22, c="grey", ls="--")
+    tufte_axis(ax, bnds_x=(0, 13), bnds_y=(0, 25), xticks=np.arange(14), gap=0.05)
+    plt.savefig("plots/misfit_slice.pdf")
+    
 if PLOT_MESH:
 
     fname = f"{PLOTS_FOLDER}/mesh.pdf"
@@ -217,8 +235,8 @@ if PLOT_POST_PARTICLES:
 if PLOT_UPFLOWS:
 
     upflow_t = p_t[-1] * upflow_cell_fine.column.area
-    print(upflow_t)
-    print(p_t[-1])
+    # print(upflow_t)
+    # print(p_t[-1])
     bnds_x = (0.1, 0.2)
     bnds_y = (0, 80)
 

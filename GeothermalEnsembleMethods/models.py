@@ -279,12 +279,16 @@ class ClayCap():
         """Given a set of unit normal variables, generates the 
         corresponding set of clay cap parameters."""
 
-        geom = transform_pars(pars[:4], self.bounds)
+        geom = self.get_geom_params(pars)
 
         coefs_shape = (self.n_terms, self.n_terms, 4)
         coefs = np.reshape(self.coef_sds * pars[4:], coefs_shape)
 
         return geom, coefs
+
+    def get_geom_params(self, pars):
+        geom = transform_pars(pars[:4], self.bounds)
+        return geom
 
     def get_cells_in_cap(self, pars):
         """Returns an array of booleans that indicate whether each cell 
