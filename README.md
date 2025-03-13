@@ -20,7 +20,6 @@ Ensemble Kalman inversion (EKI; [[1](#1), [2](#2)]) is a derivative-free algorit
     year = {2025},
     doi = {https://doi.org/10.1093/gji/ggaf060}
 }
-
 ```
 
 ## Getting Started
