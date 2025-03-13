@@ -10,14 +10,17 @@ Ensemble Kalman inversion (EKI; [[1](#1), [2](#2)]) is a derivative-free algorit
 ## Citation
 
 ```
-@misc{deBeer2024,
-    title={Ensemble Kalman Inversion for Geothermal Reservoir Modelling}, 
-    author={Alex de Beer and Elvar K Bjarkason and Michael Gravatt and Ruanui Nicholson and John P O'Sullivan and Michael J O'Sullivan and Oliver J Maclaren},
-    year={2024},
-    eprint={2410.09017},
-    archivePrefix={arXiv},
-    url={https://arxiv.org/abs/2410.09017}
+@article{deBeer2025,
+    author = {de Beer, Alex and Bjarkason, Elvar K and Gravatt, Michael and Nicholson, Ruanui and O’Sullivan, John P and O’Sullivan, Michael J and Maclaren, Oliver J},
+    title = {Ensemble Kalman inversion for geothermal reservoir modelling},
+    journal = {Geophysical Journal International},
+    volume = {241},
+    number = {1},
+    pages = {580-605},
+    year = {2025},
+    doi = {https://doi.org/10.1093/gji/ggaf060}
 }
+
 ```
 
 ## Getting Started
